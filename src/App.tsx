@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { StateProvider, useAppState } from './context/StateContext';
+import { StateProvider, useAppState, ADMIN_EMAIL } from './context/StateContext';
 import { BrandingHeader, LegalDisclosures } from './components/BrandingHeader';
 import { UserDashboard } from './components/UserDashboard';
 import { AdminPanel } from './components/AdminPanel';
@@ -21,16 +21,21 @@ import {
   Calendar, 
   Key,
   Users,
-  AlertTriangle
+  AlertTriangle,
+  ShieldAlert,
+  LayoutGrid,
+  Eye
 } from 'lucide-react';
 import { INVESTMENT_PLANS } from './types';
 
 function MainAppContent() {
   const { currentUser, register, login, successMsg, errorMsg, clearMessages } = useAppState();
   const [isRegistering, setIsRegistering] = useState(false);
+  const [adminView, setAdminView] = useState<'admin' | 'user'>('admin');
   
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
 
   // Register state
   const [regName, setRegName] = useState('');
@@ -39,7 +44,7 @@ function MainAppContent() {
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(loginEmail);
+    login(loginEmail, loginPassword);
   };
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
@@ -171,6 +176,26 @@ function MainAppContent() {
                   </div>
                 </div>
 
+                {loginEmail.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim() && (
+                  <div className="space-y-1 animate-fade-in">
+                    <label className="block text-xs text-amber-600 font-bold mb-1 uppercase tracking-wider flex items-center gap-1">
+                      <Key className="w-3.5 h-3.5" />
+                      Administrator Password Required
+                    </label>
+                    <div className="relative">
+                      <input 
+                        type="password" 
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        placeholder="Enter administrator password"
+                        className="w-full bg-amber-50/50 border border-amber-300 rounded-lg py-2 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono"
+                        required
+                      />
+                      <Lock className="w-4 h-4 text-amber-500 absolute left-3 top-2.5" />
+                    </div>
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5"
@@ -289,9 +314,48 @@ function MainAppContent() {
       <div>
         <BrandingHeader />
         
+        {currentUser.role === 'admin' && (
+          <div className="bg-[#1e293b] border-b border-slate-700 py-3 px-4">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+              <div className="flex items-center gap-2 text-slate-300 text-xs font-medium">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                <span>Treasure Homes Authorized Admin session</span>
+              </div>
+              <div className="flex gap-2 bg-[#0f172a] p-1 rounded-xl border border-slate-700">
+                <button
+                  onClick={() => setAdminView('admin')}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    adminView === 'admin'
+                      ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  Control Panel
+                </button>
+                <button
+                  onClick={() => setAdminView('user')}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    adminView === 'user'
+                      ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  Investor View (Full Build)
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {currentUser.role === 'admin' ? (
-            <AdminPanel />
+            adminView === 'admin' ? (
+              <AdminPanel />
+            ) : (
+              <UserDashboard />
+            )
           ) : (
             <UserDashboard />
           )}

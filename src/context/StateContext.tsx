@@ -1,5 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS } from '../types';
+import { 
+  isSupabaseConfigured, 
+  supabase, 
+  fetchAllSupabaseData, 
+  syncUserToSupabase, 
+  syncInvestmentToSupabase, 
+  syncTransactionToSupabase, 
+  syncSettingsToSupabase, 
+  syncWeekToSupabase,
+  syncMultipleUsersToSupabase,
+  syncMultipleInvestmentsToSupabase,
+  syncMultipleTransactionsToSupabase
+} from '../lib/supabase';
 
 interface StateContextType {
   users: User[];
@@ -10,10 +23,12 @@ interface StateContextType {
   currentWeek: number;
   errorMsg: string | null;
   successMsg: string | null;
+  supabaseStatus: 'idle' | 'loading' | 'connected' | 'error' | 'not_configured';
+  isDbLoaded: boolean;
   
   // Auth actions
   register: (name: string, email: string, referredByCode?: string) => boolean;
-  login: (email: string) => boolean;
+  login: (email: string, password?: string) => boolean;
   logout: () => void;
   switchUser: (userId: string) => void;
   
@@ -39,11 +54,14 @@ interface StateContextType {
 
 const StateContext = createContext<StateContextType | undefined>(undefined);
 
-const SEED_USERS: User[] = [
+export const ADMIN_EMAIL = (import.meta as any).env.VITE_ADMIN_EMAIL || 'admin@treasurehomes.com';
+const ADMIN_PASSWORD = (import.meta as any).env.VITE_ADMIN_PASSWORD || 'admin123';
+
+const getSeedUsers = (): User[] => [
   {
     id: 'usr_admin',
     name: 'Treasure Homes Admin',
-    email: 'admin@treasurehomes.com',
+    email: ADMIN_EMAIL.toLowerCase().trim(),
     referralCode: 'TREASURE_ADMIN',
     walletBalance: 0,
     kycStatus: 'verified',
@@ -68,7 +86,19 @@ const DEFAULT_SETTINGS: SystemSettings = {
 export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem('pm_prod_users_v1');
-    return saved ? JSON.parse(saved) : SEED_USERS;
+    const parsed = saved ? JSON.parse(saved) : null;
+    const defaultSeed = getSeedUsers();
+    
+    if (!parsed) return defaultSeed;
+
+    // Dynamically update existing seeded admin in case user updated VITE_ADMIN_EMAIL
+    const adminIndex = parsed.findIndex((u: any) => u.id === 'usr_admin' || u.role === 'admin');
+    if (adminIndex > -1) {
+      parsed[adminIndex].email = ADMIN_EMAIL.toLowerCase().trim();
+    } else {
+      parsed.push(defaultSeed[0]);
+    }
+    return parsed;
   });
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -99,30 +129,119 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Sync to local storage
+  // Supabase states
+  const [supabaseStatus, setSupabaseStatus] = useState<'idle' | 'loading' | 'connected' | 'error' | 'not_configured'>('idle');
+  const [isDbLoaded, setIsDbLoaded] = useState<boolean>(false);
+
+  // Initialize and Fetch from Supabase
+  useEffect(() => {
+    const initSupabase = async () => {
+      if (!isSupabaseConfigured()) {
+        setSupabaseStatus('not_configured');
+        setIsDbLoaded(true);
+        return;
+      }
+
+      setSupabaseStatus('loading');
+      try {
+        const dbData = await fetchAllSupabaseData();
+
+        if (dbData) {
+          setSupabaseStatus('connected');
+          
+          if (dbData.users.length === 0) {
+            console.log('Seeding Supabase with default admin...');
+            // Seed base users
+            const defaultSeed = getSeedUsers();
+            await syncMultipleUsersToSupabase(defaultSeed);
+            setUsers(defaultSeed);
+            // Sync default settings and current week
+            await syncSettingsToSupabase(settings);
+            await syncWeekToSupabase(currentWeek);
+          } else {
+            // Load state from remote DB
+            setUsers(dbData.users);
+            setInvestments(dbData.investments);
+            setTransactions(dbData.transactions);
+            if (dbData.settings) {
+              setSettings(dbData.settings);
+            }
+            if (dbData.currentWeek !== null) {
+              setCurrentWeek(dbData.currentWeek);
+            }
+
+            // Refresh currentUser reference
+            const savedUser = localStorage.getItem('pm_prod_current_user_v1');
+            if (savedUser) {
+              try {
+                const parsed = JSON.parse(savedUser);
+                const freshUser = dbData.users.find(u => u.id === parsed.id);
+                if (freshUser) {
+                  setCurrentUser(freshUser);
+                } else {
+                  setCurrentUser(null);
+                }
+              } catch (e) {
+                setCurrentUser(null);
+              }
+            }
+          }
+        } else {
+          setSupabaseStatus('error');
+        }
+      } catch (err) {
+        console.error('Supabase setup exception:', err);
+        setSupabaseStatus('error');
+      }
+      setIsDbLoaded(true);
+    };
+
+    initSupabase();
+  }, []);
+
+  // Sync to local storage and Supabase
   useEffect(() => {
     localStorage.setItem('pm_prod_users_v1', JSON.stringify(users));
-  }, [users]);
+    if (isDbLoaded && isSupabaseConfigured() && users.length > 0) {
+      syncMultipleUsersToSupabase(users);
+    }
+  }, [users, isDbLoaded]);
 
   useEffect(() => {
     localStorage.setItem('pm_prod_current_user_v1', JSON.stringify(currentUser));
-  }, [currentUser]);
+    if (isDbLoaded && isSupabaseConfigured() && currentUser) {
+      syncUserToSupabase(currentUser);
+    }
+  }, [currentUser, isDbLoaded]);
 
   useEffect(() => {
     localStorage.setItem('pm_prod_investments_v1', JSON.stringify(investments));
-  }, [investments]);
+    if (isDbLoaded && isSupabaseConfigured()) {
+      syncMultipleInvestmentsToSupabase(investments);
+    }
+  }, [investments, isDbLoaded]);
 
   useEffect(() => {
     localStorage.setItem('pm_prod_transactions_v1', JSON.stringify(transactions));
-  }, [transactions]);
+    if (isDbLoaded && isSupabaseConfigured()) {
+      syncMultipleTransactionsToSupabase(transactions);
+    }
+  }, [transactions, isDbLoaded]);
 
   useEffect(() => {
     localStorage.setItem('pm_prod_settings_v1', JSON.stringify(settings));
-  }, [settings]);
+    if (isDbLoaded && isSupabaseConfigured()) {
+      syncSettingsToSupabase(settings);
+    }
+  }, [settings, isDbLoaded]);
 
   useEffect(() => {
     localStorage.setItem('pm_prod_current_week_v1', String(currentWeek));
-  }, [currentWeek]);
+    if (isDbLoaded && isSupabaseConfigured()) {
+      syncWeekToSupabase(currentWeek);
+    }
+  }, [currentWeek, isDbLoaded]);
+
 
   // Recalculate liquidity and risk alert level based on stats
   useEffect(() => {
@@ -209,14 +328,47 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   };
 
-  const login = (email: string): boolean => {
+  const login = (email: string, password?: string): boolean => {
     clearMessages();
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const normEmail = email.toLowerCase().trim();
+    
+    // If admin email, verify password
+    if (normEmail === ADMIN_EMAIL.toLowerCase().trim()) {
+      if (!password) {
+        setErrorMsg('Administrator password is required.');
+        return false;
+      }
+      if (password !== ADMIN_PASSWORD) {
+        setErrorMsg('Invalid administrator password.');
+        return false;
+      }
+    }
+
+    const user = users.find(u => u.email.toLowerCase() === normEmail);
     if (user) {
       setCurrentUser(user);
       setSuccessMsg(`Logged in successfully as ${user.name}.`);
       return true;
     }
+
+    // Fallback: If it's the admin but they aren't seeded in the current state list yet
+    if (normEmail === ADMIN_EMAIL.toLowerCase().trim()) {
+      const newAdmin: User = {
+        id: 'usr_admin',
+        name: 'Treasure Homes Admin',
+        email: normEmail,
+        referralCode: 'TREASURE_ADMIN',
+        walletBalance: 0,
+        kycStatus: 'verified',
+        role: 'admin',
+        createdAt: new Date().toISOString()
+      };
+      setUsers(prev => [newAdmin, ...prev.filter(u => u.id !== 'usr_admin')]);
+      setCurrentUser(newAdmin);
+      setSuccessMsg('Logged in successfully as Treasure Homes Admin.');
+      return true;
+    }
+
     setErrorMsg('Invalid email address.');
     return false;
   };
@@ -608,7 +760,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.removeItem('pm_prod_settings_v1');
     localStorage.removeItem('pm_prod_current_week_v1');
 
-    setUsers(SEED_USERS);
+    setUsers(getSeedUsers());
     setCurrentUser(null);
     setInvestments(SEED_INVESTMENTS);
     setTransactions(SEED_TRANSACTIONS);
@@ -628,6 +780,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       currentWeek,
       errorMsg,
       successMsg,
+      supabaseStatus,
+      isDbLoaded,
       register,
       login,
       logout,
