@@ -44,14 +44,11 @@ export const UserDashboard: React.FC = () => {
   const [depAmount, setDepAmount] = useState<string>('');
   const [depMethod, setDepMethod] = useState<string>('Bank Transfer (Treasure Homes Escrow)');
   const [depDetails, setDepDetails] = useState<string>('');
-  const [selectedProofIndex, setSelectedProofIndex] = useState<number>(0);
-
-  // Mock receipt proofs for simulation
-  const MOCK_RECEIPT_PROOFS = [
-    { name: 'Receipt_FGN_8473.png', url: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?w=500&auto=format&fit=crop&q=60' },
-    { name: 'USDT_Receipt_TRC20.png', url: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=500&auto=format&fit=crop&q=60' },
-    { name: 'Zain_Transfer_9204.png', url: 'https://images.unsplash.com/photo-1563013544-824ae1d704d3?w=500&auto=format&fit=crop&q=60' }
-  ];
+  
+  // Real Receipt Upload states
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptUrl, setReceiptUrl] = useState<string>('');
+  const [dragActive, setDragActive] = useState<boolean>(false);
 
   // Withdrawal state
   const [withAmount, setWithAmount] = useState<string>('');
@@ -63,6 +60,7 @@ export const UserDashboard: React.FC = () => {
   const [kycNumber, setKycNumber] = useState<string>('');
 
   const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedAccount, setCopiedAccount] = useState(false);
 
   if (!currentUser) return null;
 
@@ -92,13 +90,53 @@ export const UserDashboard: React.FC = () => {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      setReceiptFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setReceiptFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleDepositSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(depAmount);
     if (isNaN(amt) || amt <= 0) return;
-    submitDeposit(amt, depMethod, depDetails, MOCK_RECEIPT_PROOFS[selectedProofIndex].url);
+    const proofToSubmit = receiptUrl || 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?w=500&auto=format&fit=crop&q=60';
+    submitDeposit(amt, depMethod, depDetails, proofToSubmit);
     setDepAmount('');
     setDepDetails('');
+    setReceiptFile(null);
+    setReceiptUrl('');
   };
 
   const handleWithdrawalSubmit = (e: React.FormEvent) => {
@@ -543,16 +581,21 @@ export const UserDashboard: React.FC = () => {
                   <span className="text-slate-500">Account Number:</span>
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-amber-600 font-mono text-sm">1023485720</span>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText('1023485720');
-                        alert('Copied Treasure Homes escrow account number to clipboard!');
-                      }}
-                      className="p-1 text-slate-400 hover:text-slate-700 transition-colors"
-                      title="Copy"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
+                    {copiedAccount ? (
+                      <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider font-mono">Copied!</span>
+                    ) : (
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText('1023485720');
+                          setCopiedAccount(true);
+                          setTimeout(() => setCopiedAccount(false), 2000);
+                        }}
+                        className="p-1 text-slate-400 hover:text-slate-700 transition-colors"
+                        title="Copy Account Number"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -596,26 +639,40 @@ export const UserDashboard: React.FC = () => {
                 />
               </div>
 
-              {/* Simulation Receipt Upload */}
+              {/* Receipt Upload with Drag & Drop & Click */}
               <div className="space-y-2">
-                <label className="block text-xs text-slate-500 font-medium">Simulate Receipt Proof Upload</label>
-                <p className="text-[11px] text-slate-400">Pick a simulated mock receipt image to submit with your deposit:</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {MOCK_RECEIPT_PROOFS.map((p, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setSelectedProofIndex(idx)}
-                      className={`p-2 rounded-xl border text-[10px] truncate transition-all text-center flex flex-col items-center gap-1 ${
-                        selectedProofIndex === idx 
-                          ? 'border-amber-500 bg-amber-50 text-amber-700 font-bold' 
-                          : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-slate-100'
-                      }`}
-                    >
-                      <UploadCloud className="w-4 h-4 shrink-0" />
-                      <span>{p.name}</span>
-                    </button>
-                  ))}
+                <label className="block text-xs text-slate-500 font-medium">Attach Receipt / Payment Proof</label>
+                <div 
+                  onDragEnter={handleDrag}
+                  onDragOver={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
+                    dragActive 
+                      ? 'border-amber-500 bg-amber-50/50' 
+                      : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100/50'
+                  }`}
+                >
+                  <input 
+                    type="file" 
+                    id="receipt-upload-input" 
+                    className="hidden" 
+                    accept="image/*,application/pdf"
+                    onChange={handleFileChange}
+                  />
+                  <label htmlFor="receipt-upload-input" className="cursor-pointer block space-y-1.5">
+                    <UploadCloud className="w-6 h-6 text-slate-400 mx-auto animate-bounce-slow" />
+                    <div className="text-xs text-slate-600">
+                      {receiptFile ? (
+                        <span className="font-bold text-amber-600 font-mono text-[11px] break-all">
+                          Selected: {receiptFile.name}
+                        </span>
+                      ) : (
+                        <span>Drag and drop your receipt here, or <strong className="text-amber-600 hover:underline">browse files</strong></span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400">Supports PNG, JPG, or PDF (Max 5MB)</p>
+                  </label>
                 </div>
               </div>
 

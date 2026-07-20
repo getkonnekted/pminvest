@@ -12,7 +12,7 @@ interface StateContextType {
   successMsg: string | null;
   
   // Auth actions
-  register: (name: string, email: string, referredByCode: string) => boolean;
+  register: (name: string, email: string, referredByCode?: string) => boolean;
   login: (email: string) => boolean;
   logout: () => void;
   switchUser: (userId: string) => void;
@@ -45,189 +45,16 @@ const SEED_USERS: User[] = [
     name: 'Treasure Homes Admin',
     email: 'admin@treasurehomes.com',
     referralCode: 'TREASURE_ADMIN',
-    walletBalance: 2500000,
+    walletBalance: 0,
     kycStatus: 'verified',
     role: 'admin',
-    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: 'usr_ola',
-    name: 'Chief Ola Williams',
-    email: 'ola@gmail.com',
-    referralCode: 'OLA500',
-    walletBalance: 185000,
-    kycStatus: 'verified',
-    kycDetails: {
-      fullName: 'Olatunji Williams',
-      idType: 'National ID Card',
-      idNumber: 'NIN-7649204732'
-    },
-    role: 'user',
-    createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: 'usr_emeka',
-    name: 'Emeka Obi',
-    email: 'emeka@gmail.com',
-    referralCode: 'EMEKA12',
-    referredByCode: 'OLA500',
-    walletBalance: 24500,
-    kycStatus: 'verified',
-    kycDetails: {
-      fullName: 'Emeka Chukwudi Obi',
-      idType: "Driver's License",
-      idNumber: 'DL-84739203'
-    },
-    role: 'user',
-    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: 'usr_fatima',
-    name: 'Fatima Yusuf',
-    email: 'fatima@gmail.com',
-    referralCode: 'FATIMA99',
-    referredByCode: 'EMEKA12',
-    walletBalance: 0,
-    kycStatus: 'pending',
-    kycDetails: {
-      fullName: 'Fatima Yusuf',
-      idType: 'International Passport',
-      idNumber: 'PP-94820384'
-    },
-    role: 'user',
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+    createdAt: new Date().toISOString()
   }
 ];
 
-const SEED_INVESTMENTS: UserInvestment[] = [
-  {
-    id: 'inv_ola_1',
-    userId: 'usr_ola',
-    userName: 'Chief Ola Williams',
-    planId: 'plan_4',
-    planName: 'Plan 4',
-    cost: 270000,
-    weeklyPayout: 191228,
-    totalReturns: 764910,
-    weeksPaid: 2,
-    totalWeeks: 4,
-    status: 'active',
-    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-    lastPayoutDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    id: 'inv_emeka_1',
-    userId: 'usr_emeka',
-    userName: 'Emeka Obi',
-    planId: 'plan_2',
-    planName: 'Plan 2',
-    cost: 45000,
-    weeklyPayout: 43121,
-    totalReturns: 172485,
-    weeksPaid: 1,
-    totalWeeks: 4,
-    status: 'active',
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    lastPayoutDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
+const SEED_INVESTMENTS: UserInvestment[] = [];
 
-const SEED_TRANSACTIONS: Transaction[] = [
-  {
-    id: 'tx_ola_dep',
-    userId: 'usr_ola',
-    userName: 'Chief Ola Williams',
-    type: 'deposit',
-    amount: 500000,
-    status: 'completed',
-    paymentMethod: 'Bank Transfer (Treasure Homes Escrow)',
-    createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
-    description: 'Initial capital deposit'
-  },
-  {
-    id: 'tx_ola_inv',
-    userId: 'usr_ola',
-    userName: 'Chief Ola Williams',
-    type: 'withdrawal', // Recorded as a deduction to buy plan
-    amount: 270000,
-    status: 'completed',
-    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-    description: 'Purchased Plan 4 (₦270,000)'
-  },
-  {
-    id: 'tx_emeka_dep',
-    userId: 'usr_emeka',
-    userName: 'Emeka Obi',
-    type: 'deposit',
-    amount: 100000,
-    status: 'completed',
-    paymentMethod: 'Bank Transfer (Treasure Homes Escrow)',
-    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-    description: 'Capital deposit'
-  },
-  {
-    id: 'tx_emeka_inv',
-    userId: 'usr_emeka',
-    userName: 'Emeka Obi',
-    type: 'withdrawal',
-    amount: 45000,
-    status: 'completed',
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    description: 'Purchased Plan 2 (₦45,000)'
-  },
-  {
-    id: 'tx_payout_ola_1',
-    userId: 'usr_ola',
-    userName: 'Chief Ola Williams',
-    type: 'payout',
-    amount: 191228,
-    status: 'completed',
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    description: 'Weekly payout: Plan 4 (Week 1/4)'
-  },
-  {
-    id: 'tx_payout_ola_2',
-    userId: 'usr_ola',
-    userName: 'Chief Ola Williams',
-    type: 'payout',
-    amount: 191228,
-    status: 'completed',
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    description: 'Weekly payout: Plan 4 (Week 2/4)'
-  },
-  {
-    id: 'tx_payout_emeka_1',
-    userId: 'usr_emeka',
-    userName: 'Emeka Obi',
-    type: 'payout',
-    amount: 43121,
-    status: 'completed',
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    description: 'Weekly payout: Plan 2 (Week 1/4)'
-  },
-  {
-    id: 'tx_ref_ola_1',
-    userId: 'usr_ola',
-    userName: 'Chief Ola Williams',
-    type: 'referral_bonus',
-    amount: 21560.5, // 50% of Emeka's weekly payout (₦43,121 * 0.5)
-    status: 'completed',
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    description: "50% Referral bonus from Emeka Obi's Plan 2 Weekly Payout"
-  },
-  {
-    id: 'tx_fatima_pending',
-    userId: 'usr_fatima',
-    userName: 'Fatima Yusuf',
-    type: 'deposit',
-    amount: 15000,
-    status: 'pending',
-    paymentMethod: 'Bank Transfer (Treasure Homes Escrow)',
-    proofUrl: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?w=500&auto=format&fit=crop&q=60',
-    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-    description: 'Deposit for Plan 1 activation'
-  }
-];
+const SEED_TRANSACTIONS: Transaction[] = [];
 
 const DEFAULT_SETTINGS: SystemSettings = {
   liquidityReserve: 15000000, // Total reserve backing (Treasure Homes Backed)
@@ -240,34 +67,33 @@ const DEFAULT_SETTINGS: SystemSettings = {
 
 export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('pm_users');
+    const saved = localStorage.getItem('pm_prod_users_v1');
     return saved ? JSON.parse(saved) : SEED_USERS;
   });
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('pm_current_user');
-    // Default to the first regular investor for preview, or admin
-    return saved ? JSON.parse(saved) : SEED_USERS[1]; 
+    const saved = localStorage.getItem('pm_prod_current_user_v1');
+    return saved ? JSON.parse(saved) : null; 
   });
 
   const [investments, setInvestments] = useState<UserInvestment[]>(() => {
-    const saved = localStorage.getItem('pm_investments');
+    const saved = localStorage.getItem('pm_prod_investments_v1');
     return saved ? JSON.parse(saved) : SEED_INVESTMENTS;
   });
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem('pm_transactions');
+    const saved = localStorage.getItem('pm_prod_transactions_v1');
     return saved ? JSON.parse(saved) : SEED_TRANSACTIONS;
   });
 
   const [settings, setSettings] = useState<SystemSettings>(() => {
-    const saved = localStorage.getItem('pm_settings');
+    const saved = localStorage.getItem('pm_prod_settings_v1');
     return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
   });
 
   const [currentWeek, setCurrentWeek] = useState<number>(() => {
-    const saved = localStorage.getItem('pm_current_week');
-    return saved ? Number(saved) : 2;
+    const saved = localStorage.getItem('pm_prod_current_week_v1');
+    return saved ? Number(saved) : 1;
   });
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -275,27 +101,27 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Sync to local storage
   useEffect(() => {
-    localStorage.setItem('pm_users', JSON.stringify(users));
+    localStorage.setItem('pm_prod_users_v1', JSON.stringify(users));
   }, [users]);
 
   useEffect(() => {
-    localStorage.setItem('pm_current_user', JSON.stringify(currentUser));
+    localStorage.setItem('pm_prod_current_user_v1', JSON.stringify(currentUser));
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('pm_investments', JSON.stringify(investments));
+    localStorage.setItem('pm_prod_investments_v1', JSON.stringify(investments));
   }, [investments]);
 
   useEffect(() => {
-    localStorage.setItem('pm_transactions', JSON.stringify(transactions));
+    localStorage.setItem('pm_prod_transactions_v1', JSON.stringify(transactions));
   }, [transactions]);
 
   useEffect(() => {
-    localStorage.setItem('pm_settings', JSON.stringify(settings));
+    localStorage.setItem('pm_prod_settings_v1', JSON.stringify(settings));
   }, [settings]);
 
   useEffect(() => {
-    localStorage.setItem('pm_current_week', String(currentWeek));
+    localStorage.setItem('pm_prod_current_week_v1', String(currentWeek));
   }, [currentWeek]);
 
   // Recalculate liquidity and risk alert level based on stats
@@ -339,11 +165,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSuccessMsg(null);
   };
 
-  const register = (name: string, email: string, referredByCode: string): boolean => {
+  const register = (name: string, email: string, referredByCode?: string): boolean => {
     clearMessages();
 
-    if (!name.trim() || !email.trim() || !referredByCode.trim()) {
-      setErrorMsg('All registration fields are required.');
+    if (!name.trim() || !email.trim()) {
+      setErrorMsg('Name and email are required.');
       return false;
     }
 
@@ -353,10 +179,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
+    // Normalize referral code or fall back to TREASURE_ADMIN
+    const codeToUse = (referredByCode || '').trim() || 'TREASURE_ADMIN';
+
     // Validate referral code
-    const sponsor = users.find(u => u.referralCode.toUpperCase() === referredByCode.toUpperCase());
+    const sponsor = users.find(u => u.referralCode.toUpperCase() === codeToUse.toUpperCase());
     if (!sponsor) {
-      setErrorMsg(`Invalid referral code. A valid sponsor referral code is required.`);
+      setErrorMsg(`Invalid referral code. Please use a valid sponsor referral code (e.g., TREASURE_ADMIN).`);
       return false;
     }
 
@@ -772,21 +601,21 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const resetAll = () => {
-    localStorage.removeItem('pm_users');
-    localStorage.removeItem('pm_current_user');
-    localStorage.removeItem('pm_investments');
-    localStorage.removeItem('pm_transactions');
-    localStorage.removeItem('pm_settings');
-    localStorage.removeItem('pm_current_week');
+    localStorage.removeItem('pm_prod_users_v1');
+    localStorage.removeItem('pm_prod_current_user_v1');
+    localStorage.removeItem('pm_prod_investments_v1');
+    localStorage.removeItem('pm_prod_transactions_v1');
+    localStorage.removeItem('pm_prod_settings_v1');
+    localStorage.removeItem('pm_prod_current_week_v1');
 
     setUsers(SEED_USERS);
-    setCurrentUser(SEED_USERS[1]); // Ola (Sponsor/User)
+    setCurrentUser(null);
     setInvestments(SEED_INVESTMENTS);
     setTransactions(SEED_TRANSACTIONS);
     setSettings(DEFAULT_SETTINGS);
-    setCurrentWeek(2);
+    setCurrentWeek(1);
     clearMessages();
-    setSuccessMsg('Platform reset to original seeded demo database state.');
+    setSuccessMsg('Platform reset to original production database state.');
   };
 
   return (

@@ -8,7 +8,6 @@ import { StateProvider, useAppState } from './context/StateContext';
 import { BrandingHeader, LegalDisclosures } from './components/BrandingHeader';
 import { UserDashboard } from './components/UserDashboard';
 import { AdminPanel } from './components/AdminPanel';
-import { DeveloperBar } from './components/DeveloperBar';
 import { 
   Building, 
   ShieldCheck, 
@@ -31,12 +30,12 @@ function MainAppContent() {
   const [isRegistering, setIsRegistering] = useState(false);
   
   // Login state
-  const [loginEmail, setLoginEmail] = useState('ola@gmail.com'); // Pre-fill with Ola's seed email for quick loading
+  const [loginEmail, setLoginEmail] = useState('');
 
   // Register state
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
-  const [regRef, setRegRef] = useState('OLA500'); // Pre-fill with Chief Ola's code so they can register instantly
+  const [regRef, setRegRef] = useState('TREASURE_ADMIN');
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,7 +179,7 @@ function MainAppContent() {
                   Access My Vault <ArrowRight className="w-4 h-4" />
                 </button>
 
-                <div className="text-center pt-3 border-t border-slate-100 mt-6 text-xs text-slate-500 space-y-3">
+                <div className="text-center pt-3 border-t border-slate-100 mt-6 text-xs text-slate-500">
                   <p>
                     Don't have an account?{' '}
                     <button 
@@ -191,42 +190,6 @@ function MainAppContent() {
                       Open secure account
                     </button>
                   </p>
-                  
-                  {/* Quick-select seed users for rapid sandbox testing */}
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left space-y-2">
-                    <span className="font-bold text-slate-700 block text-[11px] uppercase tracking-wider">Sandbox Quick Access:</span>
-                    <p className="text-slate-500 text-[11px]">Select a pre-seeded email to log in instantly:</p>
-                    <div className="flex flex-wrap gap-1.5 mt-1">
-                      <button 
-                        type="button"
-                        onClick={() => { setLoginEmail('admin@treasurehomes.com'); login('admin@treasurehomes.com'); }}
-                        className="bg-white text-slate-700 border border-slate-200 hover:border-amber-500 hover:text-amber-600 px-2 py-1 rounded text-[10px] font-semibold transition-colors shadow-sm"
-                      >
-                        Treasure Admin
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => { setLoginEmail('ola@gmail.com'); login('ola@gmail.com'); }}
-                        className="bg-white text-slate-700 border border-slate-200 hover:border-amber-500 hover:text-amber-600 px-2 py-1 rounded text-[10px] font-semibold transition-colors shadow-sm"
-                      >
-                        Chief Ola (Investor/Sponsor)
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => { setLoginEmail('emeka@gmail.com'); login('emeka@gmail.com'); }}
-                        className="bg-white text-slate-700 border border-slate-200 hover:border-amber-500 hover:text-amber-600 px-2 py-1 rounded text-[10px] font-semibold transition-colors shadow-sm"
-                      >
-                        Emeka Obi (Investor)
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => { setLoginEmail('fatima@gmail.com'); login('fatima@gmail.com'); }}
-                        className="bg-white text-slate-700 border border-slate-200 hover:border-amber-500 hover:text-amber-600 px-2 py-1 rounded text-[10px] font-semibold transition-colors shadow-sm"
-                      >
-                        Fatima (Pending KYC/Deposit)
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </form>
             ) : (
@@ -322,7 +285,7 @@ function MainAppContent() {
 
   // Authenticated workspace
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-between font-sans pb-20 md:pb-16" id="app_workspace_root">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-between font-sans pb-10" id="app_workspace_root">
       <div>
         <BrandingHeader />
         
@@ -336,9 +299,6 @@ function MainAppContent() {
       </div>
 
       <LegalDisclosures />
-      
-      {/* Simulation Helper Developer bar on bottom */}
-      <DeveloperBar />
     </div>
   );
 }
