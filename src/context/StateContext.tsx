@@ -281,8 +281,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .filter((t) => (t.type === 'payout' || t.type === 'referral_bonus') && t.status === 'completed')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Initial base liquidity reserve (₦15,000,000) + deposits - withdrawals - payouts
-    const activeLiquidity = 15000000 + totalDeposits - totalWithdrawals - totalPayouts;
+    // Initial base liquidity reserve (₦78,387,045) + deposits - withdrawals - payouts
+    const activeLiquidity = 78387045 + totalDeposits - totalWithdrawals - totalPayouts;
     
     // Risk assessment
     let risk: 'low' | 'medium' | 'high' = 'low';
@@ -290,9 +290,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .filter(t => t.type === 'withdrawal' && t.status === 'pending')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    if (activeLiquidity < 10000000 || pendingWithdrawalSum > activeLiquidity * 0.4) {
+    if (activeLiquidity < 50000000 || pendingWithdrawalSum > activeLiquidity * 0.4) {
       risk = 'high';
-    } else if (activeLiquidity < 12000000 || pendingWithdrawalSum > activeLiquidity * 0.2) {
+    } else if (activeLiquidity < 65000000 || pendingWithdrawalSum > activeLiquidity * 0.2) {
       risk = 'medium';
     }
 

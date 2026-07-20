@@ -369,7 +369,7 @@ export const LegalDisclosures: React.FC = () => {
         <div>
           <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">RISK MANAGEMENT & SECURITY</h4>
           <p className="leading-relaxed mb-3 text-slate-300">
-            To sustain our high payouts, PM Invest manages a dedicated <strong>liquidity reserve</strong> of over ₦15,000,000. Under supervision of the Treasure Homes trust committee, withdrawals are processed under a tier-based risk alert system. Large, sensitive withdrawals may require manual clearing up to 24-48 business hours.
+            To sustain our high payouts, PM Invest manages a dedicated <strong>liquidity reserve</strong> of over ₦78,387,045. Under supervision of the Treasure Homes trust committee, withdrawals are processed under a tier-based risk alert system. Large, sensitive withdrawals may require manual clearing up to 24-48 business hours.
           </p>
           <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700 text-[11px] text-slate-300">
             <span className="font-semibold text-amber-400">Active Liquidity Reserve Status:</span> Backed by physical assets and real estate escrow accounts with current reserve liquidity of <strong className="text-white">₦{settings.liquidityReserve.toLocaleString()}</strong>.
