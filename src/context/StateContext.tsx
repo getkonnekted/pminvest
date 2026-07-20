@@ -186,7 +186,31 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             await syncWeekToSupabase(currentWeek);
           } else {
             // Load state from remote DB
-            setUsers(dbData.users);
+            const loadedUsers = [...dbData.users];
+            const defaultSeed = getSeedUsers();
+
+            // Dynamically update existing seeded admin in case user updated VITE_ADMIN_EMAIL
+            const adminIndex = loadedUsers.findIndex((u: any) => u.id === 'usr_admin' || u.role === 'admin');
+            if (adminIndex > -1) {
+              loadedUsers[adminIndex].email = ADMIN_EMAIL.toLowerCase().trim();
+            } else {
+              loadedUsers.push(defaultSeed[0]);
+            }
+
+            // Dynamically inject demo user if missing or outdated in remote database
+            const demoIndex = loadedUsers.findIndex((u: any) => u.id === 'usr_demo_investor');
+            if (demoIndex === -1) {
+              const demoUser = defaultSeed.find(u => u.id === 'usr_demo_investor');
+              if (demoUser) loadedUsers.push(demoUser);
+            } else {
+              const demoUser = defaultSeed.find(u => u.id === 'usr_demo_investor');
+              if (demoUser) {
+                loadedUsers[demoIndex].email = demoUser.email;
+                loadedUsers[demoIndex].password = demoUser.password;
+              }
+            }
+
+            setUsers(loadedUsers);
             setInvestments(dbData.investments);
             setTransactions(dbData.transactions);
             if (dbData.settings) {
@@ -201,7 +225,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (savedUser) {
               try {
                 const parsed = JSON.parse(savedUser);
-                const freshUser = dbData.users.find(u => u.id === parsed.id);
+                const freshUser = loadedUsers.find(u => u.id === parsed.id);
                 if (freshUser) {
                   setCurrentUser(freshUser);
                 } else {
