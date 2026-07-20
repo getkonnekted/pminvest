@@ -61,6 +61,7 @@ export const UserDashboard: React.FC = () => {
 
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedAccount, setCopiedAccount] = useState(false);
+  const [copiedAccount2, setCopiedAccount2] = useState(false);
 
   if (!currentUser) return null;
 
@@ -563,39 +564,84 @@ export const UserDashboard: React.FC = () => {
             </div>
 
             {/* Treasure Homes Escrow Accounts */}
-            <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-3">
+            <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
                 <Building className="w-4 h-4 text-amber-500" />
-                <span>TREASURE HOMES TRUSTEE BANK DETAILS</span>
+                <span>TREASURE HOMES ESCROW DEPOSIT ACCOUNTS</span>
               </div>
-              <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Bank Name:</span>
-                  <span className="font-semibold text-slate-900">United Bank for Africa (UBA)</span>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Account 1: PAGA */}
+                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden shadow-xs">
+                  <div className="absolute top-0 right-0 bg-amber-500/10 text-amber-700 font-mono font-bold text-[9px] uppercase px-2 py-0.5 rounded-bl-lg">
+                    Account 1
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Bank Name:</span>
+                    <span className="font-semibold text-slate-900">PAGA</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Account Name:</span>
+                    <span className="font-semibold text-slate-900">EZE JUDE TREASURE</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
+                    <span className="text-slate-500">Account No:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-amber-600 font-mono text-sm">0001327256</span>
+                      {copiedAccount ? (
+                        <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider font-mono">Copied!</span>
+                      ) : (
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('0001327256');
+                            setCopiedAccount(true);
+                            setTimeout(() => setCopiedAccount(false), 2000);
+                          }}
+                          className="p-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                          title="Copy Account Number"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Account Name:</span>
-                  <span className="font-semibold text-slate-900">Treasure Homes Ltd - Escrow Holdings</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Account Number:</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-amber-600 font-mono text-sm">1023485720</span>
-                    {copiedAccount ? (
-                      <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider font-mono">Copied!</span>
-                    ) : (
-                      <button 
-                        onClick={() => {
-                          navigator.clipboard.writeText('1023485720');
-                          setCopiedAccount(true);
-                          setTimeout(() => setCopiedAccount(false), 2000);
-                        }}
-                        className="p-1 text-slate-400 hover:text-slate-700 transition-colors"
-                        title="Copy Account Number"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+
+                {/* Account 2: Moniepoint */}
+                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden shadow-xs">
+                  <div className="absolute top-0 right-0 bg-emerald-500/10 text-emerald-700 font-mono font-bold text-[9px] uppercase px-2 py-0.5 rounded-bl-lg">
+                    Account 2
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Bank Name:</span>
+                    <span className="font-semibold text-slate-900">Moniepoint</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Account Name:</span>
+                    <span className="font-semibold text-slate-900">EZE JUDE TREASURE</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
+                    <span className="text-slate-500">Account No:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-emerald-600 font-mono text-sm">6814600103</span>
+                      {copiedAccount2 ? (
+                        <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider font-mono">Copied!</span>
+                      ) : (
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('6814600103');
+                            setCopiedAccount2(true);
+                            setTimeout(() => setCopiedAccount2(false), 2000);
+                          }}
+                          className="p-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                          title="Copy Account Number"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
