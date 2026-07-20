@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Luxury Gold Gradient -->
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D" />
+      <stop offset="35%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+    <!-- Deep Sleek Dark Gradient for Inner Circle -->
+    <radialGradient id="dark-bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </radialGradient>
+  </defs>
+
+  <!-- Outer Golden Ring -->
+  <circle cx="256" cy="256" r="240" fill="url(#gold-grad)" />
+  
+  <!-- Inner Sleek Slate Base -->
+  <circle cx="256" cy="256" r="216" fill="url(#dark-bg)" />
+
+  <!-- Outer Ring Accent -->
+  <circle cx="256" cy="256" r="228" fill="none" stroke="#FBBF24" stroke-width="4" opacity="0.4" />
+
+  <!-- Interlocking Monogram P & M -->
+  <g transform="translate(10, 10)">
+    <!-- Letter P -->
+    <path d="M190,140 L270,140 C310,140 335,160 335,195 C335,230 310,250 270,250 L230,250 L230,350 L190,350 Z" fill="url(#gold-grad)" />
+    <!-- Letter P inner cutout -->
+    <path d="M230,175 L265,175 C282,175 295,183 295,195 C295,207 282,215 265,215 L230,215 Z" fill="#1E293B" />
+    
+    <!-- Letter M (Interwoven/Layered behind/in front of P) -->
+    <path d="M275,350 L275,255 L310,300 L345,255 L345,350 L385,350 L385,210 L345,210 L310,255 L275,210 L250,210 L250,235 L275,235 L275,350 Z" fill="url(#gold-grad)" opacity="0.9" />
+  </g>
+</svg>
