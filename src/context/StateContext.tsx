@@ -87,7 +87,7 @@ const SEED_INVESTMENTS: UserInvestment[] = [];
 const SEED_TRANSACTIONS: Transaction[] = [];
 
 const DEFAULT_SETTINGS: SystemSettings = {
-  liquidityReserve: 15000000, // Total reserve backing (Treasure Homes Backed)
+  liquidityReserve: 78387045, // Total reserve backing (Treasure Homes Backed)
   riskAlertLevel: 'low',
   minWithdrawal: 5000,
   maxWithdrawal: 1000000,
