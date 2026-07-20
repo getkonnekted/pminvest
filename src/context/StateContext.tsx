@@ -67,6 +67,18 @@ const getSeedUsers = (): User[] => [
     kycStatus: 'verified',
     role: 'admin',
     createdAt: new Date().toISOString()
+  },
+  {
+    id: 'usr_demo_investor',
+    name: 'Jude Eze (Demo Investor)',
+    email: 'demo_investor@pminvest.org.ng',
+    password: 'investor123',
+    referralCode: 'DEMO_INVESTOR',
+    referredByCode: 'TREASURE_ADMIN',
+    walletBalance: 250000,
+    kycStatus: 'verified',
+    role: 'user',
+    createdAt: new Date().toISOString()
   }
 ];
 
@@ -98,6 +110,20 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else {
       parsed.push(defaultSeed[0]);
     }
+
+    // Dynamically inject demo user if missing or outdated in old localStorage
+    const demoIndex = parsed.findIndex((u: any) => u.id === 'usr_demo_investor');
+    if (demoIndex === -1) {
+      const demoUser = defaultSeed.find(u => u.id === 'usr_demo_investor');
+      if (demoUser) parsed.push(demoUser);
+    } else {
+      const demoUser = defaultSeed.find(u => u.id === 'usr_demo_investor');
+      if (demoUser) {
+        parsed[demoIndex].email = demoUser.email;
+        parsed[demoIndex].password = demoUser.password;
+      }
+    }
+
     return parsed;
   });
 
@@ -346,6 +372,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const user = users.find(u => u.email.toLowerCase() === normEmail);
     if (user) {
+      if (user.password && user.password !== password) {
+        setErrorMsg('Invalid password.');
+        return false;
+      }
       setCurrentUser(user);
       setSuccessMsg(`Logged in successfully as ${user.name}.`);
       return true;
@@ -391,6 +421,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     clearMessages();
     if (!currentUser) return;
 
+    if (currentUser.id === 'usr_demo_investor') {
+      setErrorMsg('Demo Account Protection: Simulated payment submission is restricted on the shared demo account. Please register a free personal account to test custom proof of payment uploads.');
+      return;
+    }
+
     if (amount <= 0) {
       setErrorMsg('Deposit amount must be greater than zero.');
       return;
@@ -432,6 +467,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const submitWithdrawal = (amount: number, accountDetails: string): boolean => {
     clearMessages();
     if (!currentUser) return false;
+
+    if (currentUser.id === 'usr_demo_investor') {
+      setErrorMsg('Demo Account Protection: Simulated withdrawals are restricted on the shared demo account. Please register a free personal account to test custom withdrawal submissions.');
+      return false;
+    }
 
     if (amount < settings.minWithdrawal) {
       setErrorMsg(`Minimum withdrawal limit is ₦${settings.minWithdrawal.toLocaleString()}`);
@@ -484,6 +524,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const purchaseInvestment = (planId: string): boolean => {
     clearMessages();
     if (!currentUser) return false;
+
+    if (currentUser.id === 'usr_demo_investor') {
+      setErrorMsg('Demo Account Protection: Simulated investment purchases are restricted on the shared demo account. Please register a free personal account to test custom plan acquisitions.');
+      return false;
+    }
 
     const plan = INVESTMENT_PLANS.find(p => p.id === planId);
     if (!plan) {

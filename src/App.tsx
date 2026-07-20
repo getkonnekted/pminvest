@@ -29,7 +29,7 @@ import {
 import { INVESTMENT_PLANS } from './types';
 
 function MainAppContent() {
-  const { currentUser, register, login, successMsg, errorMsg, clearMessages } = useAppState();
+  const { currentUser, users, register, login, successMsg, errorMsg, clearMessages } = useAppState();
   const [isRegistering, setIsRegistering] = useState(false);
   const [adminView, setAdminView] = useState<'admin' | 'user'>('admin');
   
@@ -176,25 +176,34 @@ function MainAppContent() {
                   </div>
                 </div>
 
-                {loginEmail.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim() && (
-                  <div className="space-y-1 animate-fade-in">
-                    <label className="block text-xs text-amber-600 font-bold mb-1 uppercase tracking-wider flex items-center gap-1">
-                      <Key className="w-3.5 h-3.5" />
-                      Administrator Password Required
-                    </label>
-                    <div className="relative">
-                      <input 
-                        type="password" 
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        placeholder="Enter administrator password"
-                        className="w-full bg-amber-50/50 border border-amber-300 rounded-lg py-2 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono"
-                        required
-                      />
-                      <Lock className="w-4 h-4 text-amber-500 absolute left-3 top-2.5" />
-                    </div>
-                  </div>
-                )}
+                {(() => {
+                  const emailTrimmed = loginEmail.toLowerCase().trim();
+                  const isAdmin = emailTrimmed === ADMIN_EMAIL.toLowerCase().trim();
+                  const userHasPassword = users.some(u => u.email.toLowerCase().trim() === emailTrimmed && u.password);
+                  
+                  if (isAdmin || userHasPassword) {
+                    return (
+                      <div className="space-y-1 animate-fade-in">
+                        <label className="block text-xs text-amber-600 font-bold mb-1 uppercase tracking-wider flex items-center gap-1">
+                          <Key className="w-3.5 h-3.5" />
+                          {isAdmin ? 'Administrator' : 'Account'} Password Required
+                        </label>
+                        <div className="relative">
+                          <input 
+                            type="password" 
+                            value={loginPassword}
+                            onChange={(e) => setLoginPassword(e.target.value)}
+                            placeholder={isAdmin ? "Enter administrator password" : "Enter account password"}
+                            className="w-full bg-amber-50/50 border border-amber-300 rounded-lg py-2 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono"
+                            required
+                          />
+                          <Lock className="w-4 h-4 text-amber-500 absolute left-3 top-2.5" />
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
 
                 <button
                   type="submit"
@@ -203,6 +212,27 @@ function MainAppContent() {
                 >
                   Access My Vault <ArrowRight className="w-4 h-4" />
                 </button>
+
+                {/* Developer Demo Vault Credentials Help Box */}
+                <div className="bg-amber-50/40 border border-amber-200/50 p-3.5 rounded-xl mt-4 space-y-2 text-[11px] text-slate-700">
+                  <div className="flex items-center gap-1.5 text-amber-800 font-bold uppercase tracking-wider text-[10px]">
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Developer Demo Vault Credentials</span>
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex flex-col sm:flex-row justify-between text-[11px] gap-1">
+                      <span className="text-slate-500 font-medium">Demo Investor:</span>
+                      <span className="font-semibold text-slate-900 font-mono">demo_investor@pminvest.org.ng</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row justify-between text-[11px] gap-1 pb-1.5 border-b border-amber-200/40">
+                      <span className="text-slate-500 font-medium">Demo Password:</span>
+                      <span className="font-semibold text-amber-700 font-mono">investor123</span>
+                    </div>
+                    <div className="pt-1.5 text-[10px] leading-relaxed text-slate-500">
+                      💡 <strong>Admin Full-Access:</strong> Log in as Admin using your environment variable credentials to manage the platform. Inside the Admin Panel's <strong>"Users List"</strong> tab, you can instantly impersonate/switch to any user's investor panel to review their dashboard.
+                    </div>
+                  </div>
+                </div>
 
                 <div className="text-center pt-3 border-t border-slate-100 mt-6 text-xs text-slate-500">
                   <p>
