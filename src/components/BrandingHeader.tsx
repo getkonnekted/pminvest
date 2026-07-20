@@ -378,9 +378,12 @@ export const LegalDisclosures: React.FC = () => {
 
         <div>
           <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">LEGAL DISCLAIMER</h4>
-          <p className="leading-relaxed mb-2 text-slate-300">
+          <p className="leading-relaxed mb-3 text-slate-300">
             Investments carry risk. Our weekly payouts are generated from real estate construction completions and rental yields managed by Treasure Homes. Active investments cannot be cancelled early and are locked for the full 4-week duration.
           </p>
+          <div className="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-lg text-[11px] text-amber-300 mb-3 font-mono leading-relaxed">
+            <strong>No Banking Connectivity:</strong> First and foremost, the platform is a fully-simulated dashboard designed for tracking real estate investments. It has no live or automated connection to real-world banks or payout APIs.
+          </div>
           <p className="text-[11px] text-slate-500 font-mono">
             © {new Date().getFullYear()} PM Invest Platforms under License of Treasure Homes Ltd. All rights reserved. Registered Corporate office: Treasure Homes Building, Lagos, Nigeria.
           </p>
