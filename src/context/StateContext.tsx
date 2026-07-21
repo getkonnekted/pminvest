@@ -763,12 +763,12 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       payoutLog.push(`Credited ₦${payoutAmount.toLocaleString()} to ${inv.userName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`);
 
-      // REFERRAL BONUS SYSTEM: "Users earn 50% of their referral's weekly payout."
+      // REFERRAL BONUS SYSTEM: "Users earn 20% of their referral's weekly payout."
       const investorUser = users.find(u => u.id === inv.userId);
       if (investorUser && investorUser.referredByCode) {
         const sponsorUser = updatedUsers.find(u => u.referralCode === investorUser.referredByCode);
         if (sponsorUser) {
-          const bonusAmount = payoutAmount * 0.5;
+          const bonusAmount = payoutAmount * 0.2;
           
           // Credit the sponsor
           updatedUsers = updatedUsers.map(u => {
@@ -788,7 +788,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             amount: bonusAmount,
             status: 'completed',
             createdAt: new Date().toISOString(),
-            description: `50% Referral bonus from ${investorUser.name}'s ${inv.planName} weekly payout`
+            description: `20% Referral bonus from ${investorUser.name}'s ${inv.planName} weekly payout`
           });
 
           payoutLog.push(`Ref Bonus: Credited ₦${bonusAmount.toLocaleString()} to sponsor ${sponsorUser.name}`);

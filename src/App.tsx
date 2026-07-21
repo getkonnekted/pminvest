@@ -119,8 +119,8 @@ function MainAppContent() {
               <div className="flex items-start gap-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <Users className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-slate-900 uppercase tracking-wider">50% Referral Commission</h4>
-                  <p className="text-slate-500 mt-0.5">Earn 50% of your referral's weekly payouts automatically credited to your balance.</p>
+                  <h4 className="font-bold text-slate-900 uppercase tracking-wider">20% Referral Commission</h4>
+                  <p className="text-slate-500 mt-0.5">Earn 20% of your referral's weekly payouts automatically credited to your balance.</p>
                 </div>
               </div>
             </div>

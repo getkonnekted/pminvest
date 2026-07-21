@@ -247,7 +247,7 @@ export const UserDashboard: React.FC = () => {
           }`}
           id="tab_user_referrals"
         >
-          <Users className="w-4 h-4 text-amber-500" /> Referral 50%
+          <Users className="w-4 h-4 text-amber-500" /> Referral 20%
         </button>
         <button
           onClick={() => { setActiveTab('kyc'); clearMessages(); }}
@@ -308,7 +308,7 @@ export const UserDashboard: React.FC = () => {
               <div>
                 <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Referral Income</p>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">₦{totalReferralBonus.toLocaleString()}</h3>
-                <span className="text-[10px] text-emerald-600 font-semibold font-sans">50% weekly commission active</span>
+                <span className="text-[10px] text-emerald-600 font-semibold font-sans">20% weekly commission active</span>
               </div>
               <div className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700">
                 <Users className="w-5 h-5" />
@@ -514,7 +514,7 @@ export const UserDashboard: React.FC = () => {
                       </li>
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
-                        <span>50% Weekly Sponsor Referral Commission</span>
+                        <span>20% Weekly Sponsor Referral Commission</span>
                       </li>
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
@@ -840,10 +840,10 @@ export const UserDashboard: React.FC = () => {
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-center max-w-3xl mx-auto space-y-3">
             <h3 className="text-lg font-bold text-slate-900 tracking-wide uppercase flex items-center justify-center gap-2">
               <Users className="w-5 h-5 text-amber-500" />
-              Supercharged 50% Referral Commission Engine
+              Supercharged 20% Referral Commission Engine
             </h3>
             <p className="text-xs text-slate-600 max-w-xl mx-auto">
-              Our unique system pays sponsors **50% of their referral's weekly payouts**. When your friends earn their weekly returns, you receive a massive 50% commission automatically!
+              Our unique system pays sponsors **20% of their referral's weekly payouts**. When your friends earn their weekly returns, you receive a massive 20% commission automatically!
             </p>
             <div className="bg-slate-50 inline-flex items-center gap-2 border border-slate-200 px-4 py-2.5 rounded-xl text-sm">
               <span className="text-slate-500 text-xs">My Sponsor Code:</span>
@@ -878,7 +878,7 @@ export const UserDashboard: React.FC = () => {
             <div className="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
               <p className="text-xs text-slate-500 font-medium">Commission Credited</p>
               <h3 className="text-3xl font-extrabold text-amber-600 mt-1">₦{totalReferralBonus.toLocaleString()}</h3>
-              <p className="text-[10px] text-emerald-600 font-medium mt-1">From automated weekly 50% shares</p>
+              <p className="text-[10px] text-emerald-600 font-medium mt-1">From automated weekly 20% shares</p>
             </div>
           </div>
 
