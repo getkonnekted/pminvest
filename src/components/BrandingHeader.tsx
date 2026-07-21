@@ -194,7 +194,7 @@ create policy "Allow all public upserts" on system_state for all using (true);`;
             <div className="flex items-center gap-2">
               <span className="text-xl font-extrabold tracking-tight uppercase font-sans text-white">PM <span className="text-amber-400">Invest</span></span>
               <span className="text-[10px] uppercase tracking-widest text-slate-400 font-mono font-bold leading-none">By Treasure Homes</span>
-              {renderSupabaseBadge()}
+              {currentUser?.role === 'admin' && renderSupabaseBadge()}
             </div>
             <p className="text-xs text-slate-400 font-light mt-0.5">Secure wealth multiplication & estate-backed liquidity</p>
           </div>
@@ -233,7 +233,7 @@ create policy "Allow all public upserts" on system_state for all using (true);`;
       </div>
 
       {/* Database Connection / SQL Setup Modal */}
-      {showDbModal && (
+      {showDbModal && currentUser?.role === 'admin' && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-[#111827] rounded-2xl max-w-2xl w-full border border-slate-700 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             
