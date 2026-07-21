@@ -16,6 +16,8 @@ import {
   Building,
   UploadCloud,
   ChevronRight,
+  ChevronDown,
+  HelpCircle,
   Info,
   Sparkles
 } from 'lucide-react';
@@ -62,6 +64,26 @@ export const UserDashboard: React.FC = () => {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [copiedAccount2, setCopiedAccount2] = useState(false);
+  const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(null);
+
+  const faqItems = [
+    {
+      question: "How do I fund my vault account (Deposits)?",
+      answer: "To fund your vault, go to the 'Deposit & Withdraw' tab, select your preferred plan or enter a custom amount, and copy the provided banking transfer details. Pay using your banking app, upload your receipt/Proof of Payment (PoP), and submit. The compliance team audits transfers and approves deposits within 1 to 24 hours."
+    },
+    {
+      question: "How do payout cycles work?",
+      answer: "All plans run on a 4-week cycle. Payouts are generated and credited to your wallet balance weekly (every 7 days from plan activation). When payouts occur, sponsors of referred users receive an automated 20% affiliate commission credited directly to their withdrawable balances."
+    },
+    {
+      question: "What is the withdrawal workflow and clearance time?",
+      answer: "You can request withdrawals from your available balance under the 'Deposit & Withdraw' tab. Standard withdrawals below ₦100,000 are processed swiftly. For security, higher withdrawals and unverified accounts may undergo security clearance reviews lasting up to 24–48 business hours. Completing your identity verification under the 'KYC Compliance' tab unlocks higher limits and fast-tracks clearance."
+    },
+    {
+      question: "Is my capital guaranteed?",
+      answer: "Yes. PM Invest manages a physical-asset backed reserve of over ₦78,387,045 backed by real estate holdings under Treasure Homes supervision. This ensures the protection and stability of all participant vaults."
+    }
+  ];
 
   if (!currentUser) return null;
 
@@ -1009,8 +1031,8 @@ export const UserDashboard: React.FC = () => {
 
               <div className="bg-slate-50 p-5 rounded-xl border border-dashed border-slate-300 text-center space-y-2">
                 <UploadCloud className="w-7 h-7 text-amber-500 mx-auto" />
-                <p className="text-xs text-slate-800 font-semibold">Simulated Front Photo Upload</p>
-                <p className="text-[10px] text-slate-400">Demo sandbox mode: File attachment is auto-generated for security compliance reviews.</p>
+                <p className="text-xs text-slate-800 font-semibold">Front Photo Upload</p>
+                <p className="text-[10px] text-slate-400">File attachment is auto-generated for security compliance reviews.</p>
               </div>
 
               <button
@@ -1028,7 +1050,6 @@ export const UserDashboard: React.FC = () => {
               <p className="text-xs text-slate-600 max-w-md mx-auto">
                 Thank you. Your details ({currentUser.kycDetails?.idType}: {currentUser.kycDetails?.idNumber}) are being audited by the Treasure Homes Compliance team.
               </p>
-              <p className="text-[10px] text-amber-600 font-medium">Switch to the Admin view below to approve your KYC instantly for testing!</p>
             </div>
           ) : (
             <div className="bg-emerald-50/50 border border-emerald-100 p-6 rounded-xl text-center space-y-3">
@@ -1045,6 +1066,46 @@ export const UserDashboard: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Investment FAQ Accordion Section */}
+      <div className="mt-12 pt-8 border-t border-slate-200">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div className="text-center space-y-2">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest flex items-center justify-center gap-2">
+              <HelpCircle className="w-5 h-5 text-amber-500 shrink-0" />
+              <span>Investment Vault & Workflow FAQ</span>
+            </h3>
+            <p className="text-xs text-slate-500 max-w-lg mx-auto">
+              Understand how our vault funding, weekly payout schedules, and secure withdrawal mechanisms operate.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {faqItems.map((faq, idx) => {
+              const isOpen = openFaqIdx === idx;
+              return (
+                <div 
+                  key={idx} 
+                  className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:border-slate-300 transition-colors"
+                >
+                  <button
+                    onClick={() => setOpenFaqIdx(isOpen ? null : idx)}
+                    className="w-full flex items-center justify-between p-4 text-left font-semibold text-xs sm:text-sm text-slate-800 hover:bg-slate-50/50 transition-colors focus:outline-none"
+                  >
+                    <span className="pr-4">{faq.question}</span>
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180 text-amber-500' : ''}`} />
+                  </button>
+                  {isOpen && (
+                    <div className="px-4 pb-4 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-100 bg-slate-50/30">
+                      {faq.answer}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

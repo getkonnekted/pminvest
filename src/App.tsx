@@ -213,27 +213,6 @@ function MainAppContent() {
                   Access My Vault <ArrowRight className="w-4 h-4" />
                 </button>
 
-                {/* Developer Demo Vault Credentials Help Box */}
-                <div className="bg-amber-50/40 border border-amber-200/50 p-3.5 rounded-xl mt-4 space-y-2 text-[11px] text-slate-700">
-                  <div className="flex items-center gap-1.5 text-amber-800 font-bold uppercase tracking-wider text-[10px]">
-                    <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Developer Demo Vault Credentials</span>
-                  </div>
-                  <div className="space-y-1 text-xs">
-                    <div className="flex flex-col sm:flex-row justify-between text-[11px] gap-1">
-                      <span className="text-slate-500 font-medium">Demo Investor:</span>
-                      <span className="font-semibold text-slate-900 font-mono">demo_investor@pminvest.org.ng</span>
-                    </div>
-                    <div className="flex flex-col sm:flex-row justify-between text-[11px] gap-1 pb-1.5 border-b border-amber-200/40">
-                      <span className="text-slate-500 font-medium">Demo Password:</span>
-                      <span className="font-semibold text-amber-700 font-mono">investor123</span>
-                    </div>
-                    <div className="pt-1.5 text-[10px] leading-relaxed text-slate-500">
-                      💡 <strong>Admin Full-Access:</strong> Log in as Admin using your environment variable credentials to manage the platform. Inside the Admin Panel's <strong>"Users List"</strong> tab, you can instantly impersonate/switch to any user's investor panel to review their dashboard.
-                    </div>
-                  </div>
-                </div>
-
                 <div className="text-center pt-3 border-t border-slate-100 mt-6 text-xs text-slate-500">
                   <p>
                     Don't have an account?{' '}
@@ -323,7 +302,7 @@ function MainAppContent() {
               <p className="text-slate-300">Operating transparent escrow reserves under supervision of the Treasure Homes asset board.</p>
             </div>
             <div className="space-y-1 border-t md:border-t-0 md:border-x border-slate-800 py-4 md:py-0">
-              <span className="text-amber-400 font-bold text-sm block">₦15M+ RESERVE BACKING</span>
+              <span className="text-amber-400 font-bold text-sm block">₦78M+ RESERVE BACKING</span>
               <p className="text-slate-300">Ensuring complete stability with physical properties and liquid collateral holding records.</p>
             </div>
             <div className="space-y-1">
