@@ -77,7 +77,9 @@ create table if not exists settings (
   "minWithdrawal" double precision not null,
   "maxWithdrawal" double precision not null,
   "autoApproveDeposits" boolean not null,
-  "isMaintenanceMode" boolean not null
+  "isMaintenanceMode" boolean not null,
+  "pauseInvestments" boolean not null default false,
+  "pauseWithdrawals" boolean not null default false
 );
 
 -- 5. Create System State Table
@@ -117,6 +119,8 @@ create policy "Allow all public upserts" on system_state for all using (true);
 -- ==========================================================
 -- ALTER TABLE users ADD COLUMN IF NOT EXISTS "kycStatus" text not null default 'unverified';
 -- ALTER TABLE users ADD COLUMN IF NOT EXISTS "kycDetails" jsonb;
+-- ALTER TABLE settings ADD COLUMN IF NOT EXISTS "pauseInvestments" boolean not null default false;
+-- ALTER TABLE settings ADD COLUMN IF NOT EXISTS "pauseWithdrawals" boolean not null default false;
 `;
 
   const copySqlSchema = () => {

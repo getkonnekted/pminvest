@@ -62,6 +62,8 @@ export interface SystemSettings {
   maxWithdrawal: number;
   autoApproveDeposits: boolean;
   isMaintenanceMode: boolean;
+  pauseInvestments: boolean;
+  pauseWithdrawals: boolean;
 }
 
 export const INVESTMENT_PLANS: InvestmentPlan[] = [

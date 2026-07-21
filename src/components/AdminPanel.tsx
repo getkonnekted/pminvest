@@ -44,6 +44,8 @@ export const AdminPanel: React.FC = () => {
 
   const [adminTab, setAdminTab] = useState<'analytics' | 'deposits' | 'withdrawals' | 'users' | 'kyc' | 'settings'>('analytics');
   const [userSearch, setUserSearch] = useState('');
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetConfirmationInput, setResetConfirmationInput] = useState('');
 
   // Stats
   const activeInvestments = investments.filter(i => i.status === 'active');
@@ -87,7 +89,10 @@ export const AdminPanel: React.FC = () => {
             <RefreshCw className="w-3.5 h-3.5 animate-spin-slow" /> Trigger Weekly Payout Cycle
           </button>
           <button
-            onClick={resetAll}
+            onClick={() => {
+              setResetConfirmationInput('');
+              setShowResetModal(true);
+            }}
             className="bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold px-3 py-2 rounded-lg text-xs uppercase tracking-wider transition-colors"
             id="btn_reset_platform"
           >
@@ -436,22 +441,42 @@ export const AdminPanel: React.FC = () => {
               </button>
             </div>
 
-            {/* Maintenance Mode toggle */}
+            {/* Pause New Investments toggle */}
             <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
               <div>
-                <p className="font-bold text-slate-900">Platform Lock (Maintenance Mode)</p>
-                <p className="text-slate-500 text-[10px] mt-0.5">Restrict users from initiating new investments or withdrawals.</p>
+                <p className="font-bold text-slate-900">Pause New Investments</p>
+                <p className="text-slate-500 text-[10px] mt-0.5">Prevent users from purchasing any new investment plans. Existing plans still earn weekly yields.</p>
               </div>
               <button
-                onClick={() => updateSettings({ isMaintenanceMode: !settings.isMaintenanceMode })}
+                onClick={() => updateSettings({ pauseInvestments: !settings.pauseInvestments })}
                 className={`w-12 h-6.5 rounded-full p-1 transition-colors relative ${
-                  settings.isMaintenanceMode ? 'bg-amber-500' : 'bg-slate-200'
+                  settings.pauseInvestments ? 'bg-amber-500' : 'bg-slate-200'
                 }`}
                 type="button"
-                id="btn_toggle_maintenance"
+                id="btn_toggle_pause_investments"
               >
                 <div className={`bg-white w-4.5 h-4.5 rounded-full shadow-md transition-transform ${
-                  settings.isMaintenanceMode ? 'translate-x-5.5' : 'translate-x-0'
+                  settings.pauseInvestments ? 'translate-x-5.5' : 'translate-x-0'
+                }`} />
+              </button>
+            </div>
+
+            {/* Pause Withdrawals toggle */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+              <div>
+                <p className="font-bold text-slate-900">Pause Withdrawals</p>
+                <p className="text-slate-500 text-[10px] mt-0.5">Temporarily freeze new withdrawal requests during system updates or balance audits.</p>
+              </div>
+              <button
+                onClick={() => updateSettings({ pauseWithdrawals: !settings.pauseWithdrawals })}
+                className={`w-12 h-6.5 rounded-full p-1 transition-colors relative ${
+                  settings.pauseWithdrawals ? 'bg-rose-500' : 'bg-slate-200'
+                }`}
+                type="button"
+                id="btn_toggle_pause_withdrawals"
+              >
+                <div className={`bg-white w-4.5 h-4.5 rounded-full shadow-md transition-transform ${
+                  settings.pauseWithdrawals ? 'translate-x-5.5' : 'translate-x-0'
                 }`} />
               </button>
             </div>
@@ -559,6 +584,71 @@ export const AdminPanel: React.FC = () => {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Confirmation Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-xl animate-scaleIn">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-rose-50 rounded-lg text-rose-600 shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-950">Confirm Database Reset</h3>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  This action is highly destructive and irreversible. It will erase all users, investments, transactions, and settings, rebuilding the default starting data state.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 border-t border-slate-100 pt-4">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
+                Type <span className="font-mono text-rose-600 font-extrabold select-all">RESET DATABASE</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={resetConfirmationInput}
+                onChange={(e) => setResetConfirmationInput(e.target.value)}
+                onPaste={(e) => e.preventDefault()}
+                placeholder="RESET DATABASE"
+                className="w-full font-mono text-sm border border-slate-300 rounded-xl px-4 py-2.5 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-rose-500 focus:bg-white transition-all text-center tracking-wider font-bold"
+                autoFocus
+                autoComplete="off"
+              />
+              <p className="text-[10px] text-slate-400 mt-1.5 text-center">
+                Copying and pasting is disabled for safety.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowResetModal(false)}
+                className="flex-1 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (resetConfirmationInput === 'RESET DATABASE') {
+                    resetAll();
+                    setShowResetModal(false);
+                  }
+                }}
+                disabled={resetConfirmationInput !== 'RESET DATABASE'}
+                className={`flex-1 font-bold py-2.5 rounded-xl text-xs transition-colors text-white ${
+                  resetConfirmationInput === 'RESET DATABASE'
+                    ? 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/10'
+                    : 'bg-slate-200 cursor-not-allowed text-slate-400'
+                }`}
+              >
+                Reset Now
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -92,7 +92,9 @@ const DEFAULT_SETTINGS: SystemSettings = {
   minWithdrawal: 5000,
   maxWithdrawal: 1000000,
   autoApproveDeposits: false,
-  isMaintenanceMode: false
+  isMaintenanceMode: false,
+  pauseInvestments: false,
+  pauseWithdrawals: false
 };
 
 export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -144,7 +146,14 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [settings, setSettings] = useState<SystemSettings>(() => {
     const saved = localStorage.getItem('pm_prod_settings_v1');
-    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    if (saved) {
+      try {
+        return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+      } catch (e) {
+        return DEFAULT_SETTINGS;
+      }
+    }
+    return DEFAULT_SETTINGS;
   });
 
   const [currentWeek, setCurrentWeek] = useState<number>(() => {
@@ -214,7 +223,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setInvestments(dbData.investments);
             setTransactions(dbData.transactions);
             if (dbData.settings) {
-              setSettings(dbData.settings);
+              setSettings(prev => ({ ...prev, ...dbData.settings }));
             }
             if (dbData.currentWeek !== null) {
               setCurrentWeek(dbData.currentWeek);
@@ -492,6 +501,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     clearMessages();
     if (!currentUser) return false;
 
+    if (settings.pauseWithdrawals) {
+      setErrorMsg('Withdrawal Restored Limit: Withdrawals are currently paused by the administrator for regular system balance checks. Please check back later.');
+      return false;
+    }
+
     if (currentUser.id === 'usr_demo_investor') {
       setErrorMsg('Demo Account Protection: Simulated withdrawals are restricted on the shared demo account. Please register a free personal account to test custom withdrawal submissions.');
       return false;
@@ -548,6 +562,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const purchaseInvestment = (planId: string): boolean => {
     clearMessages();
     if (!currentUser) return false;
+
+    if (settings.pauseInvestments) {
+      setErrorMsg('Investment Vault Notice: Initiating new investment plans is currently paused by the administrator. Existing plans will continue to yield returns as normal.');
+      return false;
+    }
 
     if (currentUser.id === 'usr_demo_investor') {
       setErrorMsg('Demo Account Protection: Simulated investment purchases are restricted on the shared demo account. Please register a free personal account to test custom plan acquisitions.');
