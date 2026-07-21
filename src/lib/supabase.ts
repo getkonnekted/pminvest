@@ -155,13 +155,17 @@ export const fetchAllSupabaseData = async (): Promise<SupabaseFetchResult | null
 
 export const syncUserToSupabase = async (user: User) => {
   if (!supabase) return;
-  const { error } = await supabase.from('users').upsert(user);
+  // Strip password to avoid column missing error in Supabase
+  const { password, ...dbUser } = user;
+  const { error } = await supabase.from('users').upsert(dbUser);
   if (error) console.error('Error syncing user:', error);
 };
 
 export const syncMultipleUsersToSupabase = async (usersList: User[]) => {
   if (!supabase || usersList.length === 0) return;
-  const { error } = await supabase.from('users').upsert(usersList);
+  // Strip password from all users before upserting to Supabase
+  const sanitized = usersList.map(({ password, ...u }) => u);
+  const { error } = await supabase.from('users').upsert(sanitized);
   if (error) console.error('Error syncing multiple users:', error);
 };
 

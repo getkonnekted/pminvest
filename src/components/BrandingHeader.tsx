@@ -110,7 +110,14 @@ create policy "Allow all public reads" on settings for select using (true);
 create policy "Allow all public upserts" on settings for all using (true);
 
 create policy "Allow all public reads" on system_state for select using (true);
-create policy "Allow all public upserts" on system_state for all using (true);`;
+create policy "Allow all public upserts" on system_state for all using (true);
+
+-- ==========================================================
+-- EXISTING DATABASE MIGRATION (Run this if you get errors or KYC doesn't save!)
+-- ==========================================================
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS "kycStatus" text not null default 'unverified';
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS "kycDetails" jsonb;
+`;
 
   const copySqlSchema = () => {
     navigator.clipboard.writeText(SQL_SCHEMA);
