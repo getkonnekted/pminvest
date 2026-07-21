@@ -46,6 +46,8 @@ export const AdminPanel: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetConfirmationInput, setResetConfirmationInput] = useState('');
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
+  const [payoutConfirmationInput, setPayoutConfirmationInput] = useState('');
 
   // Stats
   const activeInvestments = investments.filter(i => i.status === 'active');
@@ -81,7 +83,10 @@ export const AdminPanel: React.FC = () => {
         {/* Live Simulator Quick Trigger */}
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={simulateWeek}
+            onClick={() => {
+              setPayoutConfirmationInput('');
+              setShowPayoutModal(true);
+            }}
             className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-sm"
             id="btn_simulate_week_admin"
             title="Advance 1 week in the future, credit payouts & calculate referral bonuses!"
@@ -647,6 +652,71 @@ export const AdminPanel: React.FC = () => {
                 }`}
               >
                 Reset Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payout Confirmation Modal */}
+      {showPayoutModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-xl animate-scaleIn">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-amber-50 rounded-lg text-amber-600 shrink-0">
+                <RefreshCw className="w-6 h-6 animate-spin-slow" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-950">Confirm Weekly Payout Cycle</h3>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  This will advance the system timeline by 1 week, trigger all weekly yield payouts on active user investment plans, and update user balances. This operation cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 border-t border-slate-100 pt-4">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
+                Type <span className="font-mono text-amber-600 font-extrabold select-all">TRIGGER PAYOUT</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={payoutConfirmationInput}
+                onChange={(e) => setPayoutConfirmationInput(e.target.value)}
+                onPaste={(e) => e.preventDefault()}
+                placeholder="TRIGGER PAYOUT"
+                className="w-full font-mono text-sm border border-slate-300 rounded-xl px-4 py-2.5 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition-all text-center tracking-wider font-bold"
+                autoFocus
+                autoComplete="off"
+              />
+              <p className="text-[10px] text-slate-400 mt-1.5 text-center">
+                Copying and pasting is disabled for safety.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowPayoutModal(false)}
+                className="flex-1 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (payoutConfirmationInput === 'TRIGGER PAYOUT') {
+                    simulateWeek();
+                    setShowPayoutModal(false);
+                  }
+                }}
+                disabled={payoutConfirmationInput !== 'TRIGGER PAYOUT'}
+                className={`flex-1 font-bold py-2.5 rounded-xl text-xs transition-colors ${
+                  payoutConfirmationInput === 'TRIGGER PAYOUT'
+                    ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md shadow-amber-500/10'
+                    : 'bg-slate-200 cursor-not-allowed text-slate-400'
+                }`}
+              >
+                Trigger Payouts
               </button>
             </div>
           </div>
