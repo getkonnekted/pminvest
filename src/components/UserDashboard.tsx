@@ -317,7 +317,7 @@ export const UserDashboard: React.FC = () => {
 
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Simulated Earnings</p>
+                <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Yield Earnings</p>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-amber-600 mt-1">₦{totalEarnedPayouts.toLocaleString()}</h3>
                 <span className="text-[10px] text-slate-400 font-sans">Received from payouts</span>
               </div>

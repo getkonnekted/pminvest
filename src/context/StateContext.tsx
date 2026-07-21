@@ -455,7 +455,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!currentUser) return;
 
     if (currentUser.id === 'usr_demo_investor') {
-      setErrorMsg('Demo Account Protection: Simulated payment submission is restricted on the shared demo account. Please register a free personal account to test custom proof of payment uploads.');
+      setErrorMsg('Demo Account Protection: Sandbox payment submission is restricted on the shared demo account. Please register a free personal account to test custom proof of payment uploads.');
       return;
     }
 
@@ -507,7 +507,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     if (currentUser.id === 'usr_demo_investor') {
-      setErrorMsg('Demo Account Protection: Simulated withdrawals are restricted on the shared demo account. Please register a free personal account to test custom withdrawal submissions.');
+      setErrorMsg('Demo Account Protection: Sandbox withdrawals are restricted on the shared demo account. Please register a free personal account to test custom withdrawal submissions.');
       return false;
     }
 
@@ -569,7 +569,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     if (currentUser.id === 'usr_demo_investor') {
-      setErrorMsg('Demo Account Protection: Simulated investment purchases are restricted on the shared demo account. Please register a free personal account to test custom plan acquisitions.');
+      setErrorMsg('Demo Account Protection: Sandbox investment purchases are restricted on the shared demo account. Please register a free personal account to test custom plan acquisitions.');
       return false;
     }
 
@@ -834,9 +834,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     if (payoutLog.length > 0) {
-      setSuccessMsg(`Simulated Week ${currentWeek + 1}! Advanced payout cycle. ${payoutLog.length} actions triggered.`);
+      setSuccessMsg(`Week ${currentWeek + 1} payout processed! Advanced payout cycle. ${payoutLog.length} active plans received yields.`);
     } else {
-      setSuccessMsg(`Simulated Week ${currentWeek + 1}. No active investments received payouts this week.`);
+      setSuccessMsg(`Week ${currentWeek + 1} payout processed. No active investments received payouts this week.`);
     }
   };
 
