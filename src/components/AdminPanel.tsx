@@ -18,7 +18,14 @@ import {
   Sparkles,
   Search,
   Settings2,
-  Hourglass
+  Hourglass,
+  Flame,
+  Building2,
+  CalendarCheck,
+  BarChart3,
+  Share2,
+  Award,
+  CheckCircle2
 } from 'lucide-react';
 import { INVESTMENT_PLANS } from '../types';
 
@@ -28,21 +35,27 @@ export const AdminPanel: React.FC = () => {
     investments, 
     transactions, 
     settings, 
+    dailyTasks,
+    taskSubmissions,
+    virtualDate,
     approveDeposit, 
     rejectDeposit, 
     approveWithdrawal, 
     rejectWithdrawal, 
     reviewKyc, 
     updateSettings, 
+    approveTaskSubmission,
+    rejectTaskSubmission,
     switchUser,
     simulateWeek,
+    simulateNextDay,
     resetAll,
     successMsg,
     errorMsg,
     clearMessages
   } = useAppState();
 
-  const [adminTab, setAdminTab] = useState<'analytics' | 'deposits' | 'withdrawals' | 'users' | 'kyc' | 'settings'>('analytics');
+  const [adminTab, setAdminTab] = useState<'analytics' | 'deposits' | 'withdrawals' | 'tasks' | 'users' | 'kyc' | 'settings'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetConfirmationInput, setResetConfirmationInput] = useState('');
@@ -59,6 +72,7 @@ export const AdminPanel: React.FC = () => {
   const pendingDeposits = transactions.filter(t => t.type === 'deposit' && t.status === 'pending');
   const pendingWithdrawals = transactions.filter(t => t.type === 'withdrawal' && t.status === 'pending');
   const pendingKycs = users.filter(u => u.kycStatus === 'pending');
+  const pendingTaskSubmissions = taskSubmissions.filter(s => s.status === 'pending');
 
   const totalRegisteredUsers = users.length;
 
@@ -162,6 +176,23 @@ export const AdminPanel: React.FC = () => {
           id="tab_admin_kyc"
         >
           KYC Audits {pendingKycs.length > 0 && <span className="bg-amber-500 text-slate-950 font-mono font-bold px-1.5 py-0.5 text-[9px] rounded-full shrink-0">{pendingKycs.length}</span>}
+        </button>
+        <button
+          onClick={() => { setAdminTab('tasks'); clearMessages(); }}
+          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
+            adminTab === 'tasks'
+              ? 'bg-slate-100 text-slate-900 border-t-2 border-amber-500'
+              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+          }`}
+          id="tab_admin_tasks"
+        >
+          <Flame className="w-3.5 h-3.5 text-amber-500" />
+          <span>Daily Tasks</span>
+          {pendingTaskSubmissions.length > 0 && (
+            <span className="bg-purple-600 text-white font-mono font-bold px-1.5 py-0.5 text-[9px] rounded-full shrink-0 animate-pulse">
+              {pendingTaskSubmissions.length}
+            </span>
+          )}
         </button>
         <button
           onClick={() => { setAdminTab('users'); clearMessages(); }}
@@ -507,6 +538,294 @@ export const AdminPanel: React.FC = () => {
                   className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-slate-900 font-semibold text-xs font-mono"
                 />
               </div>
+            </div>
+
+            {/* Daily Task Controls */}
+            <div className="pt-4 border-t border-slate-200 space-y-3">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Flame className="w-4 h-4 text-amber-500" /> Daily Task Economy Settings
+              </h4>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <div>
+                  <p className="font-bold text-slate-900 text-xs">Enable Daily Task System</p>
+                  <p className="text-slate-500 text-[10px]">Allow users to access daily property inspection audits and check-ins for yield bonuses.</p>
+                </div>
+                <button
+                  onClick={() => updateSettings({ dailyTaskEnabled: !settings.dailyTaskEnabled })}
+                  className={`w-12 h-6.5 rounded-full p-1 transition-colors relative ${
+                    settings.dailyTaskEnabled ? 'bg-amber-500' : 'bg-slate-200'
+                  }`}
+                  type="button"
+                >
+                  <div className={`bg-white w-4.5 h-4.5 rounded-full shadow-md transition-transform ${
+                    settings.dailyTaskEnabled ? 'translate-x-5.5' : 'translate-x-0'
+                  }`} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                  <span className="text-[11px] font-semibold text-slate-700 block">Daily Bonus Rate</span>
+                  <select
+                    value={settings.dailyTaskBonusRate ?? 0.05}
+                    onChange={(e) => updateSettings({ dailyTaskBonusRate: Number(e.target.value) })}
+                    className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-2.5 text-xs text-slate-900 font-mono font-bold"
+                  >
+                    <option value={0.03}>3% of Weekly Payout</option>
+                    <option value={0.05}>5% of Weekly Payout (Recommended)</option>
+                    <option value={0.08}>8% of Weekly Payout</option>
+                    <option value={0.10}>10% of Weekly Payout</option>
+                  </select>
+                </div>
+
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                  <span className="text-[11px] font-semibold text-slate-700 block">Base Pool (Non-Investors)</span>
+                  <input
+                    type="number"
+                    value={settings.dailyTaskBaseReward ?? 200}
+                    onChange={(e) => updateSettings({ dailyTaskBaseReward: Number(e.target.value) })}
+                    className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-2.5 text-xs text-slate-900 font-mono font-bold"
+                  />
+                </div>
+
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                  <span className="text-[11px] font-semibold text-slate-700 block">7-Day Consistency Bonus</span>
+                  <input
+                    type="number"
+                    value={settings.dailyTaskStreakBonus ?? 1500}
+                    onChange={(e) => updateSettings({ dailyTaskStreakBonus: Number(e.target.value) })}
+                    className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-2.5 text-xs text-slate-900 font-mono font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DAILY TASKS MANAGEMENT SUB-TAB */}
+      {adminTab === 'tasks' && (
+        <div className="space-y-6">
+          {/* Economy Overview & Controls Header */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <span className="text-[10px] text-amber-600 font-mono font-bold uppercase tracking-wider block">Investor Engagement & Retention</span>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-amber-500" /> Daily Task Economy & Balancing Controls
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={simulateNextDay}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors font-mono"
+                  id="btn_admin_sim_next_day"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-slate-600" /> Advance Virtual Day (Midnight Reset)
+                </button>
+              </div>
+            </div>
+
+            {/* Plan Tier Multiplier Matrix */}
+            <div>
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                Live Tier Daily Pool Multipliers ({Math.round((settings.dailyTaskBonusRate ?? 0.05) * 100)}% of Weekly Yield)
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                {INVESTMENT_PLANS.map((plan) => {
+                  const dailyRate = Math.round(plan.weeklyPayout * (settings.dailyTaskBonusRate ?? 0.05));
+                  return (
+                    <div key={plan.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-1">
+                      <span className="font-bold text-slate-900 block truncate">{plan.name}</span>
+                      <div className="text-slate-500 text-[11px]">
+                        Weekly Payout: <strong className="text-slate-800">₦{plan.weeklyPayout.toLocaleString()}</strong>
+                      </div>
+                      <div className="text-amber-600 font-mono font-bold text-xs pt-1 border-t border-slate-200">
+                        Daily Task Pool: ₦{dailyRate.toLocaleString()}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quick Toggle & Balancing Form */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="font-bold text-slate-900 text-xs block">Daily Task System</span>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {settings.dailyTaskEnabled ? '● Active & Live' : '○ Paused'}
+                  </span>
+                </div>
+                <button
+                  onClick={() => updateSettings({ dailyTaskEnabled: !settings.dailyTaskEnabled })}
+                  className={`w-12 h-6.5 rounded-full p-1 transition-colors relative ${
+                    settings.dailyTaskEnabled ? 'bg-amber-500' : 'bg-slate-200'
+                  }`}
+                  type="button"
+                >
+                  <div className={`bg-white w-4.5 h-4.5 rounded-full shadow-md transition-transform ${
+                    settings.dailyTaskEnabled ? 'translate-x-5.5' : 'translate-x-0'
+                  }`} />
+                </button>
+              </div>
+
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <label className="text-xs font-bold text-slate-800 block">Proportional Bonus Rate</label>
+                <select
+                  value={settings.dailyTaskBonusRate ?? 0.05}
+                  onChange={(e) => updateSettings({ dailyTaskBonusRate: Number(e.target.value) })}
+                  className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-xs font-mono font-bold text-slate-900"
+                >
+                  <option value={0.03}>3% of Weekly Payout</option>
+                  <option value={0.05}>5% of Weekly Payout (Standard Option 2)</option>
+                  <option value={0.08}>8% of Weekly Payout</option>
+                  <option value={0.10}>10% of Weekly Payout</option>
+                </select>
+              </div>
+
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <label className="text-xs font-bold text-slate-800 block">7-Day Consistency Bonus</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={settings.dailyTaskStreakBonus ?? 1500}
+                    onChange={(e) => updateSettings({ dailyTaskStreakBonus: Number(e.target.value) })}
+                    className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-xs font-mono font-bold text-slate-900"
+                  />
+                  <span className="text-xs text-slate-500 font-mono">NGN</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* User Task Proof Submissions Audit Queue */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <Share2 className="w-4 h-4 text-purple-600" />
+                  Social & Growth Proof Submissions ({taskSubmissions.length})
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Review proof submitted by investors for growth bounties and credit rewards upon compliance verification.
+                </p>
+              </div>
+
+              {pendingTaskSubmissions.length > 0 && (
+                <span className="bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold font-mono px-3 py-1 rounded-full">
+                  {pendingTaskSubmissions.length} Pending Review
+                </span>
+              )}
+            </div>
+
+            {taskSubmissions.length === 0 ? (
+              <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-500 text-xs">
+                No user proof submissions recorded yet. Submissions made via the Growth Bounty will appear here for admin audit.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs font-sans text-slate-600">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
+                      <th className="pb-2 font-mono">Submitted</th>
+                      <th className="pb-2">User / Investor</th>
+                      <th className="pb-2">Quest Title</th>
+                      <th className="pb-2">Proof / Link Details</th>
+                      <th className="pb-2 text-right">Bounty Reward</th>
+                      <th className="pb-2 text-center">Status</th>
+                      <th className="pb-2 text-center">Review Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {taskSubmissions.map((sub) => (
+                      <tr key={sub.id} className="hover:bg-slate-50/80">
+                        <td className="py-3 font-mono text-[11px] text-slate-400">
+                          {new Date(sub.createdAt).toLocaleDateString()} {new Date(sub.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="py-3">
+                          <div className="font-bold text-slate-900">{sub.userName}</div>
+                          <div className="text-[10px] text-slate-500 font-mono">{sub.userEmail}</div>
+                        </td>
+                        <td className="py-3 font-medium text-slate-800">
+                          {sub.taskTitle}
+                        </td>
+                        <td className="py-3">
+                          <div className="max-w-xs font-mono text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-700 break-all select-all">
+                            {sub.proof}
+                          </div>
+                        </td>
+                        <td className="py-3 text-right font-mono font-bold text-emerald-600">
+                          +₦{sub.rewardAmount.toLocaleString()}
+                        </td>
+                        <td className="py-3 text-center">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                            sub.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                            sub.status === 'rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                            'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse'
+                          }`}>
+                            {sub.status.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="py-3 text-center">
+                          {sub.status === 'pending' ? (
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => approveTaskSubmission(sub.id)}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded text-[11px] flex items-center gap-1 transition-colors shadow-xs"
+                                id={`btn_approve_sub_${sub.id}`}
+                                title="Approve and credit bounty to user balance"
+                              >
+                                <Check className="w-3 h-3" /> Approve (+₦{sub.rewardAmount})
+                              </button>
+                              <button
+                                onClick={() => rejectTaskSubmission(sub.id)}
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-2.5 py-1 rounded text-[11px] flex items-center gap-1 transition-colors"
+                                id={`btn_reject_sub_${sub.id}`}
+                                title="Reject submission"
+                              >
+                                <X className="w-3 h-3" /> Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {sub.status === 'approved' ? 'Audited & Credited' : 'Rejected'}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Active Quests Catalog Summary */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
+              <Building2 className="w-4 h-4 text-amber-500" /> Active Daily Quests Blueprint ({dailyTasks.length})
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {dailyTasks.map((t) => (
+                <div key={t.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                      {t.category.toUpperCase()} • {t.rewardShare > 0 ? `${Math.round(t.rewardShare * 100)}% pool` : `₦${t.fixedReward} fixed`}
+                    </span>
+                    <h5 className="font-bold text-slate-900 text-sm mt-1.5">{t.title}</h5>
+                    <p className="text-xs text-slate-500 mt-0.5">{t.subtitle}</p>
+                  </div>
+
+                  <span className="text-[10px] font-mono px-2 py-1 rounded bg-white border border-slate-200 text-slate-600 shrink-0">
+                    {t.verificationType === 'instant' ? '⚡ Instant' : '📋 Submission'}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

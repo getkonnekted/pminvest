@@ -45,7 +45,7 @@ export interface Transaction {
   id: string;
   userId: string;
   userName: string;
-  type: 'deposit' | 'withdrawal' | 'payout' | 'referral_bonus';
+  type: 'deposit' | 'withdrawal' | 'payout' | 'referral_bonus' | 'task_reward';
   amount: number;
   status: 'pending' | 'completed' | 'rejected';
   paymentMethod?: string;
@@ -53,6 +53,53 @@ export interface Transaction {
   proofUrl?: string; // Mock uploaded proof image
   createdAt: string;
   description: string;
+}
+
+export interface DailyTask {
+  id: string;
+  title: string;
+  subtitle: string;
+  category: 'inspection' | 'pulse' | 'attendance' | 'social_share' | 'milestone';
+  rewardShare: number; // Share of daily reward pool (e.g., 0.4 for 40%, 0.3 for 30%)
+  fixedReward?: number; // Optional fixed fallback or milestone bonus
+  verificationType: 'instant' | 'submission';
+  actionLabel: string;
+  detailsContent?: {
+    headline?: string;
+    propertyName?: string;
+    location?: string;
+    progressPercentage?: number;
+    paragraphs?: string[];
+    keyTakeaway?: string;
+    pollQuestion?: string;
+    pollOptions?: { text: string; votes: number }[];
+    shareTemplate?: string;
+  };
+}
+
+export interface TaskSubmission {
+  id: string;
+  taskId: string;
+  taskTitle: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  proof: string;
+  rewardAmount: number;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  reviewedAt?: string;
+}
+
+export interface UserDailyProgress {
+  userId: string;
+  currentDate: string; // YYYY-MM-DD
+  completedTaskIds: string[];
+  pendingSubmissionTaskIds: string[];
+  streakCount: number;
+  lastCompletedDate?: string;
+  streakBonusClaimedDate?: string;
+  pollAnswers?: Record<string, number>;
 }
 
 export interface SystemSettings {
@@ -64,6 +111,10 @@ export interface SystemSettings {
   isMaintenanceMode: boolean;
   pauseInvestments: boolean;
   pauseWithdrawals: boolean;
+  dailyTaskEnabled: boolean;
+  dailyTaskBonusRate: number; // e.g. 0.05 for 5% of weekly payout
+  dailyTaskBaseReward: number; // e.g. 200 for users without active plans
+  dailyTaskStreakBonus: number; // e.g. 1500 for 7-day streak
 }
 
 export const INVESTMENT_PLANS: InvestmentPlan[] = [

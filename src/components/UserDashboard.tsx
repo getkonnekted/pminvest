@@ -19,10 +19,13 @@ import {
   ChevronDown,
   HelpCircle,
   Info,
-  Sparkles
+  Sparkles,
+  Flame,
+  Award
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
 import { INVESTMENT_PLANS, InvestmentPlan } from '../types';
+import { DailyTasksHub } from './DailyTasksHub';
 
 export const UserDashboard: React.FC = () => {
   const { 
@@ -31,6 +34,9 @@ export const UserDashboard: React.FC = () => {
     transactions, 
     users, 
     settings,
+    dailyTasks,
+    getUserProgress,
+    getUserDailyPool,
     submitDeposit, 
     submitWithdrawal, 
     purchaseInvestment, 
@@ -40,7 +46,7 @@ export const UserDashboard: React.FC = () => {
     clearMessages
   } = useAppState();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'finance' | 'referrals' | 'kyc'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'tasks' | 'finance' | 'referrals' | 'kyc'>('overview');
   
   // Deposit state
   const [depAmount, setDepAmount] = useState<string>('');
@@ -250,6 +256,23 @@ export const UserDashboard: React.FC = () => {
           <Sparkles className="w-4 h-4 text-amber-500" /> Buy Plans
         </button>
         <button
+          onClick={() => { setActiveTab('tasks'); clearMessages(); }}
+          className={`px-4 py-2.5 rounded-t-lg font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
+            activeTab === 'tasks'
+              ? 'bg-slate-100 text-slate-950 border-t-2 border-amber-500 shadow-sm'
+              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+          }`}
+          id="tab_user_tasks"
+        >
+          <Flame className="w-4 h-4 text-amber-500" />
+          <span>Daily Tasks</span>
+          {currentUser && (
+            <span className="bg-amber-500/20 text-amber-900 border border-amber-400/40 text-[10px] font-bold px-1.5 py-0.2 rounded-full font-mono">
+              🔥 {getUserProgress(currentUser.id).streakCount}d
+            </span>
+          )}
+        </button>
+        <button
           onClick={() => { setActiveTab('finance'); clearMessages(); }}
           className={`px-4 py-2.5 rounded-t-lg font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
             activeTab === 'finance'
@@ -337,6 +360,42 @@ export const UserDashboard: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Daily Task Quick Quest Snapshot */}
+          {currentUser && (
+            <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-800 text-white rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0">
+                  <Flame className="w-6 h-6 fill-amber-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-amber-400 font-mono">
+                      🔥 {getUserProgress(currentUser.id).streakCount}-DAY CONSISTENCY STREAK
+                    </span>
+                    <span className="text-[10px] bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded-full font-mono">
+                      {getUserProgress(currentUser.id).completedTaskIds.length}/{dailyTasks.length} Done Today
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-white mt-0.5">
+                    Today's Task Yield Pool: <span className="text-amber-400 font-mono">₦{getUserDailyPool(currentUser.id).toLocaleString()}</span>
+                  </h4>
+                  <p className="text-xs text-slate-400">
+                    Earn 5% proportional daily yields by completing fast property audits and check-ins.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => { setActiveTab('tasks'); clearMessages(); }}
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 px-4 rounded-xl transition-all shrink-0 flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                id="btn_overview_jump_to_tasks"
+              >
+                <span>Go to Daily Quests</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           {/* Active Investments section */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
@@ -1065,6 +1124,11 @@ export const UserDashboard: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* DAILY TASKS TAB */}
+      {activeTab === 'tasks' && (
+        <DailyTasksHub onNavigateToInvest={() => setActiveTab('invest')} />
       )}
 
       {/* Investment FAQ Accordion Section */}

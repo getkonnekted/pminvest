@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS } from '../types';
+import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS, DailyTask, TaskSubmission, UserDailyProgress } from '../types';
+import { DEFAULT_DAILY_TASKS } from '../data/dailyTasks';
 import { 
   isSupabaseConfigured, 
   supabase, 
@@ -26,6 +27,16 @@ interface StateContextType {
   supabaseStatus: 'idle' | 'loading' | 'connected' | 'error' | 'not_configured';
   isDbLoaded: boolean;
   
+  // Daily Tasks state & helpers
+  dailyTasks: DailyTask[];
+  taskSubmissions: TaskSubmission[];
+  userDailyProgress: Record<string, UserDailyProgress>;
+  virtualDate: string;
+  getUserActiveWeeklyPayout: (userId: string) => number;
+  getUserDailyPool: (userId: string) => number;
+  getUserDailyTaskReward: (userId: string, task: DailyTask) => number;
+  getUserProgress: (userId: string) => UserDailyProgress;
+  
   // Auth actions
   register: (name: string, email: string, referredByCode?: string) => boolean;
   login: (email: string, password?: string) => boolean;
@@ -37,6 +48,11 @@ interface StateContextType {
   submitWithdrawal: (amount: number, accountDetails: string) => boolean;
   purchaseInvestment: (planId: string) => boolean;
   submitKyc: (fullName: string, idType: string, idNumber: string) => void;
+
+  // Daily Tasks user actions
+  completeInstantTask: (taskId: string, answerIndex?: number) => boolean;
+  submitTaskProof: (taskId: string, proof: string) => boolean;
+  claimStreakBonus: () => boolean;
   
   // Admin actions
   approveDeposit: (txId: string) => void;
@@ -45,9 +61,12 @@ interface StateContextType {
   rejectWithdrawal: (txId: string) => void;
   reviewKyc: (userId: string, approve: boolean) => void;
   updateSettings: (newSettings: Partial<SystemSettings>) => void;
+  approveTaskSubmission: (subId: string) => void;
+  rejectTaskSubmission: (subId: string) => void;
   
   // Simulator
   simulateWeek: () => void;
+  simulateNextDay: () => void;
   resetAll: () => void;
   clearMessages: () => void;
 }
@@ -94,7 +113,11 @@ const DEFAULT_SETTINGS: SystemSettings = {
   autoApproveDeposits: false,
   isMaintenanceMode: false,
   pauseInvestments: false,
-  pauseWithdrawals: false
+  pauseWithdrawals: false,
+  dailyTaskEnabled: true,
+  dailyTaskBonusRate: 0.05, // 5% of weekly payout
+  dailyTaskBaseReward: 200, // ₦200 base for users with no active plan
+  dailyTaskStreakBonus: 1500 // ₦1,500 bonus for 7-day streak
 };
 
 export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -159,6 +182,21 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [currentWeek, setCurrentWeek] = useState<number>(() => {
     const saved = localStorage.getItem('pm_prod_current_week_v1');
     return saved ? Number(saved) : 1;
+  });
+
+  // Daily Tasks state
+  const [dailyTasks, setDailyTasks] = useState<DailyTask[]>(DEFAULT_DAILY_TASKS);
+  const [taskSubmissions, setTaskSubmissions] = useState<TaskSubmission[]>(() => {
+    const saved = localStorage.getItem('pm_prod_task_submissions_v1');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [userDailyProgress, setUserDailyProgress] = useState<Record<string, UserDailyProgress>>(() => {
+    const saved = localStorage.getItem('pm_prod_daily_progress_v1');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [virtualDayOffset, setVirtualDayOffset] = useState<number>(() => {
+    const saved = localStorage.getItem('pm_prod_virtual_day_v1');
+    return saved ? Number(saved) : 0;
   });
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -300,6 +338,18 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       syncWeekToSupabase(currentWeek);
     }
   }, [currentWeek, isDbLoaded]);
+
+  useEffect(() => {
+    localStorage.setItem('pm_prod_task_submissions_v1', JSON.stringify(taskSubmissions));
+  }, [taskSubmissions]);
+
+  useEffect(() => {
+    localStorage.setItem('pm_prod_daily_progress_v1', JSON.stringify(userDailyProgress));
+  }, [userDailyProgress]);
+
+  useEffect(() => {
+    localStorage.setItem('pm_prod_virtual_day_v1', String(virtualDayOffset));
+  }, [virtualDayOffset]);
 
 
   // Recalculate liquidity and risk alert level based on stats
@@ -736,6 +786,345 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSuccessMsg(`KYC verification ${approve ? 'APPROVED' : 'REJECTED'} for selected user.`);
   };
 
+  // Daily Task Calculation Helpers
+  const getCurrentDateStr = (): string => {
+    const d = new Date(Date.now() + virtualDayOffset * 86400000);
+    return d.toISOString().split('T')[0];
+  };
+
+  const virtualDate = getCurrentDateStr();
+
+  const getUserActiveWeeklyPayout = (userId: string): number => {
+    return investments
+      .filter(i => i.userId === userId && i.status === 'active')
+      .reduce((sum, i) => sum + i.weeklyPayout, 0);
+  };
+
+  const getUserDailyPool = (userId: string): number => {
+    const activeWeekly = getUserActiveWeeklyPayout(userId);
+    if (activeWeekly > 0) {
+      const rate = settings.dailyTaskBonusRate ?? 0.05;
+      return Math.round(activeWeekly * rate);
+    }
+    return settings.dailyTaskBaseReward ?? 200;
+  };
+
+  const getUserDailyTaskReward = (userId: string, task: DailyTask): number => {
+    if (task.fixedReward && task.rewardShare === 0) {
+      return task.fixedReward;
+    }
+    const pool = getUserDailyPool(userId);
+    return Math.max(50, Math.round(pool * task.rewardShare));
+  };
+
+  const getUserProgress = (userId: string): UserDailyProgress => {
+    const today = getCurrentDateStr();
+    const existing = userDailyProgress[userId];
+    if (!existing || existing.currentDate !== today) {
+      const prevStreak = existing ? existing.streakCount : 0;
+      return {
+        userId,
+        currentDate: today,
+        completedTaskIds: [],
+        pendingSubmissionTaskIds: [],
+        streakCount: prevStreak,
+        lastCompletedDate: existing?.lastCompletedDate,
+        streakBonusClaimedDate: existing?.streakBonusClaimedDate,
+        pollAnswers: existing?.pollAnswers || {}
+      };
+    }
+    return existing;
+  };
+
+  // Instant Task Completion (Check-in, Property Inspection, Daily Poll)
+  const completeInstantTask = (taskId: string, answerIndex?: number): boolean => {
+    clearMessages();
+    if (!currentUser) return false;
+
+    if (!settings.dailyTaskEnabled) {
+      setErrorMsg('Daily Tasks are temporarily disabled in system controls.');
+      return false;
+    }
+
+    const task = dailyTasks.find(t => t.id === taskId);
+    if (!task) {
+      setErrorMsg('Task not found.');
+      return false;
+    }
+
+    const today = getCurrentDateStr();
+    const progress = getUserProgress(currentUser.id);
+
+    if (progress.completedTaskIds.includes(taskId)) {
+      setErrorMsg('You have already completed and claimed this task today!');
+      return false;
+    }
+
+    const rewardAmount = getUserDailyTaskReward(currentUser.id, task);
+
+    // 1. Credit User Wallet
+    setUsers(prev => prev.map(u => {
+      if (u.id === currentUser.id) {
+        const updated = { ...u, walletBalance: u.walletBalance + rewardAmount };
+        setCurrentUser(updated);
+        return updated;
+      }
+      return u;
+    }));
+
+    // 2. Create Transaction Log
+    const txId = 'tx_task_' + Date.now();
+    const taskTx: Transaction = {
+      id: txId,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      type: 'task_reward',
+      amount: rewardAmount,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      description: `Daily Task Reward: ${task.title}`
+    };
+    setTransactions(prev => [taskTx, ...prev]);
+
+    // 3. Update User Progress & Streak calculation
+    const updatedCompleted = [...progress.completedTaskIds, taskId];
+    
+    // Check if user completed all 3 primary daily tasks today (inspection, poll, checkin)
+    const instantTaskIds = dailyTasks.filter(t => t.verificationType === 'instant').map(t => t.id);
+    const allInstantDone = instantTaskIds.every(id => updatedCompleted.includes(id));
+    
+    let newStreak = progress.streakCount;
+    let newLastCompletedDate = progress.lastCompletedDate;
+
+    if (allInstantDone && progress.lastCompletedDate !== today) {
+      // Calculate consecutive days
+      newStreak = (progress.streakCount || 0) + 1;
+      newLastCompletedDate = today;
+    }
+
+    const updatedPollAnswers = { ...progress.pollAnswers };
+    if (answerIndex !== undefined) {
+      updatedPollAnswers[taskId] = answerIndex;
+    }
+
+    const updatedProg: UserDailyProgress = {
+      ...progress,
+      currentDate: today,
+      completedTaskIds: updatedCompleted,
+      streakCount: newStreak,
+      lastCompletedDate: newLastCompletedDate,
+      pollAnswers: updatedPollAnswers
+    };
+
+    setUserDailyProgress(prev => ({
+      ...prev,
+      [currentUser.id]: updatedProg
+    }));
+
+    setSuccessMsg(`🎉 Task Completed! Credited ₦${rewardAmount.toLocaleString()} to your available balance.`);
+    return true;
+  };
+
+  // Task Submission (e.g., Social Share proof)
+  const submitTaskProof = (taskId: string, proof: string): boolean => {
+    clearMessages();
+    if (!currentUser) return false;
+
+    if (!proof.trim()) {
+      setErrorMsg('Please provide your post link, screenshot details, or proof text.');
+      return false;
+    }
+
+    const task = dailyTasks.find(t => t.id === taskId);
+    if (!task) return false;
+
+    const today = getCurrentDateStr();
+    const progress = getUserProgress(currentUser.id);
+
+    if (progress.completedTaskIds.includes(taskId) || progress.pendingSubmissionTaskIds.includes(taskId)) {
+      setErrorMsg('You already have a submitted or completed entry for this task today.');
+      return false;
+    }
+
+    const rewardAmount = getUserDailyTaskReward(currentUser.id, task);
+
+    const submission: TaskSubmission = {
+      id: 'sub_' + Date.now(),
+      taskId: task.id,
+      taskTitle: task.title,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userEmail: currentUser.email,
+      proof: proof.trim(),
+      rewardAmount,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+
+    setTaskSubmissions(prev => [submission, ...prev]);
+
+    // Mark as pending in progress
+    const updatedProg: UserDailyProgress = {
+      ...progress,
+      currentDate: today,
+      pendingSubmissionTaskIds: [...progress.pendingSubmissionTaskIds, taskId]
+    };
+
+    setUserDailyProgress(prev => ({
+      ...prev,
+      [currentUser.id]: updatedProg
+    }));
+
+    setSuccessMsg(`Proof submitted! Treasure Homes compliance team will review and credit ₦${rewardAmount.toLocaleString()} to your wallet.`);
+    return true;
+  };
+
+  // Claim 7-day Streak Jackpot Bonus
+  const claimStreakBonus = (): boolean => {
+    clearMessages();
+    if (!currentUser) return false;
+
+    const today = getCurrentDateStr();
+    const progress = getUserProgress(currentUser.id);
+
+    if (progress.streakCount < 7) {
+      setErrorMsg(`You need a 7-day streak to claim this bonus. Current streak: ${progress.streakCount}/7 days.`);
+      return false;
+    }
+
+    if (progress.streakBonusClaimedDate === today) {
+      setErrorMsg('You have already claimed your 7-day streak milestone for this cycle!');
+      return false;
+    }
+
+    const streakBonusAmount = settings.dailyTaskStreakBonus || 1500;
+
+    // Credit User Wallet
+    setUsers(prev => prev.map(u => {
+      if (u.id === currentUser.id) {
+        const updated = { ...u, walletBalance: u.walletBalance + streakBonusAmount };
+        setCurrentUser(updated);
+        return updated;
+      }
+      return u;
+    }));
+
+    // Log Transaction
+    const streakTx: Transaction = {
+      id: 'tx_streak_' + Date.now(),
+      userId: currentUser.id,
+      userName: currentUser.name,
+      type: 'task_reward',
+      amount: streakBonusAmount,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      description: `🔥 7-Day Consistency Streak Bonus (+₦${streakBonusAmount.toLocaleString()})`
+    };
+    setTransactions(prev => [streakTx, ...prev]);
+
+    // Update Progress
+    const updatedProg: UserDailyProgress = {
+      ...progress,
+      streakBonusClaimedDate: today,
+      streakCount: 0 // Reset for next 7-day cycle
+    };
+
+    setUserDailyProgress(prev => ({
+      ...prev,
+      [currentUser.id]: updatedProg
+    }));
+
+    setSuccessMsg(`🔥 Boom! 7-Day Consistency Streak Bonus of ₦${streakBonusAmount.toLocaleString()} credited to your balance!`);
+    return true;
+  };
+
+  // Admin Task Submission Review Actions
+  const approveTaskSubmission = (subId: string) => {
+    clearMessages();
+    const sub = taskSubmissions.find(s => s.id === subId);
+    if (!sub || sub.status !== 'pending') return;
+
+    // Update submission
+    setTaskSubmissions(prev => prev.map(s => s.id === subId ? { ...s, status: 'approved', reviewedAt: new Date().toISOString() } : s));
+
+    // Credit user wallet
+    setUsers(prev => prev.map(u => {
+      if (u.id === sub.userId) {
+        const updated = { ...u, walletBalance: u.walletBalance + sub.rewardAmount };
+        if (currentUser && currentUser.id === u.id) {
+          setCurrentUser(updated);
+        }
+        return updated;
+      }
+      return u;
+    }));
+
+    // Create Transaction
+    const taskTx: Transaction = {
+      id: 'tx_task_sub_' + Date.now(),
+      userId: sub.userId,
+      userName: sub.userName,
+      type: 'task_reward',
+      amount: sub.rewardAmount,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      description: `Approved Task Reward: ${sub.taskTitle}`
+    };
+    setTransactions(prev => [taskTx, ...prev]);
+
+    // Update user's progress
+    const today = getCurrentDateStr();
+    const targetProg = userDailyProgress[sub.userId] || {
+      userId: sub.userId,
+      currentDate: today,
+      completedTaskIds: [],
+      pendingSubmissionTaskIds: [],
+      streakCount: 0
+    };
+
+    const updatedProg: UserDailyProgress = {
+      ...targetProg,
+      pendingSubmissionTaskIds: targetProg.pendingSubmissionTaskIds.filter(id => id !== sub.taskId),
+      completedTaskIds: [...targetProg.completedTaskIds, sub.taskId]
+    };
+
+    setUserDailyProgress(prev => ({
+      ...prev,
+      [sub.userId]: updatedProg
+    }));
+
+    setSuccessMsg(`Approved task submission from ${sub.userName} (+₦${sub.rewardAmount.toLocaleString()}).`);
+  };
+
+  const rejectTaskSubmission = (subId: string) => {
+    clearMessages();
+    const sub = taskSubmissions.find(s => s.id === subId);
+    if (!sub || sub.status !== 'pending') return;
+
+    setTaskSubmissions(prev => prev.map(s => s.id === subId ? { ...s, status: 'rejected', reviewedAt: new Date().toISOString() } : s));
+
+    // Remove from pending in progress
+    const targetProg = userDailyProgress[sub.userId];
+    if (targetProg) {
+      setUserDailyProgress(prev => ({
+        ...prev,
+        [sub.userId]: {
+          ...targetProg,
+          pendingSubmissionTaskIds: targetProg.pendingSubmissionTaskIds.filter(id => id !== sub.taskId)
+        }
+      }));
+    }
+
+    setSuccessMsg(`Rejected task submission for ${sub.userName}.`);
+  };
+
+  // Fast testing: Simulate next day (Midnight Reset)
+  const simulateNextDay = () => {
+    clearMessages();
+    setVirtualDayOffset(prev => prev + 1);
+    setSuccessMsg('Simulated next day! Daily tasks board has reset with fresh daily yield opportunities.');
+  };
+
   const updateSettings = (newSettings: Partial<SystemSettings>) => {
     clearMessages();
     setSettings(prev => ({ ...prev, ...newSettings }));
@@ -847,12 +1236,18 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.removeItem('pm_prod_transactions_v1');
     localStorage.removeItem('pm_prod_settings_v1');
     localStorage.removeItem('pm_prod_current_week_v1');
+    localStorage.removeItem('pm_prod_task_submissions_v1');
+    localStorage.removeItem('pm_prod_daily_progress_v1');
+    localStorage.removeItem('pm_prod_virtual_day_v1');
 
     setUsers(getSeedUsers());
     setCurrentUser(null);
     setInvestments(SEED_INVESTMENTS);
     setTransactions(SEED_TRANSACTIONS);
     setSettings(DEFAULT_SETTINGS);
+    setTaskSubmissions([]);
+    setUserDailyProgress({});
+    setVirtualDayOffset(0);
     setCurrentWeek(1);
     clearMessages();
     setSuccessMsg('Platform reset to original production database state.');
@@ -870,6 +1265,14 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       successMsg,
       supabaseStatus,
       isDbLoaded,
+      dailyTasks,
+      taskSubmissions,
+      userDailyProgress,
+      virtualDate,
+      getUserActiveWeeklyPayout,
+      getUserDailyPool,
+      getUserDailyTaskReward,
+      getUserProgress,
       register,
       login,
       logout,
@@ -878,13 +1281,19 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       submitWithdrawal,
       purchaseInvestment,
       submitKyc,
+      completeInstantTask,
+      submitTaskProof,
+      claimStreakBonus,
       approveDeposit,
       rejectDeposit,
       approveWithdrawal,
       rejectWithdrawal,
       reviewKyc,
       updateSettings,
+      approveTaskSubmission,
+      rejectTaskSubmission,
       simulateWeek,
+      simulateNextDay,
       resetAll,
       clearMessages
     }}>
