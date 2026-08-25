@@ -74,8 +74,8 @@ export const UserDashboard: React.FC = () => {
 
   const faqItems = [
     {
-      question: "How do I fund my vault account (Deposits)?",
-      answer: "To fund your vault, go to the 'Deposit & Withdraw' tab, select your preferred plan or enter a custom amount, and copy the provided banking transfer details. Pay using your banking app, upload your receipt/Proof of Payment (PoP), and submit. The compliance team audits transfers and approves deposits within 1 to 24 hours."
+      question: "How do I fund my account (Deposits)?",
+      answer: "To fund your account, go to the 'Deposit & Withdraw' tab, select your preferred plan or enter a custom amount, and copy the provided banking transfer details. Pay using your banking app, upload your receipt/Proof of Payment (PoP), and submit. The compliance team audits transfers and approves deposits within 1 to 24 hours."
     },
     {
       question: "How do payout cycles work?",
@@ -87,7 +87,7 @@ export const UserDashboard: React.FC = () => {
     },
     {
       question: "Is my capital guaranteed?",
-      answer: "Yes. PM Invest manages a physical-asset backed reserve of over ₦78,387,045 backed by real estate holdings under Treasure Homes supervision. This ensures the protection and stability of all participant vaults."
+      answer: "Yes. PM Invest manages a physical-asset backed reserve of over ₦78,387,045 backed by real estate holdings under Treasure Homes supervision. This ensures the protection and stability of all participant investments."
     }
   ];
 
@@ -1137,10 +1137,10 @@ export const UserDashboard: React.FC = () => {
           <div className="text-center space-y-2">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest flex items-center justify-center gap-2">
               <HelpCircle className="w-5 h-5 text-amber-500 shrink-0" />
-              <span>Investment Vault & Workflow FAQ</span>
+              <span>Investment & Platform FAQ</span>
             </h3>
             <p className="text-xs text-slate-500 max-w-lg mx-auto">
-              Understand how our vault funding, weekly payout schedules, and secure withdrawal mechanisms operate.
+              Understand how account funding, weekly payout schedules, and secure withdrawal mechanisms operate.
             </p>
           </div>
 

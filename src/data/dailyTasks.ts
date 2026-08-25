@@ -19,7 +19,7 @@ export const DEFAULT_DAILY_TASKS: DailyTask[] = [
         'Interior electrical wiring and high-efficiency plumbing conduits are now 75% deployed, ensuring the planned Q4 tenant handover remains firmly on target.',
         'Independent structural valuation audit conducted this morning verified asset capital appreciation of +4.2% since ground-breaking.'
       ],
-      keyTakeaway: 'Physical structural appraisal matches full collateral reserve backing for all active investor vaults.'
+      keyTakeaway: 'Physical structural appraisal matches full collateral reserve backing for all active investor portfolios.'
     }
   },
   {
@@ -51,9 +51,9 @@ export const DEFAULT_DAILY_TASKS: DailyTask[] = [
     verificationType: 'instant',
     actionLabel: 'Check In & Claim Yield',
     detailsContent: {
-      headline: 'Daily Vault Attendance & Security Confirmation',
+      headline: 'Daily Investor Attendance & Security Confirmation',
       paragraphs: [
-        'Checking in daily confirms your active participant status, verifies the integrity of your linked vault, and advances your weekly consistency multiplier.',
+        'Checking in daily confirms your active participant status, verifies your investment account, and advances your weekly consistency multiplier.',
         'Completing 7 consecutive days unlocks the ₦1,500 Unbroken Streak Bonus credited directly to your available balance!'
       ],
       keyTakeaway: 'Consistent engagement reinforces active investor status in Treasure Homes partner programs.'

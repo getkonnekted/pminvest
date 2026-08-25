@@ -614,7 +614,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!currentUser) return false;
 
     if (settings.pauseInvestments) {
-      setErrorMsg('Investment Vault Notice: Initiating new investment plans is currently paused by the administrator. Existing plans will continue to yield returns as normal.');
+      setErrorMsg('Investment Notice: Initiating new investment plans is currently paused by the administrator. Existing plans will continue to yield returns as normal.');
       return false;
     }
 

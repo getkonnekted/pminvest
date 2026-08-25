@@ -112,7 +112,7 @@ function MainAppContent() {
                 <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-bold text-slate-900 uppercase tracking-wider">Automated weekly payouts</h4>
-                  <p className="text-slate-500 mt-0.5">Yield is credited automatically to your secure vault wallet every week.</p>
+                  <p className="text-slate-500 mt-0.5">Yield is credited automatically to your investment wallet every week.</p>
                 </div>
               </div>
 
@@ -126,7 +126,7 @@ function MainAppContent() {
             </div>
           </div>
 
-          {/* RIGHT PANEL: Auth Vault Forms */}
+          {/* RIGHT PANEL: Auth Forms */}
           <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden text-slate-800">
             {/* Overlay glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
@@ -134,12 +134,12 @@ function MainAppContent() {
             <div className="border-b border-slate-100 pb-4 mb-6">
               <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 justify-center sm:justify-start">
                 <Lock className="w-4 h-4 text-amber-500" />
-                {isRegistering ? 'Register Wealth Account' : 'Investor Vault Log In'}
+                {isRegistering ? 'Create Investor Account' : 'Investor Log In'}
               </h3>
               <p className="text-center sm:text-left text-xs text-slate-500 mt-1">
                 {isRegistering 
-                  ? 'Access secure mortgage yield cycles under Treasure Homes compliance.'
-                  : 'Unlock your private investment panel and check accumulated yields.'
+                  ? 'Start earning weekly mortgage yields backed by physical real estate.'
+                  : 'Sign in to access your investment dashboard and track earnings.'
                 }
               </p>
             </div>
@@ -162,13 +162,13 @@ function MainAppContent() {
               /* LOGIN FORM */
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs text-slate-500 font-medium mb-1">Registered Vault Email</label>
+                  <label className="block text-xs text-slate-500 font-medium mb-1">Email Address</label>
                   <div className="relative">
                     <input 
                       type="email" 
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="e.g. ola@gmail.com"
+                      placeholder="e.g. name@example.com"
                       className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                       required
                     />
@@ -210,7 +210,7 @@ function MainAppContent() {
                   className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5"
                   id="btn_landing_login"
                 >
-                  Access My Vault <ArrowRight className="w-4 h-4" />
+                  Sign In <ArrowRight className="w-4 h-4" />
                 </button>
 
                 <div className="text-center pt-3 border-t border-slate-100 mt-6 text-xs text-slate-500">
@@ -221,7 +221,7 @@ function MainAppContent() {
                       onClick={() => { setIsRegistering(true); clearMessages(); }}
                       className="text-amber-600 hover:underline font-semibold"
                     >
-                      Open secure account
+                      Create an account
                     </button>
                   </p>
                 </div>
@@ -242,7 +242,7 @@ function MainAppContent() {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-500 font-medium mb-1">Vault Email Address</label>
+                  <label className="block text-xs text-slate-500 font-medium mb-1">Email Address</label>
                   <input 
                     type="email" 
                     value={regEmail}
@@ -276,17 +276,17 @@ function MainAppContent() {
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/10"
                   id="btn_landing_register"
                 >
-                  Create Secure Vault Account <UserPlus className="w-4 h-4" />
+                  Create Investor Account <UserPlus className="w-4 h-4" />
                 </button>
 
                 <p className="text-center pt-3 border-t border-slate-100 mt-6 text-xs text-slate-500">
-                  Already registered?{' '}
+                  Already have an account?{' '}
                   <button 
                     type="button"
                     onClick={() => { setIsRegistering(false); clearMessages(); }}
                     className="text-amber-600 hover:underline font-semibold"
                   >
-                    Log in here
+                    Sign in here
                   </button>
                 </p>
               </form>

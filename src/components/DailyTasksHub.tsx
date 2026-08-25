@@ -531,7 +531,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
                   </h3>
 
                   <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-                    Verify your active vault participant status to maintain your weekly consistency streak and claim today's attendance allocation.
+                    Verify your active investor status to maintain your weekly consistency streak and claim today's attendance allocation.
                   </p>
 
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-mono space-y-1">
