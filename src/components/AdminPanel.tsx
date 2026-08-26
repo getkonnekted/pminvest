@@ -216,6 +216,20 @@ export const AdminPanel: React.FC = () => {
         >
           Controls
         </button>
+
+        <a
+          href="/aujoten"
+          onClick={(e) => {
+            e.preventDefault();
+            window.history.pushState({}, '', '/aujoten');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+          }}
+          className="px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 text-amber-700 hover:text-amber-800 bg-amber-50/80 border border-b-0 border-amber-200 ml-auto"
+          id="tab_admin_aujoten"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+          <span>Aujoten Holdings Portal</span>
+        </a>
       </div>
 
       {/* ANALYTICS SUB-TAB */}

@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StateProvider, useAppState, ADMIN_EMAIL } from './context/StateContext';
 import { BrandingHeader, LegalDisclosures } from './components/BrandingHeader';
 import { UserDashboard } from './components/UserDashboard';
 import { AdminPanel } from './components/AdminPanel';
+import { AujotenPage } from './components/AujotenPage';
 import { 
   Building, 
   ShieldCheck, 
@@ -29,7 +30,8 @@ import {
   CheckCircle2,
   User as UserIcon,
   Zap,
-  X
+  X,
+  Globe
 } from 'lucide-react';
 import { INVESTMENT_PLANS } from './types';
 
@@ -37,6 +39,44 @@ function MainAppContent() {
   const { currentUser, users, register, login, successMsg, errorMsg, clearMessages } = useAppState();
   const [isRegistering, setIsRegistering] = useState(false);
   const [adminView, setAdminView] = useState<'admin' | 'user'>('admin');
+  const [currentPage, setCurrentPage] = useState<'pminvest' | 'aujoten'>('pminvest');
+  
+  // URL routing detection (e.g. pminvest.org.ng/aujoten or ?page=aujoten or #aujoten or pathname === '/aujoten')
+  useEffect(() => {
+    const checkRoute = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      const search = window.location.search.toLowerCase();
+      
+      if (path.includes('aujoten') || hash.includes('aujoten') || search.includes('aujoten')) {
+        setCurrentPage('aujoten');
+      } else {
+        setCurrentPage('pminvest');
+      }
+    };
+
+    checkRoute();
+    window.addEventListener('popstate', checkRoute);
+    window.addEventListener('hashchange', checkRoute);
+    return () => {
+      window.removeEventListener('popstate', checkRoute);
+      window.removeEventListener('hashchange', checkRoute);
+    };
+  }, []);
+
+  const navigateTo = (page: 'pminvest' | 'aujoten') => {
+    setCurrentPage(page);
+    if (page === 'aujoten') {
+      window.history.pushState({}, '', '/aujoten');
+    } else {
+      window.history.pushState({}, '', '/');
+    }
+  };
+
+  // If user navigated to /aujoten, render the Aujoten dedicated website
+  if (currentPage === 'aujoten') {
+    return <AujotenPage onBackToPmInvest={() => navigateTo('pminvest')} />;
+  }
   
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
@@ -77,9 +117,19 @@ function MainAppContent() {
     return (
       <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-between font-sans">
         {/* Affiliation Header bar */}
-        <div className="bg-[#0f172a] px-4 py-2.5 text-center text-xs text-slate-300 border-b border-slate-800 flex items-center justify-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-          <span>PM Invest is a certified wealth program operates under <strong className="text-white">TREASURE HOMES LTD</strong></span>
+        <div className="bg-[#0f172a] px-4 py-2.5 text-center text-xs text-slate-300 border-b border-slate-800 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            <span>PM Invest is a certified wealth program operates under <strong className="text-white">TREASURE HOMES LTD</strong></span>
+          </div>
+          <span className="hidden sm:inline text-slate-600">|</span>
+          <button
+            onClick={() => navigateTo('aujoten')}
+            className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 transition-colors cursor-pointer"
+          >
+            <span>Visit Aujoten Holdings (Sports & Industrial)</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-grow">

@@ -21,7 +21,8 @@ import {
   Info,
   Sparkles,
   Flame,
-  Award
+  Award,
+  ExternalLink
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
 import { INVESTMENT_PLANS, InvestmentPlan } from '../types';
@@ -305,6 +306,21 @@ export const UserDashboard: React.FC = () => {
         >
           <FileText className="w-4 h-4 text-amber-500" /> KYC Verification
         </button>
+
+        <a
+          href="/aujoten"
+          onClick={(e) => {
+            e.preventDefault();
+            window.history.pushState({}, '', '/aujoten');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+          }}
+          className="px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm tracking-wider uppercase transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 text-amber-600 hover:text-amber-700 bg-amber-50/70 border border-b-0 border-amber-200/80 ml-auto"
+          id="tab_user_aujoten_link"
+        >
+          <Sparkles className="w-4 h-4 text-amber-500" />
+          <span>Aujoten Holdings</span>
+          <ExternalLink className="w-3.5 h-3.5" />
+        </a>
       </div>
 
       {/* TAB CONTENTS */}

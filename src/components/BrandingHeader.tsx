@@ -371,9 +371,24 @@ export const LegalDisclosures: React.FC = () => {
           <p className="leading-relaxed mb-4 text-slate-300">
             PM Invest is a premium high-yield investment platform owned and managed by TREASURE HOMES LTD. We leverage physical estate developments, verified property acquisition, and structured mortgage-backed securities to generate consistent yield for our active investors.
           </p>
-          <div className="flex items-center gap-2 text-white/80">
+          <div className="flex items-center gap-2 text-white/80 mb-3">
             <ShieldCheck className="w-5 h-5 text-amber-400" />
             <span className="font-mono text-[10px] tracking-wider font-semibold">100% REGULATED LIQUIDITY RESERVE</span>
+          </div>
+
+          <div className="pt-2 border-t border-slate-800">
+            <a
+              href="/aujoten"
+              onClick={(e) => {
+                e.preventDefault();
+                window.history.pushState({}, '', '/aujoten');
+                window.dispatchEvent(new PopStateEvent('popstate'));
+              }}
+              className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-bold hover:underline transition-colors"
+            >
+              <span>Explore Aujoten Sports & Commercial Holdings</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
           </div>
         </div>
 
