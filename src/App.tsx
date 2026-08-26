@@ -117,19 +117,9 @@ function MainAppContent() {
     return (
       <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-between font-sans">
         {/* Affiliation Header bar */}
-        <div className="bg-[#0f172a] px-4 py-2.5 text-center text-xs text-slate-300 border-b border-slate-800 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            <span>PM Invest is a certified wealth program operates under <strong className="text-white">TREASURE HOMES LTD</strong></span>
-          </div>
-          <span className="hidden sm:inline text-slate-600">|</span>
-          <button
-            onClick={() => navigateTo('aujoten')}
-            className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 transition-colors cursor-pointer"
-          >
-            <span>Visit Aujoten Holdings (Sports & Industrial)</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+        <div className="bg-[#0f172a] px-4 py-2.5 text-center text-xs text-slate-300 border-b border-slate-800 flex items-center justify-center gap-2">
+          <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+          <span>PM Invest is a certified wealth program operates under <strong className="text-white">TREASURE HOMES LTD</strong></span>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-grow">
