@@ -38,7 +38,7 @@ interface StateContextType {
   getUserProgress: (userId: string) => UserDailyProgress;
   
   // Auth actions
-  register: (name: string, email: string, referredByCode?: string) => boolean;
+  register: (name: string, email: string, referredByCode?: string, password?: string) => boolean;
   login: (email: string, password?: string) => boolean;
   logout: () => void;
   switchUser: (userId: string) => void;
@@ -393,17 +393,31 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSuccessMsg(null);
   };
 
-  const register = (name: string, email: string, referredByCode?: string): boolean => {
+  const register = (name: string, email: string, referredByCode?: string, password?: string): boolean => {
     clearMessages();
 
-    if (!name.trim() || !email.trim()) {
-      setErrorMsg('Name and email are required.');
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedName || !trimmedEmail) {
+      setErrorMsg('Full legal name and email address are required.');
+      return false;
+    }
+
+    // Basic email format check
+    if (!trimmedEmail.includes('@') || !trimmedEmail.includes('.')) {
+      setErrorMsg('Please enter a valid email address.');
       return false;
     }
 
     // Email uniqueness check
-    if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-      setErrorMsg('This email is already registered.');
+    if (users.some(u => u.email.toLowerCase() === trimmedEmail)) {
+      setErrorMsg('An account with this email already exists. Please sign in instead.');
+      return false;
+    }
+
+    if (password && password.length < 4) {
+      setErrorMsg('Password must be at least 4 characters long.');
       return false;
     }
 
@@ -413,17 +427,18 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Validate referral code
     const sponsor = users.find(u => u.referralCode.toUpperCase() === codeToUse.toUpperCase());
     if (!sponsor) {
-      setErrorMsg(`Invalid referral code. Please use a valid sponsor referral code (e.g., TREASURE_ADMIN).`);
+      setErrorMsg(`Invalid sponsor referral code "${codeToUse}". Please use a valid sponsor code (e.g. TREASURE_ADMIN, DEMO_INVESTOR).`);
       return false;
     }
 
     // Create new user
-    const refCode = name.split(' ')[0].toUpperCase() + Math.floor(100 + Math.random() * 900);
+    const refCode = trimmedName.split(' ')[0].replace(/[^A-Za-z]/g, '').toUpperCase() + Math.floor(100 + Math.random() * 900);
     const newUser: User = {
       id: 'usr_' + Date.now(),
-      name,
-      email: email.toLowerCase(),
-      referralCode: refCode,
+      name: trimmedName,
+      email: trimmedEmail,
+      password: password || undefined,
+      referralCode: refCode || ('INV' + Math.floor(1000 + Math.random() * 9000)),
       referredByCode: sponsor.referralCode,
       walletBalance: 0,
       kycStatus: 'unverified',
@@ -433,13 +448,18 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
-    setSuccessMsg(`Welcome to PM Invest, ${name}! Registered successfully under sponsor: ${sponsor.name}.`);
+    setSuccessMsg(`Account created successfully! Welcome to PM Invest, ${trimmedName}.`);
     return true;
   };
 
   const login = (email: string, password?: string): boolean => {
     clearMessages();
     const normEmail = email.toLowerCase().trim();
+
+    if (!normEmail) {
+      setErrorMsg('Please enter your email address to sign in.');
+      return false;
+    }
     
     // If admin email, verify password
     if (normEmail === ADMIN_EMAIL.toLowerCase().trim()) {
@@ -448,7 +468,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return false;
       }
       if (password !== ADMIN_PASSWORD) {
-        setErrorMsg('Invalid administrator password.');
+        setErrorMsg('Incorrect administrator password.');
         return false;
       }
     }
@@ -456,11 +476,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const user = users.find(u => u.email.toLowerCase() === normEmail);
     if (user) {
       if (user.password && user.password !== password) {
-        setErrorMsg('Invalid password.');
+        setErrorMsg('Incorrect password. Please verify and try again.');
         return false;
       }
       setCurrentUser(user);
-      setSuccessMsg(`Logged in successfully as ${user.name}.`);
+      setSuccessMsg(`Welcome back, ${user.name}!`);
       return true;
     }
 
@@ -482,7 +502,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return true;
     }
 
-    setErrorMsg('Invalid email address.');
+    setErrorMsg('No account found with this email address. Please register a new account.');
     return false;
   };
 

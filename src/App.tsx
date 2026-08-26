@@ -24,7 +24,12 @@ import {
   AlertTriangle,
   ShieldAlert,
   LayoutGrid,
-  Eye
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  User as UserIcon,
+  Zap,
+  X
 } from 'lucide-react';
 import { INVESTMENT_PLANS } from './types';
 
@@ -36,10 +41,13 @@ function MainAppContent() {
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Register state
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [regRef, setRegRef] = useState('TREASURE_ADMIN');
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -49,11 +57,19 @@ function MainAppContent() {
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const success = register(regName, regEmail, regRef);
+    const success = register(regName, regEmail, regRef, regPassword);
     if (success) {
       setRegName('');
       setRegEmail('');
+      setRegPassword('');
     }
+  };
+
+  const fillQuickLogin = (email: string, pass: string) => {
+    clearMessages();
+    setLoginEmail(email);
+    setLoginPassword(pass);
+    login(email, pass);
   };
 
   // Unauthenticated Landing Page
@@ -126,169 +142,278 @@ function MainAppContent() {
             </div>
           </div>
 
-          {/* RIGHT PANEL: Auth Forms */}
-          <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden text-slate-800">
-            {/* Overlay glow */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
+          {/* RIGHT PANEL: Clean Auth Forms */}
+          <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-6 sm:p-7 shadow-xl relative overflow-hidden text-slate-800" id="card_auth_panel">
+            {/* Ambient accent background blur */}
+            <div className="absolute top-0 right-0 w-36 h-36 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="border-b border-slate-100 pb-4 mb-6">
-              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 justify-center sm:justify-start">
-                <Lock className="w-4 h-4 text-amber-500" />
-                {isRegistering ? 'Create Investor Account' : 'Investor Log In'}
+            {/* Segmented Top Tabs */}
+            <div className="flex bg-slate-100 p-1 rounded-xl mb-5 border border-slate-200/80">
+              <button
+                type="button"
+                onClick={() => { setIsRegistering(false); clearMessages(); }}
+                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  !isRegistering
+                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                id="tab_auth_signin"
+              >
+                <Lock className="w-3.5 h-3.5 text-amber-500" />
+                <span>Sign In</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsRegistering(true); clearMessages(); }}
+                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  isRegistering
+                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+                id="tab_auth_signup"
+              >
+                <UserPlus className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Create Account</span>
+              </button>
+            </div>
+
+            {/* Subtitle Header */}
+            <div className="mb-4">
+              <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-tight">
+                {isRegistering ? 'Open Investor Account' : 'Welcome Back'}
               </h3>
-              <p className="text-center sm:text-left text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 mt-0.5">
                 {isRegistering 
-                  ? 'Start earning weekly mortgage yields backed by physical real estate.'
-                  : 'Sign in to access your investment dashboard and track earnings.'
+                  ? 'Join PM Invest to start earning weekly mortgage returns.'
+                  : 'Enter your credentials to access your portfolio dashboard.'
                 }
               </p>
             </div>
 
-            {/* General feedback message in landing page */}
+            {/* General Feedback Notifications */}
             {successMsg && (
-              <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-lg text-xs flex items-center gap-1.5 shadow-sm">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{successMsg}</span>
+              <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-xl text-xs flex items-start justify-between gap-2 shadow-xs animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="font-medium leading-relaxed">{successMsg}</span>
+                </div>
+                <button 
+                  onClick={clearMessages} 
+                  className="text-emerald-600 hover:text-emerald-800 p-0.5"
+                  type="button"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
             )}
             {errorMsg && (
-              <div className="mb-4 bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-lg text-xs flex items-center gap-1.5 shadow-sm">
-                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                <span>{errorMsg}</span>
+              <div className="mb-4 bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs flex items-start justify-between gap-2 shadow-xs animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span className="font-medium leading-relaxed">{errorMsg}</span>
+                </div>
+                <button 
+                  onClick={clearMessages} 
+                  className="text-rose-600 hover:text-rose-800 p-0.5"
+                  type="button"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
             )}
 
             {!isRegistering ? (
-              /* LOGIN FORM */
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
+              /* CLEAN SIGN IN FORM */
+              <form onSubmit={handleLoginSubmit} className="space-y-3.5">
                 <div>
-                  <label className="block text-xs text-slate-500 font-medium mb-1">Email Address</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
                   <div className="relative">
                     <input 
                       type="email" 
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="e.g. name@example.com"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      placeholder="e.g. investor@gmail.com"
+                      autoComplete="email"
+                      className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-sans"
                       required
                     />
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   </div>
                 </div>
 
-                {(() => {
-                  const emailTrimmed = loginEmail.toLowerCase().trim();
-                  const isAdmin = emailTrimmed === ADMIN_EMAIL.toLowerCase().trim();
-                  const userHasPassword = users.some(u => u.email.toLowerCase().trim() === emailTrimmed && u.password);
-                  
-                  if (isAdmin || userHasPassword) {
-                    return (
-                      <div className="space-y-1 animate-fade-in">
-                        <label className="block text-xs text-amber-600 font-bold mb-1 uppercase tracking-wider flex items-center gap-1">
-                          <Key className="w-3.5 h-3.5" />
-                          {isAdmin ? 'Administrator' : 'Account'} Password Required
-                        </label>
-                        <div className="relative">
-                          <input 
-                            type="password" 
-                            value={loginPassword}
-                            onChange={(e) => setLoginPassword(e.target.value)}
-                            placeholder={isAdmin ? "Enter administrator password" : "Enter account password"}
-                            className="w-full bg-amber-50/50 border border-amber-300 rounded-lg py-2 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono"
-                            required
-                          />
-                          <Lock className="w-4 h-4 text-amber-500 absolute left-3 top-2.5" />
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-xs font-semibold text-slate-700">Password</label>
+                    <span className="text-[10px] text-slate-400 font-normal">Optional for unseeded guest accounts</span>
+                  </div>
+                  <div className="relative">
+                    <input 
+                      type={showLoginPassword ? 'text' : 'password'}
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="Enter account password"
+                      autoComplete="current-password"
+                      className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-10 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-mono"
+                    />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                      tabIndex={-1}
+                      title={showLoginPassword ? "Hide password" : "Show password"}
+                    >
+                      {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5"
+                  className="w-full bg-slate-950 hover:bg-slate-900 active:scale-[0.99] text-white font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer mt-2"
                   id="btn_landing_login"
                 >
-                  Sign In <ArrowRight className="w-4 h-4" />
+                  <span>Sign In</span>
+                  <ArrowRight className="w-4 h-4 text-amber-400" />
                 </button>
 
-                <div className="text-center pt-3 border-t border-slate-100 mt-6 text-xs text-slate-500">
-                  <p>
-                    Don't have an account?{' '}
-                    <button 
+                {/* Quick Auto-Fill Demo Shortcuts */}
+                <div className="pt-3 border-t border-slate-100 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <Zap className="w-3 h-3 text-amber-500" />
+                    <span>Quick Test Accounts</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
                       type="button"
-                      onClick={() => { setIsRegistering(true); clearMessages(); }}
-                      className="text-amber-600 hover:underline font-semibold"
+                      onClick={() => fillQuickLogin('demo_investor@pminvest.org.ng', 'investor123')}
+                      className="bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 text-left p-2 rounded-lg transition-all group cursor-pointer"
                     >
-                      Create an account
+                      <div className="text-[11px] font-bold text-slate-800 group-hover:text-amber-700 truncate">Jude Eze (Investor)</div>
+                      <div className="text-[9px] text-slate-400 font-mono truncate">₦250k balance • 1-click</div>
                     </button>
-                  </p>
+
+                    <button
+                      type="button"
+                      onClick={() => fillQuickLogin(ADMIN_EMAIL, 'admin123')}
+                      className="bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-400 text-left p-2 rounded-lg transition-all group cursor-pointer"
+                    >
+                      <div className="text-[11px] font-bold text-slate-800 group-hover:text-slate-900 truncate">Treasure Admin</div>
+                      <div className="text-[9px] text-slate-400 font-mono truncate">Full control panel • 1-click</div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="text-center pt-2 text-xs text-slate-500">
+                  <span>Don't have an account? </span>
+                  <button 
+                    type="button"
+                    onClick={() => { setIsRegistering(true); clearMessages(); }}
+                    className="text-amber-600 hover:text-amber-700 font-bold hover:underline cursor-pointer"
+                  >
+                    Create one now
+                  </button>
                 </div>
               </form>
             ) : (
-              /* REGISTRATION FORM */
-              <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              /* CLEAN REGISTRATION FORM */
+              <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
                 <div>
-                  <label className="block text-xs text-slate-500 font-medium mb-1">Full Legal Name</label>
-                  <input 
-                    type="text" 
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
-                    placeholder="Same as your ID card"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                    required
-                  />
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Full Legal Name</label>
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      value={regName}
+                      onChange={(e) => setRegName(e.target.value)}
+                      placeholder="e.g. Jude Okafor"
+                      autoComplete="name"
+                      className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-sans"
+                      required
+                    />
+                    <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-500 font-medium mb-1">Email Address</label>
-                  <input 
-                    type="email" 
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                    placeholder="e.g. investor@gmail.com"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                    required
-                  />
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                  <div className="relative">
+                    <input 
+                      type="email" 
+                      value={regEmail}
+                      onChange={(e) => setRegEmail(e.target.value)}
+                      placeholder="e.g. jude@gmail.com"
+                      autoComplete="email"
+                      className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-sans"
+                      required
+                    />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Create Password</label>
+                  <div className="relative">
+                    <input 
+                      type={showRegPassword ? 'text' : 'password'}
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      placeholder="Minimum 6 characters"
+                      autoComplete="new-password"
+                      className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-10 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-mono"
+                    />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                      tabIndex={-1}
+                      title={showRegPassword ? "Hide password" : "Show password"}
+                    >
+                      {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <div className="flex justify-between items-baseline mb-1">
-                    <label className="block text-xs text-slate-500 font-medium">Sponsor Referral Code</label>
-                    <span className="text-[10px] text-rose-500 font-semibold">* Required</span>
+                    <label className="block text-xs font-semibold text-slate-700">Sponsor Referral Code</label>
+                    <span className="text-[10px] text-amber-600 font-mono font-bold">Auto-Assigned</span>
                   </div>
-                  <input 
-                    type="text" 
-                    value={regRef}
-                    onChange={(e) => setRegRef(e.target.value)}
-                    placeholder="e.g. OLA500"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                    required
-                  />
-                  <span className="text-[10px] text-slate-400 mt-1 block">
-                    Under Treasure Homes guidelines, registrations require a valid sponsor. Try <strong>OLA500</strong>, <strong>EMEKA12</strong>, or <strong>TREASURE_ADMIN</strong>.
-                  </span>
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      value={regRef}
+                      onChange={(e) => setRegRef(e.target.value.toUpperCase())}
+                      placeholder="e.g. TREASURE_ADMIN"
+                      className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-mono uppercase"
+                      required
+                    />
+                    <Users className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Default: <strong className="text-slate-600">TREASURE_ADMIN</strong>. You may also enter a friend or partner's code.
+                  </p>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/10"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm shadow-emerald-600/15 cursor-pointer mt-2"
                   id="btn_landing_register"
                 >
-                  Create Investor Account <UserPlus className="w-4 h-4" />
+                  <span>Create Account</span>
+                  <UserPlus className="w-4 h-4" />
                 </button>
 
-                <p className="text-center pt-3 border-t border-slate-100 mt-6 text-xs text-slate-500">
-                  Already have an account?{' '}
+                <div className="text-center pt-2 text-xs text-slate-500">
+                  <span>Already registered? </span>
                   <button 
                     type="button"
                     onClick={() => { setIsRegistering(false); clearMessages(); }}
-                    className="text-amber-600 hover:underline font-semibold"
+                    className="text-amber-600 hover:text-amber-700 font-bold hover:underline cursor-pointer"
                   >
                     Sign in here
                   </button>
-                </p>
+                </div>
               </form>
             )}
           </div>
