@@ -849,11 +849,28 @@ export const UserDashboard: React.FC = () => {
             <div className="bg-rose-50 border border-rose-100 p-4 rounded-xl text-xs text-rose-800 space-y-2">
               <div className="flex items-center gap-1.5 font-bold text-rose-700">
                 <ShieldCheck className="w-4 h-4 text-rose-600" />
-                <span>STABILITY CONTROLS ACTIVE</span>
+                <span>STABILITY CONTROLS & WITHDRAWAL TIERS</span>
               </div>
               <ul className="list-disc pl-4 space-y-1 text-slate-600 text-[11px]">
-                <li>Minimum single withdrawal: <strong className="text-slate-900">₦{settings.minWithdrawal.toLocaleString()}</strong></li>
-                <li>Maximum single withdrawal: <strong className="text-slate-900">₦{settings.maxWithdrawal.toLocaleString()}</strong></li>
+                {getUserActiveWeeklyPayout(currentUser.id) === 0 ? (
+                  <>
+                    <li className="text-amber-900 font-semibold">
+                      🎁 <strong>Free Starter Trial:</strong> You can withdraw up to <strong className="text-slate-900">₦{(settings.freeStarterWithdrawalLimit || 3000).toLocaleString()}</strong> free from daily tasks.
+                    </li>
+                    <li>
+                      Withdrawn so far: <strong>₦{(getUserProgress(currentUser.id).totalFreeEarningsWithdrawn || 0).toLocaleString()} / ₦{(settings.freeStarterWithdrawalLimit || 3000).toLocaleString()}</strong>
+                    </li>
+                    <li>
+                      To unlock uncapped withdrawals up to ₦{settings.maxWithdrawal.toLocaleString()}/day, activate any investment plan.
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li>Minimum single withdrawal: <strong className="text-slate-900">₦{settings.minWithdrawal.toLocaleString()}</strong></li>
+                    <li>Maximum single withdrawal: <strong className="text-slate-900">₦{settings.maxWithdrawal.toLocaleString()}</strong></li>
+                    <li>Investment-backed account: Unlimited withdrawals enabled.</li>
+                  </>
+                )}
                 <li>Pending limits check: KYC verified users receive faster clearance.</li>
                 <li>Refund Guarantee: Rejected withdrawals are automatically credited back to your wallet.</li>
               </ul>

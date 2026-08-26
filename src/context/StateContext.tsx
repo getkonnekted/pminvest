@@ -50,9 +50,11 @@ interface StateContextType {
   submitKyc: (fullName: string, idType: string, idNumber: string) => void;
 
   // Daily Tasks user actions
-  completeInstantTask: (taskId: string, answerIndex?: number) => boolean;
+  completeInstantTask: (taskId: string, answerIndex?: number, isAdBoosted?: boolean) => boolean;
+  applyRewardedAdBoost: (taskId: string) => boolean;
   submitTaskProof: (taskId: string, proof: string) => boolean;
   claimStreakBonus: () => boolean;
+  claimGuestTrialEarnings: () => number;
   
   // Admin actions
   approveDeposit: (txId: string) => void;
@@ -63,6 +65,7 @@ interface StateContextType {
   updateSettings: (newSettings: Partial<SystemSettings>) => void;
   approveTaskSubmission: (subId: string) => void;
   rejectTaskSubmission: (subId: string) => void;
+  recordAdImpression: (adRevenue: number) => void;
   
   // Simulator
   simulateWeek: () => void;
@@ -117,7 +120,10 @@ const DEFAULT_SETTINGS: SystemSettings = {
   dailyTaskEnabled: true,
   dailyTaskBonusRate: 0.05, // 5% of weekly payout
   dailyTaskBaseReward: 200, // ₦200 base for users with no active plan
-  dailyTaskStreakBonus: 1500 // ₦1,500 bonus for 7-day streak
+  dailyTaskStreakBonus: 1500, // ₦1,500 bonus for 7-day streak
+  freeStarterWithdrawalLimit: 3000, // ₦3,000 max free starter cashout
+  rewardedAdBonusMultiplier: 2, // 2x yield booster on video ad view
+  estimatedAdRevenueTotal: 284500 // Simulated external advertiser revenue pool
 };
 
 export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -581,14 +587,42 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
-    if (amount < settings.minWithdrawal) {
-      setErrorMsg(`Minimum withdrawal limit is ₦${settings.minWithdrawal.toLocaleString()}`);
-      return false;
-    }
+    const userActiveCapital = getUserActiveWeeklyPayout(currentUser.id);
+    const progress = getUserProgress(currentUser.id);
+    const freeLimit = settings.freeStarterWithdrawalLimit ?? 3000;
+    const previouslyWithdrawn = progress.totalFreeEarningsWithdrawn || 0;
+    const hasActivePlans = userActiveCapital > 0;
 
-    if (amount > settings.maxWithdrawal) {
-      setErrorMsg(`Maximum single withdrawal limit is ₦${settings.maxWithdrawal.toLocaleString()}`);
-      return false;
+    // If user has NO active plan, allow them to withdraw up to their ₦3,000 free trial limit
+    if (!hasActivePlans) {
+      if (previouslyWithdrawn >= freeLimit) {
+        setErrorMsg(`Starter Milestone Reached: You have successfully withdrawn your maximum free trial starter limit of ₦${freeLimit.toLocaleString()}. To unlock unlimited daily yields and larger withdrawals, please activate an investment plan.`);
+        return false;
+      }
+
+      if (previouslyWithdrawn + amount > freeLimit) {
+        const remainingFree = freeLimit - previouslyWithdrawn;
+        setErrorMsg(`Free Trial Cap: Your remaining free starter cashout allowance is ₦${remainingFree.toLocaleString()} (out of ₦${freeLimit.toLocaleString()} max). Please adjust withdrawal amount or activate an investment plan.`);
+        return false;
+      }
+
+      // Allow starter user to withdraw with a lower starter minimum (e.g., ₦1,000 or up to ₦3,000)
+      const starterMin = Math.min(1000, settings.minWithdrawal);
+      if (amount < starterMin) {
+        setErrorMsg(`Minimum starter withdrawal limit is ₦${starterMin.toLocaleString()}`);
+        return false;
+      }
+    } else {
+      // Standard paid investor thresholds
+      if (amount < settings.minWithdrawal) {
+        setErrorMsg(`Minimum withdrawal limit is ₦${settings.minWithdrawal.toLocaleString()}`);
+        return false;
+      }
+
+      if (amount > settings.maxWithdrawal) {
+        setErrorMsg(`Maximum single withdrawal limit is ₦${settings.maxWithdrawal.toLocaleString()}`);
+        return false;
+      }
     }
 
     if (currentUser.walletBalance < amount) {
@@ -611,6 +645,17 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return u;
     }));
 
+    // If starter user, update their totalFreeEarningsWithdrawn
+    if (!hasActivePlans) {
+      setUserDailyProgress(prev => ({
+        ...prev,
+        [currentUser.id]: {
+          ...progress,
+          totalFreeEarningsWithdrawn: (progress.totalFreeEarningsWithdrawn || 0) + amount
+        }
+      }));
+    }
+
     const txId = 'tx_' + Date.now();
     const newTx: Transaction = {
       id: txId,
@@ -621,7 +666,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       status: 'pending',
       accountDetails,
       createdAt: new Date().toISOString(),
-      description: `Withdrawal request of ₦${amount.toLocaleString()} to: ${accountDetails}`
+      description: hasActivePlans 
+        ? `Investment Payout Withdrawal of ₦${amount.toLocaleString()} to: ${accountDetails}`
+        : `Free Starter Task Yield Withdrawal (₦3k Trial) of ₦${amount.toLocaleString()} to: ${accountDetails}`
     };
 
     setTransactions(prev => [newTx, ...prev]);
@@ -856,8 +903,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return existing;
   };
 
-  // Instant Task Completion (Check-in, Property Inspection, Daily Poll)
-  const completeInstantTask = (taskId: string, answerIndex?: number): boolean => {
+  // Instant Task Completion (Check-in, Property Inspection, Daily Poll, Sponsored Quiz)
+  const completeInstantTask = (taskId: string, answerIndex?: number, isAdBoosted?: boolean): boolean => {
     clearMessages();
     if (!currentUser) return false;
 
@@ -880,7 +927,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
-    const rewardAmount = getUserDailyTaskReward(currentUser.id, task);
+    let rewardAmount = getUserDailyTaskReward(currentUser.id, task);
+    if (isAdBoosted) {
+      rewardAmount = rewardAmount * (settings.rewardedAdBonusMultiplier || 2);
+    }
 
     // 1. Credit User Wallet
     setUsers(prev => prev.map(u => {
@@ -902,14 +952,19 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       amount: rewardAmount,
       status: 'completed',
       createdAt: new Date().toISOString(),
-      description: `Daily Task Reward: ${task.title}`
+      description: isAdBoosted 
+        ? `Daily Task Reward (2X Ad Boosted): ${task.title}`
+        : `Daily Task Reward: ${task.title}`
     };
     setTransactions(prev => [taskTx, ...prev]);
 
     // 3. Update User Progress & Streak calculation
     const updatedCompleted = [...progress.completedTaskIds, taskId];
+    const updatedBoosted = isAdBoosted 
+      ? [...(progress.adBoostedTaskIds || []), taskId]
+      : (progress.adBoostedTaskIds || []);
     
-    // Check if user completed all 3 primary daily tasks today (inspection, poll, checkin)
+    // Check if user completed all primary daily instant tasks today
     const instantTaskIds = dailyTasks.filter(t => t.verificationType === 'instant').map(t => t.id);
     const allInstantDone = instantTaskIds.every(id => updatedCompleted.includes(id));
     
@@ -917,7 +972,6 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     let newLastCompletedDate = progress.lastCompletedDate;
 
     if (allInstantDone && progress.lastCompletedDate !== today) {
-      // Calculate consecutive days
       newStreak = (progress.streakCount || 0) + 1;
       newLastCompletedDate = today;
     }
@@ -931,6 +985,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...progress,
       currentDate: today,
       completedTaskIds: updatedCompleted,
+      adBoostedTaskIds: updatedBoosted,
       streakCount: newStreak,
       lastCompletedDate: newLastCompletedDate,
       pollAnswers: updatedPollAnswers
@@ -941,8 +996,118 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       [currentUser.id]: updatedProg
     }));
 
+    // Record simulated sponsor ad revenue for system
+    setSettings(prev => ({
+      ...prev,
+      estimatedAdRevenueTotal: (prev.estimatedAdRevenueTotal || 0) + (isAdBoosted ? 35 : 15)
+    }));
+
     setSuccessMsg(`🎉 Task Completed! Credited ₦${rewardAmount.toLocaleString()} to your available balance.`);
     return true;
+  };
+
+  // Apply rewarded ad boost retroactively or immediately
+  const applyRewardedAdBoost = (taskId: string): boolean => {
+    if (!currentUser) return false;
+    const task = dailyTasks.find(t => t.id === taskId);
+    if (!task) return false;
+
+    const progress = getUserProgress(currentUser.id);
+    if (!progress.completedTaskIds.includes(taskId)) return false;
+    if (progress.adBoostedTaskIds?.includes(taskId)) {
+      setErrorMsg('You have already applied the 2x Rewarded Ad boost to this task today.');
+      return false;
+    }
+
+    const baseReward = getUserDailyTaskReward(currentUser.id, task);
+    const bonusDifference = baseReward * ((settings.rewardedAdBonusMultiplier || 2) - 1);
+
+    // Credit user wallet with the bonus difference
+    setUsers(prev => prev.map(u => {
+      if (u.id === currentUser.id) {
+        const updated = { ...u, walletBalance: u.walletBalance + bonusDifference };
+        setCurrentUser(updated);
+        return updated;
+      }
+      return u;
+    }));
+
+    // Log transaction
+    const txId = 'tx_task_boost_' + Date.now();
+    const boostTx: Transaction = {
+      id: txId,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      type: 'task_reward',
+      amount: bonusDifference,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      description: `2X Rewarded Ad Boost: ${task.title}`
+    };
+    setTransactions(prev => [boostTx, ...prev]);
+
+    // Update progress
+    setUserDailyProgress(prev => ({
+      ...prev,
+      [currentUser.id]: {
+        ...progress,
+        adBoostedTaskIds: [...(progress.adBoostedTaskIds || []), taskId]
+      }
+    }));
+
+    // Record sponsor revenue
+    setSettings(prev => ({
+      ...prev,
+      estimatedAdRevenueTotal: (prev.estimatedAdRevenueTotal || 0) + 25
+    }));
+
+    setSuccessMsg(`⚡ 2X Ad Yield Boost Applied! Credited additional +₦${bonusDifference.toLocaleString()} to your balance.`);
+    return true;
+  };
+
+  // Claim guest trial earnings when user registers or logs in
+  const claimGuestTrialEarnings = (): number => {
+    if (!currentUser) return 0;
+    const guestStored = localStorage.getItem('pm_guest_trial_earnings');
+    if (!guestStored) return 0;
+
+    const guestAmount = Number(guestStored);
+    if (guestAmount > 0) {
+      // Credit to user balance
+      setUsers(prev => prev.map(u => {
+        if (u.id === currentUser.id) {
+          const updated = { ...u, walletBalance: u.walletBalance + guestAmount };
+          setCurrentUser(updated);
+          return updated;
+        }
+        return u;
+      }));
+
+      // Log transaction
+      const guestTx: Transaction = {
+        id: 'tx_guest_claim_' + Date.now(),
+        userId: currentUser.id,
+        userName: currentUser.name,
+        type: 'task_reward',
+        amount: guestAmount,
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+        description: `Claimed Guest Trial Task Earnings (+₦${guestAmount.toLocaleString()})`
+      };
+      setTransactions(prev => [guestTx, ...prev]);
+
+      localStorage.removeItem('pm_guest_trial_earnings');
+      setSuccessMsg(`🎁 Welcome Bonus! Successfully transferred your ₦${guestAmount.toLocaleString()} guest trial earnings to your official investment wallet.`);
+      return guestAmount;
+    }
+    return 0;
+  };
+
+  const recordAdImpression = (adRevenue: number) => {
+    setSettings(prev => ({
+      ...prev,
+      estimatedAdRevenueTotal: (prev.estimatedAdRevenueTotal || 0) + adRevenue
+    }));
   };
 
   // Task Submission (e.g., Social Share proof)
@@ -1302,8 +1467,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       purchaseInvestment,
       submitKyc,
       completeInstantTask,
+      applyRewardedAdBoost,
       submitTaskProof,
       claimStreakBonus,
+      claimGuestTrialEarnings,
       approveDeposit,
       rejectDeposit,
       approveWithdrawal,
@@ -1312,6 +1479,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       updateSettings,
       approveTaskSubmission,
       rejectTaskSubmission,
+      recordAdImpression,
       simulateWeek,
       simulateNextDay,
       resetAll,

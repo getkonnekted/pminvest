@@ -20,12 +20,23 @@ import {
   Send,
   X,
   RefreshCw,
-  Gift
+  Gift,
+  HelpCircle,
+  Video,
+  Zap,
+  Lock,
+  Wallet,
+  Coins
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
 import { DailyTask } from '../types';
+import { SponsoredQuizModal } from './SponsoredQuizModal';
+import { RewardedAdModal } from './RewardedAdModal';
 
-export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ onNavigateToInvest }) => {
+export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRegisterModal?: () => void }> = ({ 
+  onNavigateToInvest,
+  onOpenRegisterModal
+}) => {
   const { 
     currentUser, 
     dailyTasks, 
@@ -37,17 +48,26 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
     getUserDailyTaskReward, 
     getUserProgress,
     completeInstantTask,
+    applyRewardedAdBoost,
     submitTaskProof,
     claimStreakBonus,
+    claimGuestTrialEarnings,
     simulateNextDay
   } = useAppState();
 
   const [selectedTask, setSelectedTask] = useState<DailyTask | null>(null);
-  const [modalType, setModalType] = useState<'inspect' | 'poll' | 'checkin' | 'share' | 'streak_celebration' | null>(null);
+  const [modalType, setModalType] = useState<'inspect' | 'poll' | 'checkin' | 'share' | 'quiz' | null>(null);
   const [selectedPollOption, setSelectedPollOption] = useState<number | null>(null);
   const [shareProofText, setShareProofText] = useState<string>('');
   const [copiedShare, setCopiedShare] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number }>({ hours: 0, minutes: 0, seconds: 0 });
+
+  // Rewarded Video Ad Modal State
+  const [isAdModalOpen, setIsAdModalOpen] = useState<boolean>(false);
+  const [adTargetTaskId, setAdTargetTaskId] = useState<string | null>(null);
+  const [guestTrialEarnings, setGuestTrialEarnings] = useState<number>(() => {
+    return Number(localStorage.getItem('pm_guest_trial_earnings') || 0);
+  });
 
   // 24h Countdown timer to midnight
   useEffect(() => {
@@ -69,11 +89,30 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
     return () => clearInterval(interval);
   }, []);
 
-  if (!currentUser) return null;
+  // When user is logged in, check if they have uncredited guest trial earnings
+  useEffect(() => {
+    if (currentUser) {
+      const stored = localStorage.getItem('pm_guest_trial_earnings');
+      if (stored && Number(stored) > 0) {
+        claimGuestTrialEarnings();
+        setGuestTrialEarnings(0);
+      }
+    }
+  }, [currentUser]);
 
-  const progress = getUserProgress(currentUser.id);
-  const activeWeeklyPayout = getUserActiveWeeklyPayout(currentUser.id);
-  const dailyPool = getUserDailyPool(currentUser.id);
+  const progress = currentUser ? getUserProgress(currentUser.id) : {
+    userId: 'guest',
+    currentDate: virtualDate,
+    completedTaskIds: [],
+    pendingSubmissionTaskIds: [],
+    adBoostedTaskIds: [],
+    streakCount: 1,
+    pollAnswers: {},
+    totalFreeEarningsWithdrawn: 0
+  };
+
+  const activeWeeklyPayout = currentUser ? getUserActiveWeeklyPayout(currentUser.id) : 0;
+  const dailyPool = currentUser ? getUserDailyPool(currentUser.id) : (settings.dailyTaskBaseReward || 200) * 4;
   const bonusRatePercentage = Math.round((settings.dailyTaskBonusRate ?? 0.05) * 100);
 
   const completedCount = progress.completedTaskIds.length;
@@ -81,9 +120,15 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
   const instantTasks = dailyTasks.filter(t => t.verificationType === 'instant');
   const instantCompleted = instantTasks.filter(t => progress.completedTaskIds.includes(t.id)).length;
 
+  const freeStarterCap = settings.freeStarterWithdrawalLimit || 3000;
+  const freeWithdrawn = progress.totalFreeEarningsWithdrawn || 0;
+  const remainingFreeAllowance = Math.max(0, freeStarterCap - freeWithdrawn);
+  const isStarterUser = activeWeeklyPayout === 0;
+
   const handleOpenTask = (task: DailyTask) => {
     setSelectedTask(task);
-    if (task.category === 'inspection') setModalType('inspect');
+    if (task.category === 'quiz') setModalType('quiz');
+    else if (task.category === 'inspection') setModalType('inspect');
     else if (task.category === 'pulse') {
       const prevAnswer = progress.pollAnswers ? progress.pollAnswers[task.id] : null;
       setSelectedPollOption(prevAnswer !== undefined ? prevAnswer : null);
@@ -94,13 +139,47 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
   };
 
   const handleInstantClaim = (taskId: string, answerIndex?: number) => {
+    if (!currentUser) {
+      // Guest Trial Mode: Accumulate in guest trial storage
+      const task = dailyTasks.find(t => t.id === taskId);
+      const reward = task?.fixedReward || 200;
+      const newGuestTotal = guestTrialEarnings + reward;
+      localStorage.setItem('pm_guest_trial_earnings', String(newGuestTotal));
+      setGuestTrialEarnings(newGuestTotal);
+      setModalType(null);
+      setSelectedTask(null);
+      return;
+    }
+
     completeInstantTask(taskId, answerIndex);
     setModalType(null);
     setSelectedTask(null);
   };
 
+  const handleTriggerAdBoost = (taskId: string) => {
+    setAdTargetTaskId(taskId);
+    setIsAdModalOpen(true);
+  };
+
+  const handleAdRewardGranted = () => {
+    if (adTargetTaskId) {
+      if (currentUser) {
+        applyRewardedAdBoost(adTargetTaskId);
+      } else {
+        const bonus = 200; // 2x guest bonus
+        const newTotal = guestTrialEarnings + bonus;
+        localStorage.setItem('pm_guest_trial_earnings', String(newTotal));
+        setGuestTrialEarnings(newTotal);
+      }
+    }
+  };
+
   const handleProofSubmit = (taskId: string) => {
     if (!shareProofText.trim()) return;
+    if (!currentUser) {
+      if (onOpenRegisterModal) onOpenRegisterModal();
+      return;
+    }
     submitTaskProof(taskId, shareProofText);
     setShareProofText('');
     setModalType(null);
@@ -109,6 +188,8 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
 
   const getTaskIcon = (category: DailyTask['category']) => {
     switch (category) {
+      case 'quiz':
+        return <HelpCircle className="w-5 h-5 text-amber-500" />;
       case 'inspection':
         return <Building2 className="w-5 h-5 text-amber-500" />;
       case 'pulse':
@@ -122,8 +203,21 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
     }
   };
 
-  const getCategoryBadge = (category: DailyTask['category'], share: number) => {
+  const getCategoryBadge = (category: DailyTask['category'], share: number, sponsorBadge?: string) => {
+    if (sponsorBadge) {
+      return (
+        <span className="bg-amber-50 text-amber-900 border border-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+          <Zap className="w-3 h-3 text-amber-600 fill-amber-500" /> {sponsorBadge}
+        </span>
+      );
+    }
     switch (category) {
+      case 'quiz':
+        return (
+          <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            Sponsored Quiz
+          </span>
+        );
       case 'inspection':
         return (
           <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -155,9 +249,80 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
 
   return (
     <div className="space-y-6" id="daily_tasks_hub_container">
+      {/* GUEST UNREGISTERED EARNINGS BANNER */}
+      {!currentUser && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-slate-950 p-5 rounded-2xl shadow-lg border border-amber-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-slate-950 text-amber-400 flex items-center justify-center font-black text-xl shrink-0 shadow-md">
+              ₦
+            </div>
+            <div>
+              <span className="text-[10px] uppercase tracking-wider font-extrabold bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full">
+                GUEST TRIAL REWARD HUB
+              </span>
+              <h3 className="text-base sm:text-lg font-black text-slate-950 leading-snug">
+                Earn Up to ₦{freeStarterCap.toLocaleString()} Free Without Any Investment!
+              </h3>
+              <p className="text-xs text-slate-900/90 max-w-lg">
+                Complete daily site tasks & trivia. Your accumulated trial balance (<strong>₦{guestTrialEarnings.toLocaleString()}</strong>) unlocks immediately upon creating a free account.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onOpenRegisterModal}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-950 hover:bg-slate-900 text-amber-400 font-extrabold text-xs tracking-wider uppercase shadow-xl transition-all hover:scale-105 shrink-0 flex items-center justify-center gap-2 cursor-pointer"
+            id="btn_guest_claim_account"
+          >
+            <Coins className="w-4 h-4 text-amber-400" />
+            <span>Create Free Account to Claim ₦{guestTrialEarnings.toLocaleString()}</span>
+          </button>
+        </motion.div>
+      )}
+
+      {/* ₦3,000 STARTER TRIAL MILESTONE BANNER (FOR LOGGED IN STARTERS) */}
+      {currentUser && isStarterUser && (
+        <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-amber-500/40 rounded-2xl p-5 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shrink-0">
+              <Coins className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded uppercase">
+                  FREE STARTER TRIAL
+                </span>
+                <span className="text-xs text-slate-300 font-mono">
+                  Withdrawn: ₦{freeWithdrawn.toLocaleString()} / ₦{freeStarterCap.toLocaleString()} Max
+                </span>
+              </div>
+              <h3 className="text-sm sm:text-base font-extrabold text-white mt-0.5">
+                Free Starter Cashout: ₦{remainingFreeAllowance.toLocaleString()} Remaining
+              </h3>
+              <p className="text-xs text-slate-400 max-w-lg">
+                You can withdraw up to ₦{freeStarterCap.toLocaleString()} from free daily tasks without depositing. Ready for uncapped yields?
+              </p>
+            </div>
+          </div>
+
+          {onNavigateToInvest && (
+            <button
+              onClick={onNavigateToInvest}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 shrink-0 cursor-pointer transition-all hover:scale-105"
+            >
+              <TrendingUp className="w-4 h-4 text-slate-950" />
+              <span>UPGRADE PLAN FOR UNLIMITED YIELDS</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Top Banner: Tier & Reward Potential */}
       <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-slate-900 border border-slate-700 text-white rounded-2xl p-6 shadow-md relative overflow-hidden">
-        {/* Background ambient pattern */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -172,15 +337,19 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
                 Reset: {String(timeLeft.hours).padStart(2, '0')}h {String(timeLeft.minutes).padStart(2, '0')}m {String(timeLeft.seconds).padStart(2, '0')}s
               </span>
+
+              <span className="inline-flex items-center gap-1 bg-purple-500/20 border border-purple-500/40 text-purple-300 px-3 py-1 rounded-full text-xs font-bold font-mono">
+                <Video className="w-3.5 h-3.5 text-purple-400" />
+                2X Rewarded Ad Boosts Available
+              </span>
             </div>
 
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              Investor Daily Yield Quests
+              Daily Real Estate Yield & Trivia Hub
             </h2>
 
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-              Complete quick property audits and attendance check-ins to claim your{' '}
-              <strong className="text-amber-400 font-bold">{bonusRatePercentage}% daily task yield</strong> based on your active weekly investment payout.
+              Complete daily site audits, market polls, and sponsored corporate trivia. Ad views and corporate sponsors fund 100% of guest & starter yields with zero deduction from fund reserves.
             </p>
           </div>
 
@@ -202,14 +371,14 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Daily Multiplier:</span>
-                <span className="text-amber-400 font-bold">{bonusRatePercentage}% / day</span>
+                <span className="text-amber-400 font-bold">{isStarterUser ? 'Base Starter Tier' : `${bonusRatePercentage}% / day`}</span>
               </div>
             </div>
 
-            {activeWeeklyPayout === 0 && onNavigateToInvest && (
+            {activeWeeklyPayout === 0 && onNavigateToInvest && currentUser && (
               <button
                 onClick={onNavigateToInvest}
-                className="mt-3 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                className="mt-3 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                 id="btn_boost_daily_pool"
               >
                 <TrendingUp className="w-3.5 h-3.5" /> Boost Daily Task Pool
@@ -262,11 +431,11 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
             })}
           </div>
 
-          {progress.streakCount >= 7 && progress.streakBonusClaimedDate !== virtualDate && (
+          {currentUser && progress.streakCount >= 7 && progress.streakBonusClaimedDate !== virtualDate && (
             <div className="mt-4 flex justify-center">
               <button
                 onClick={claimStreakBonus}
-                className="bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 font-extrabold px-6 py-2.5 rounded-xl text-sm shadow-lg shadow-amber-500/25 flex items-center gap-2 animate-bounce"
+                className="bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 font-extrabold px-6 py-2.5 rounded-xl text-sm shadow-lg shadow-amber-500/25 flex items-center gap-2 animate-bounce cursor-pointer"
                 id="btn_claim_streak_jackpot"
               >
                 <Flame className="w-4 h-4 fill-slate-950" /> Claim ₦{(settings.dailyTaskStreakBonus || 1500).toLocaleString()} Streak Jackpot!
@@ -279,7 +448,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
       {/* Task List Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
         <div>
-          <h3 className="text-base font-bold text-slate-900">Today's Available Tasks</h3>
+          <h3 className="text-base font-bold text-slate-900">Today's Available Tasks & Quizzes</h3>
           <p className="text-slate-500 text-xs mt-0.5">
             {completedCount} of {totalTasks} tasks completed today ({instantCompleted}/{instantTasks.length} required for streak).
           </p>
@@ -289,7 +458,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
           {/* Fast Day Sim for Developer / Preview testing */}
           <button
             onClick={simulateNextDay}
-            className="text-[11px] text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1 font-mono transition-colors"
+            className="text-[11px] text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1 font-mono transition-colors cursor-pointer"
             title="Advance virtual date by 24h to test midnight task reset"
             id="btn_sim_next_day_user"
           >
@@ -303,7 +472,9 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
         {dailyTasks.map((task) => {
           const isCompleted = progress.completedTaskIds.includes(task.id);
           const isPending = progress.pendingSubmissionTaskIds.includes(task.id);
-          const rewardAmount = getUserDailyTaskReward(currentUser.id, task);
+          const isAdBoosted = progress.adBoostedTaskIds?.includes(task.id);
+          const baseReward = currentUser ? getUserDailyTaskReward(currentUser.id, task) : (task.fixedReward || 200);
+          const displayReward = isAdBoosted ? baseReward * 2 : baseReward;
 
           return (
             <div 
@@ -324,14 +495,14 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
                       {getTaskIcon(task.category)}
                     </div>
                     <div>
-                      {getCategoryBadge(task.category, task.rewardShare)}
+                      {getCategoryBadge(task.category, task.rewardShare, task.sponsorBadge)}
                       <h4 className="font-bold text-slate-900 text-sm mt-1">{task.title}</h4>
                     </div>
                   </div>
 
                   <div className="text-right shrink-0">
                     <span className="text-xs font-mono font-bold text-emerald-600 block">
-                      +₦{rewardAmount.toLocaleString()}
+                      +₦{displayReward.toLocaleString()}
                     </span>
                     <span className="text-[9px] text-slate-400 font-mono uppercase">
                       {task.verificationType === 'instant' ? 'Instant Credit' : 'Admin Audited'}
@@ -345,11 +516,11 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
               </div>
 
               {/* Action Button & Status */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+              <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
                 {isCompleted ? (
                   <div className="flex items-center gap-1.5 text-emerald-700 font-bold text-xs">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>Completed & Credited (+₦{rewardAmount.toLocaleString()})</span>
+                    <span>Claimed (+₦{displayReward.toLocaleString()})</span>
                   </div>
                 ) : isPending ? (
                   <div className="flex items-center gap-1.5 text-amber-700 font-semibold text-xs">
@@ -362,10 +533,28 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
                   </div>
                 )}
 
+                {/* Boost Button for completed tasks not yet boosted */}
+                {isCompleted && !isAdBoosted && (
+                  <button
+                    onClick={() => handleTriggerAdBoost(task.id)}
+                    className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                    title="Watch 12s ad to double your reward"
+                  >
+                    <Video className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Double (+₦{baseReward.toLocaleString()})</span>
+                  </button>
+                )}
+
+                {isCompleted && isAdBoosted && (
+                  <span className="text-[10px] font-mono font-bold text-purple-700 bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Zap className="w-3 h-3 text-purple-600 fill-purple-600" /> 2X Ad Boosted
+                  </span>
+                )}
+
                 {!isCompleted && !isPending && (
                   <button
                     onClick={() => handleOpenTask(task)}
-                    className="bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 shadow-xs active:scale-95"
+                    className="bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 shadow-xs active:scale-95 cursor-pointer"
                     id={`btn_open_task_${task.id}`}
                   >
                     <span>{task.actionLabel}</span>
@@ -378,9 +567,41 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
         })}
       </div>
 
+      {/* SPONSORED QUIZ MODAL */}
+      {selectedTask && selectedTask.category === 'quiz' && (
+        <SponsoredQuizModal
+          isOpen={modalType === 'quiz'}
+          onClose={() => { setModalType(null); setSelectedTask(null); }}
+          task={selectedTask}
+          rewardAmount={currentUser ? getUserDailyTaskReward(currentUser.id, selectedTask) : (selectedTask.fixedReward || 200)}
+          onCompleteQuiz={(score, passed) => {
+            if (currentUser) {
+              completeInstantTask(selectedTask.id);
+            } else {
+              const base = selectedTask.fixedReward || 200;
+              const newTotal = guestTrialEarnings + base;
+              localStorage.setItem('pm_guest_trial_earnings', String(newTotal));
+              setGuestTrialEarnings(newTotal);
+            }
+          }}
+          onWatchRewardedAd={() => {
+            handleTriggerAdBoost(selectedTask.id);
+          }}
+          hasWatchedAd={progress.adBoostedTaskIds?.includes(selectedTask.id)}
+        />
+      )}
+
+      {/* REWARDED AD VIDEO MODAL */}
+      <RewardedAdModal
+        isOpen={isAdModalOpen}
+        onClose={() => setIsAdModalOpen(false)}
+        onRewardGranted={handleAdRewardGranted}
+        bonusAmount={200}
+      />
+
       {/* MODAL DIALOGS FOR TASKS */}
       <AnimatePresence>
-        {modalType && selectedTask && (
+        {modalType && selectedTask && selectedTask.category !== 'quiz' && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-fadeIn">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -392,7 +613,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
               {/* Close Button */}
               <button
                 onClick={() => { setModalType(null); setSelectedTask(null); }}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors"
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors cursor-pointer"
                 id="btn_close_task_modal"
               >
                 <X className="w-5 h-5" />
@@ -443,13 +664,13 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
                     <div>
                       <span className="text-[10px] text-slate-400 font-mono block">Inspection Yield</span>
                       <span className="text-base font-bold font-mono text-slate-900">
-                        +₦{getUserDailyTaskReward(currentUser.id, selectedTask).toLocaleString()}
+                        +₦{(currentUser ? getUserDailyTaskReward(currentUser.id, selectedTask) : (selectedTask.fixedReward || 200)).toLocaleString()}
                       </span>
                     </div>
 
                     <button
                       onClick={() => handleInstantClaim(selectedTask.id)}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
                       id="btn_confirm_inspection_claim"
                     >
                       <CheckCircle2 className="w-4 h-4" /> Complete & Claim Yield
@@ -482,7 +703,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
                           key={idx}
                           type="button"
                           onClick={() => setSelectedPollOption(idx)}
-                          className={`w-full text-left p-3 rounded-xl border text-xs transition-all flex items-center justify-between ${
+                          className={`w-full text-left p-3 rounded-xl border text-xs transition-all flex items-center justify-between cursor-pointer ${
                             isSelected
                               ? 'bg-blue-50 border-blue-500 text-blue-900 font-bold ring-1 ring-blue-500/30'
                               : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -503,14 +724,14 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
                     <div>
                       <span className="text-[10px] text-slate-400 font-mono block">Survey Reward</span>
                       <span className="text-base font-bold font-mono text-slate-900">
-                        +₦{getUserDailyTaskReward(currentUser.id, selectedTask).toLocaleString()}
+                        +₦{(currentUser ? getUserDailyTaskReward(currentUser.id, selectedTask) : (selectedTask.fixedReward || 200)).toLocaleString()}
                       </span>
                     </div>
 
                     <button
                       onClick={() => handleInstantClaim(selectedTask.id, selectedPollOption ?? 0)}
                       disabled={selectedPollOption === null}
-                      className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
+                      className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
                       id="btn_submit_poll_vote"
                     >
                       <CheckCircle2 className="w-4 h-4" /> Submit Vote & Claim
@@ -531,7 +752,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
                   </h3>
 
                   <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-                    Verify your active investor status to maintain your weekly consistency streak and claim today's attendance allocation.
+                    Verify your active status to maintain your consistency streak and claim today's attendance allocation.
                   </p>
 
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-mono space-y-1">
@@ -541,16 +762,16 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-500">Attendance Reward:</span>
-                      <span className="font-bold text-emerald-600">+₦{getUserDailyTaskReward(currentUser.id, selectedTask).toLocaleString()}</span>
+                      <span className="font-bold text-emerald-600">+₦{(currentUser ? getUserDailyTaskReward(currentUser.id, selectedTask) : (selectedTask.fixedReward || 200)).toLocaleString()}</span>
                     </div>
                   </div>
 
                   <button
                     onClick={() => handleInstantClaim(selectedTask.id)}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                     id="btn_confirm_checkin_action"
                   >
-                    <CheckCircle2 className="w-4 h-4" /> Confirm Check-In & Claim ₦{getUserDailyTaskReward(currentUser.id, selectedTask).toLocaleString()}
+                    <CheckCircle2 className="w-4 h-4" /> Confirm Check-In & Claim ₦{(currentUser ? getUserDailyTaskReward(currentUser.id, selectedTask) : (selectedTask.fixedReward || 200)).toLocaleString()}
                   </button>
                 </div>
               )}
@@ -568,22 +789,23 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
                   </h3>
 
                   <p className="text-xs text-slate-600">
-                    Copy the invitation message with your referral code ({currentUser.referralCode}) and share with your network:
+                    Copy the invitation message with your referral code ({currentUser?.referralCode || 'PM_STARTER'}) and share with your network:
                   </p>
 
                   {/* Share Template Box */}
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 font-mono relative">
                     <p>
-                      {selectedTask.detailsContent?.shareTemplate} <strong>{currentUser.referralCode}</strong>
+                      {selectedTask.detailsContent?.shareTemplate} <strong>{currentUser?.referralCode || 'PM_STARTER'}</strong>
                     </p>
                     <button
                       onClick={() => {
-                        const text = `${selectedTask.detailsContent?.shareTemplate}${currentUser.referralCode}`;
+                        const code = currentUser?.referralCode || 'PM_STARTER';
+                        const text = `${selectedTask.detailsContent?.shareTemplate}${code}`;
                         navigator.clipboard.writeText(text);
                         setCopiedShare(true);
                         setTimeout(() => setCopiedShare(false), 2000);
                       }}
-                      className="mt-2 text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-2.5 py-1 rounded flex items-center gap-1 font-sans transition-colors"
+                      className="mt-2 text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-2.5 py-1 rounded flex items-center gap-1 font-sans transition-colors cursor-pointer"
                       id="btn_copy_share_template"
                     >
                       <Copy className="w-3 h-3" /> {copiedShare ? 'Copied to Clipboard!' : 'Copy Share Template'}
@@ -615,7 +837,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void }> = ({ o
                     <button
                       onClick={() => handleProofSubmit(selectedTask.id)}
                       disabled={!shareProofText.trim()}
-                      className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
+                      className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
                       id="btn_submit_share_proof"
                     >
                       <Send className="w-3.5 h-3.5" /> Submit Proof

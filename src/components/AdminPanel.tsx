@@ -599,6 +599,51 @@ export const AdminPanel: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {/* Free Trial Limit & Monetization Engine Controls */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+                <div className="p-3.5 bg-amber-50/60 border border-amber-200 rounded-xl space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-amber-950 block">Free Starter Cashout Limit</span>
+                    <span className="text-[9px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-mono font-bold">₦3,000 Cap</span>
+                  </div>
+                  <input
+                    type="number"
+                    value={settings.freeStarterWithdrawalLimit ?? 3000}
+                    onChange={(e) => updateSettings({ freeStarterWithdrawalLimit: Number(e.target.value) })}
+                    className="w-full bg-white border border-amber-300 rounded-lg py-1.5 px-2.5 text-xs text-slate-900 font-mono font-bold"
+                  />
+                  <p className="text-[10px] text-amber-800">Max trial withdrawal before requiring investment upgrade.</p>
+                </div>
+
+                <div className="p-3.5 bg-purple-50/60 border border-purple-200 rounded-xl space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-purple-950 block">Rewarded Ad Boost Multiplier</span>
+                    <span className="text-[9px] bg-purple-200 text-purple-900 px-1.5 py-0.5 rounded font-mono font-bold">2X Multiplier</span>
+                  </div>
+                  <select
+                    value={settings.rewardedAdBonusMultiplier ?? 2}
+                    onChange={(e) => updateSettings({ rewardedAdBonusMultiplier: Number(e.target.value) })}
+                    className="w-full bg-white border border-purple-300 rounded-lg py-1.5 px-2.5 text-xs text-slate-900 font-mono font-bold"
+                  >
+                    <option value={1.5}>1.5X Yield</option>
+                    <option value={2}>2.0X Yield (Standard 100% Boost)</option>
+                    <option value={2.5}>2.5X Yield</option>
+                  </select>
+                  <p className="text-[10px] text-purple-800">Bonus paid on 12-second sponsor video completion.</p>
+                </div>
+
+                <div className="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-emerald-950 block">Ad Revenue Pool</span>
+                    <span className="text-[9px] bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded font-mono font-bold">Self-Funding</span>
+                  </div>
+                  <div className="text-base font-extrabold font-mono text-emerald-700">
+                    ₦{(settings.estimatedAdRevenueTotal || 284500).toLocaleString()}
+                  </div>
+                  <p className="text-[10px] text-emerald-800">100% sponsor-funded ad income covering free task yields.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -59,11 +59,13 @@ export interface DailyTask {
   id: string;
   title: string;
   subtitle: string;
-  category: 'inspection' | 'pulse' | 'attendance' | 'social_share' | 'milestone';
+  category: 'inspection' | 'pulse' | 'attendance' | 'social_share' | 'quiz' | 'milestone';
   rewardShare: number; // Share of daily reward pool (e.g., 0.4 for 40%, 0.3 for 30%)
   fixedReward?: number; // Optional fixed fallback or milestone bonus
   verificationType: 'instant' | 'submission';
   actionLabel: string;
+  sponsorName?: string;
+  sponsorBadge?: string;
   detailsContent?: {
     headline?: string;
     propertyName?: string;
@@ -74,6 +76,13 @@ export interface DailyTask {
     pollQuestion?: string;
     pollOptions?: { text: string; votes: number }[];
     shareTemplate?: string;
+    quizQuestions?: {
+      id: string;
+      question: string;
+      options: string[];
+      correctAnswerIndex: number;
+      explanation: string;
+    }[];
   };
 }
 
@@ -100,6 +109,9 @@ export interface UserDailyProgress {
   lastCompletedDate?: string;
   streakBonusClaimedDate?: string;
   pollAnswers?: Record<string, number>;
+  quizScores?: Record<string, number>;
+  adBoostedTaskIds?: string[];
+  totalFreeEarningsWithdrawn?: number; // Tracks cumulative free starter earnings withdrawn (max ₦3,000)
 }
 
 export interface SystemSettings {
@@ -115,6 +127,9 @@ export interface SystemSettings {
   dailyTaskBonusRate: number; // e.g. 0.05 for 5% of weekly payout
   dailyTaskBaseReward: number; // e.g. 200 for users without active plans
   dailyTaskStreakBonus: number; // e.g. 1500 for 7-day streak
+  freeStarterWithdrawalLimit: number; // e.g. 3000 naira max for users without active plans
+  rewardedAdBonusMultiplier: number; // e.g. 2 for 2x yield
+  estimatedAdRevenueTotal: number; // in NGN or USD
 }
 
 export const INVESTMENT_PLANS: InvestmentPlan[] = [
