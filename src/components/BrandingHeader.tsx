@@ -205,6 +205,14 @@ create policy "Allow all public upserts" on system_state for all using (true);
             <div className="flex items-center gap-2">
               <span className="text-xl font-extrabold tracking-tight uppercase font-sans text-white">PM <span className="text-amber-400">Invest</span></span>
               <span className="text-[10px] uppercase tracking-widest text-slate-400 font-mono font-bold leading-none">By Treasure Homes</span>
+              <a
+                href="#aujoten"
+                className="hidden sm:inline-flex items-center gap-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono transition-all"
+                title="Open Aujoten Corporate Portal"
+              >
+                <span>Aujoten Portal</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
               {currentUser?.role === 'admin' && renderSupabaseBadge()}
             </div>
             <p className="text-xs text-slate-400 font-light mt-0.5">Secure wealth multiplication & estate-backed liquidity</p>

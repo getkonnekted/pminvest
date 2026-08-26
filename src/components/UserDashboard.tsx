@@ -38,6 +38,7 @@ export const UserDashboard: React.FC = () => {
     dailyTasks,
     getUserProgress,
     getUserDailyPool,
+    getUserActiveWeeklyPayout,
     submitDeposit, 
     submitWithdrawal, 
     purchaseInvestment, 
