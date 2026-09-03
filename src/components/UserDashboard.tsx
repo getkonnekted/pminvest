@@ -91,7 +91,7 @@ export const UserDashboard: React.FC = () => {
     },
     {
       question: "Is my capital guaranteed?",
-      answer: `Yes. PM Invest manages a physical-asset backed reserve of over ₦${settings.liquidityReserve.toLocaleString()} Naira (with automated daily accretion of +₦530,234 Naira) backed by real estate holdings under Treasure Homes supervision. This ensures the protection and stability of all participant investments.`
+      answer: `Yes. PM Invest manages a physical-asset backed reserve of over ₦${settings.liquidityReserve.toLocaleString()} backed by real estate holdings under Treasure Homes supervision. This ensures the protection and stability of all participant investments.`
     }
   ];
 

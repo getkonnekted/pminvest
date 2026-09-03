@@ -496,8 +496,8 @@ function MainAppContent() {
               <p className="text-slate-300">Operating transparent escrow reserves under supervision of the Treasure Homes asset board.</p>
             </div>
             <div className="space-y-1 border-t md:border-t-0 md:border-x border-slate-800 py-4 md:py-0">
-              <span className="text-amber-400 font-bold text-sm block font-mono">₦{settings ? (settings.liquidityReserve / 1000000).toFixed(1) : '78.9'}M+ RESERVE BACKING</span>
-              <p className="text-slate-300">₦{settings ? settings.liquidityReserve.toLocaleString() : '78,917,279'} Naira in active escrow holdings (+₦530,234 Naira daily).</p>
+              <span className="text-amber-400 font-bold text-sm block font-mono">₦{settings ? Math.floor(settings.liquidityReserve / 1000000) : '78'}M+ RESERVE BACKING</span>
+              <p className="text-slate-300">Ensuring complete stability with physical properties and liquid collateral holding records.</p>
             </div>
             <div className="space-y-1">
               <span className="text-amber-400 font-bold text-sm block">KYC INTEGRITY GATE</span>

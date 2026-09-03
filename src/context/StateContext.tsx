@@ -1446,7 +1446,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const simulateNextDay = () => {
     clearMessages();
     setVirtualDayOffset(prev => prev + 1);
-    setSuccessMsg('Simulated next day! Liquidity reserve increased by +₦530,234 Naira and daily tasks board has reset.');
+    setSuccessMsg('Simulated next day! Daily tasks board has reset with fresh daily yield opportunities.');
   };
 
   const updateSettings = (newSettings: Partial<SystemSettings>) => {

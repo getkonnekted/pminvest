@@ -380,16 +380,10 @@ export const LegalDisclosures: React.FC = () => {
         <div>
           <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">RISK MANAGEMENT & SECURITY</h4>
           <p className="leading-relaxed mb-3 text-slate-300">
-            To sustain our high payouts, PM Invest manages a dedicated <strong>liquidity reserve</strong> of over <strong className="text-white font-mono">₦{settings.liquidityReserve.toLocaleString()} Naira</strong> (increasing daily by <span className="text-emerald-400 font-mono font-semibold">+₦530,234 Naira</span>). Under supervision of the Treasure Homes trust committee, withdrawals are processed under a tier-based risk alert system. Large, sensitive withdrawals may require manual clearing up to 24-48 business hours.
+            To sustain our high payouts, PM Invest manages a dedicated <strong>liquidity reserve</strong> of over ₦{settings.liquidityReserve.toLocaleString()}. Under supervision of the Treasure Homes trust committee, withdrawals are processed under a tier-based risk alert system. Large, sensitive withdrawals may require manual clearing up to 24-48 business hours.
           </p>
-          <div className="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700 text-[11px] text-slate-300 space-y-1.5">
-            <div>
-              <span className="font-semibold text-amber-400">Active Liquidity Reserve Status:</span> Backed by physical assets and real estate escrow accounts with current reserve liquidity of <strong className="text-white font-mono font-bold">₦{settings.liquidityReserve.toLocaleString()} Naira</strong>.
-            </div>
-            <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1.5 pt-1.5 border-t border-slate-700/60">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-              <span>Automated Daily Accretion: <strong>+₦530,234 Naira / day</strong></span>
-            </div>
+          <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700 text-[11px] text-slate-300">
+            <span className="font-semibold text-amber-400">Active Liquidity Reserve Status:</span> Backed by physical assets and real estate escrow accounts with current reserve liquidity of <strong className="text-white font-mono">₦{settings.liquidityReserve.toLocaleString()}</strong>.
           </div>
         </div>
 
