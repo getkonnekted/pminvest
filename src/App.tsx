@@ -29,7 +29,6 @@ import {
   EyeOff,
   CheckCircle2,
   User as UserIcon,
-  Zap,
   X,
   Globe
 } from 'lucide-react';
@@ -128,13 +127,6 @@ function MainAppContent() {
       setRegEmail('');
       setRegPassword('');
     }
-  };
-
-  const fillQuickLogin = (email: string, pass: string) => {
-    clearMessages();
-    setLoginEmail(email);
-    setLoginPassword(pass);
-    login(email, pass);
   };
 
   // Unauthenticated Landing Page
@@ -345,33 +337,6 @@ function MainAppContent() {
                   <span>Sign In</span>
                   <ArrowRight className="w-4 h-4 text-amber-400" />
                 </button>
-
-                {/* Quick Auto-Fill Demo Shortcuts */}
-                <div className="pt-3 border-t border-slate-100 space-y-2">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    <Zap className="w-3 h-3 text-amber-500" />
-                    <span>Quick Test Accounts</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => fillQuickLogin('demo_investor@pminvest.org.ng', 'investor123')}
-                      className="bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 text-left p-2 rounded-lg transition-all group cursor-pointer"
-                    >
-                      <div className="text-[11px] font-bold text-slate-800 group-hover:text-amber-700 truncate">Jude Eze (Investor)</div>
-                      <div className="text-[9px] text-slate-400 font-mono truncate">₦250k balance • 1-click</div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => fillQuickLogin(ADMIN_EMAIL, 'admin123')}
-                      className="bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-400 text-left p-2 rounded-lg transition-all group cursor-pointer"
-                    >
-                      <div className="text-[11px] font-bold text-slate-800 group-hover:text-slate-900 truncate">Treasure Admin</div>
-                      <div className="text-[9px] text-slate-400 font-mono truncate">Full control panel • 1-click</div>
-                    </button>
-                  </div>
-                </div>
 
                 <div className="text-center pt-2 text-xs text-slate-500">
                   <span>Don't have an account? </span>
