@@ -462,7 +462,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
             title="Advance virtual date by 24h to test midnight task reset"
             id="btn_sim_next_day_user"
           >
-            <RefreshCw className="w-3 h-3" /> Advance Day (Test Reset)
+            <RefreshCw className="w-3 h-3" /> Advance Day (+₦530,234 Naira Liquidity)
           </button>
         </div>
       </div>

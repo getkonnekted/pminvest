@@ -43,6 +43,8 @@ export const UserDashboard: React.FC = () => {
     submitWithdrawal, 
     purchaseInvestment, 
     submitKyc,
+    processSingleInvestmentPayout,
+    triggerPayoutToast,
     successMsg,
     errorMsg,
     clearMessages
@@ -89,7 +91,7 @@ export const UserDashboard: React.FC = () => {
     },
     {
       question: "Is my capital guaranteed?",
-      answer: "Yes. PM Invest manages a physical-asset backed reserve of over ₦78,387,045 backed by real estate holdings under Treasure Homes supervision. This ensures the protection and stability of all participant investments."
+      answer: `Yes. PM Invest manages a physical-asset backed reserve of over ₦${settings.liquidityReserve.toLocaleString()} Naira (with automated daily accretion of +₦530,234 Naira) backed by real estate holdings under Treasure Homes supervision. This ensures the protection and stability of all participant investments.`
     }
   ];
 
@@ -401,10 +403,35 @@ export const UserDashboard: React.FC = () => {
 
           {/* Active Investments section */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2 flex items-center gap-2">
-              <span className="w-2.5 h-2.5 bg-amber-500 rounded-full" />
-              My Active Investments ({activeInvestments.length})
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-amber-500 rounded-full" />
+                My Active Investments ({activeInvestments.length})
+              </h3>
+              <button
+                onClick={() => {
+                  const samplePlan = activeInvestments[0];
+                  const sampleAmount = samplePlan ? samplePlan.weeklyPayout : 16250;
+                  const sampleName = samplePlan ? samplePlan.planName : 'Plan 1 - Starter Growth';
+                  const sampleWeeksPaid = samplePlan ? (samplePlan.weeksPaid % samplePlan.totalWeeks) + 1 : 1;
+                  const sampleTotal = samplePlan ? samplePlan.totalWeeks : 4;
+                  triggerPayoutToast({
+                    planName: sampleName,
+                    amount: sampleAmount,
+                    weeksPaid: sampleWeeksPaid,
+                    totalWeeks: sampleTotal,
+                    walletBalance: (currentUser?.walletBalance || 250000) + sampleAmount,
+                    type: 'payout'
+                  });
+                }}
+                className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer shadow-2xs self-start sm:self-auto"
+                id="btn_test_payout_toast"
+                title="Preview the slide-in investment payout toast notification"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Test Payout Notification Toast</span>
+              </button>
+            </div>
 
             {activeInvestments.length === 0 ? (
               <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
@@ -467,9 +494,20 @@ export const UserDashboard: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="text-[10px] text-slate-400 font-mono mt-2 pt-2 border-t border-slate-100 flex justify-between">
-                        <span>Invested on: {new Date(inv.createdAt).toLocaleDateString()}</span>
-                        <span>Next Cycle: Auto Weekly Payout</span>
+                      <div className="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-[10px] text-slate-400 font-mono">
+                          <span>Invested: {new Date(inv.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <button
+                          onClick={() => processSingleInvestmentPayout(inv.id)}
+                          disabled={inv.weeksPaid >= inv.totalWeeks}
+                          className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                          id={`btn_credit_weekly_payout_${inv.id}`}
+                          title="Trigger and credit this plan's weekly payout directly to your wallet"
+                        >
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                          <span>Credit Due Yield (+₦{inv.weeklyPayout.toLocaleString()})</span>
+                        </button>
                       </div>
                     </div>
                   );

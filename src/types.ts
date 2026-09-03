@@ -114,8 +114,21 @@ export interface UserDailyProgress {
   totalFreeEarningsWithdrawn?: number; // Tracks cumulative free starter earnings withdrawn (max ₦3,000)
 }
 
+export interface PayoutToastData {
+  id: string;
+  planName: string;
+  amount: number;
+  weeksPaid: number;
+  totalWeeks: number;
+  walletBalance: number;
+  type: 'payout' | 'referral_bonus';
+  timestamp: string;
+  sourceUserName?: string;
+}
+
 export interface SystemSettings {
   liquidityReserve: number;
+  dailyLiquidityGrowth: number;
   riskAlertLevel: 'low' | 'medium' | 'high';
   minWithdrawal: number;
   maxWithdrawal: number;

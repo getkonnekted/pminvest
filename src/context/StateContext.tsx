@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS, DailyTask, TaskSubmission, UserDailyProgress } from '../types';
+import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS, DailyTask, TaskSubmission, UserDailyProgress, PayoutToastData } from '../types';
 import { DEFAULT_DAILY_TASKS } from '../data/dailyTasks';
+import { playPayoutChime } from '../lib/sound';
 import { 
   isSupabaseConfigured, 
   supabase, 
@@ -67,6 +68,12 @@ interface StateContextType {
   rejectTaskSubmission: (subId: string) => void;
   recordAdImpression: (adRevenue: number) => void;
   
+  // Payout Notification Toasts
+  payoutToasts: PayoutToastData[];
+  dismissPayoutToast: (id: string) => void;
+  triggerPayoutToast: (toast: Omit<PayoutToastData, 'id' | 'timestamp'>) => void;
+  processSingleInvestmentPayout: (invId: string) => boolean;
+
   // Simulator
   simulateWeek: () => void;
   simulateNextDay: () => void;
@@ -108,8 +115,22 @@ const SEED_INVESTMENTS: UserInvestment[] = [];
 
 const SEED_TRANSACTIONS: Transaction[] = [];
 
+// Base liquidity reserve backing and automated daily growth rate
+export const BASE_LIQUIDITY_RESERVE = 78387045; // Base reserve backing (Treasure Homes Backed)
+export const DAILY_LIQUIDITY_GROWTH = 530234; // Daily accretion (+₦530,234 Naira per day)
+export const LIQUIDITY_ANCHOR_DATE = '2026-09-02T00:00:00.000Z'; // Reference baseline anchor
+
+export function calculateDailyLiquidity(virtualDayOffset: number = 0): number {
+  const anchorTime = new Date(LIQUIDITY_ANCHOR_DATE).getTime();
+  const now = Date.now();
+  const calendarDays = Math.max(0, Math.floor((now - anchorTime) / (1000 * 60 * 60 * 24)));
+  const totalDays = calendarDays + virtualDayOffset;
+  return BASE_LIQUIDITY_RESERVE + (totalDays * DAILY_LIQUIDITY_GROWTH);
+}
+
 const DEFAULT_SETTINGS: SystemSettings = {
-  liquidityReserve: 78387045, // Total reserve backing (Treasure Homes Backed)
+  liquidityReserve: calculateDailyLiquidity(0), // Dynamic reserve backing (+₦530,234 daily)
+  dailyLiquidityGrowth: DAILY_LIQUIDITY_GROWTH,
   riskAlertLevel: 'low',
   minWithdrawal: 5000,
   maxWithdrawal: 1000000,
@@ -207,6 +228,33 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Payout Notification Toasts
+  const [payoutToasts, setPayoutToasts] = useState<PayoutToastData[]>([]);
+
+  // Periodic calendar tick to ensure reserve updates daily
+  const [calendarTick, setCalendarTick] = useState<number>(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCalendarTick(prev => prev + 1);
+    }, 60000); // Check every minute
+    return () => clearInterval(timer);
+  }, []);
+
+  const dismissPayoutToast = (id: string) => {
+    setPayoutToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  const triggerPayoutToast = (toastData: Omit<PayoutToastData, 'id' | 'timestamp'>) => {
+    const newToast: PayoutToastData = {
+      ...toastData,
+      id: 'toast_payout_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    };
+    setPayoutToasts(prev => [newToast, ...prev]);
+    playPayoutChime();
+  };
 
   // Supabase states
   const [supabaseStatus, setSupabaseStatus] = useState<'idle' | 'loading' | 'connected' | 'error' | 'not_configured'>('idle');
@@ -358,7 +406,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [virtualDayOffset]);
 
 
-  // Recalculate liquidity and risk alert level based on stats
+  // Recalculate liquidity and risk alert level based on stats and automated daily growth (+₦530,234 Naira/day)
   useEffect(() => {
     const totalDeposits = transactions
       .filter(t => t.type === 'deposit' && t.status === 'completed')
@@ -370,8 +418,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .filter((t) => (t.type === 'payout' || t.type === 'referral_bonus') && t.status === 'completed')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Initial base liquidity reserve (₦78,387,045) + deposits - withdrawals - payouts
-    const activeLiquidity = 78387045 + totalDeposits - totalWithdrawals - totalPayouts;
+    // Initial base liquidity reserve with daily growth (+₦530,234 Naira per day) + deposits - withdrawals - payouts
+    const dynamicBaseReserve = calculateDailyLiquidity(virtualDayOffset);
+    const activeLiquidity = dynamicBaseReserve + totalDeposits - totalWithdrawals - totalPayouts;
     
     // Risk assessment
     let risk: 'low' | 'medium' | 'high' = 'low';
@@ -385,14 +434,19 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       risk = 'medium';
     }
 
-    if (settings.liquidityReserve !== activeLiquidity || settings.riskAlertLevel !== risk) {
+    if (
+      settings.liquidityReserve !== activeLiquidity || 
+      settings.riskAlertLevel !== risk || 
+      settings.dailyLiquidityGrowth !== DAILY_LIQUIDITY_GROWTH
+    ) {
       setSettings(prev => ({
         ...prev,
         liquidityReserve: activeLiquidity,
+        dailyLiquidityGrowth: DAILY_LIQUIDITY_GROWTH,
         riskAlertLevel: risk
       }));
     }
-  }, [transactions]);
+  }, [transactions, virtualDayOffset, calendarTick]);
 
   const clearMessages = () => {
     setErrorMsg(null);
@@ -743,6 +797,91 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setInvestments(prev => [...prev, newInv]);
     setTransactions(prev => [logTx, ...prev]);
     setSuccessMsg(`Successfully invested ₦${plan.cost.toLocaleString()} in ${plan.name}! Direct weekly payouts will start.`);
+    return true;
+  };
+
+  const processSingleInvestmentPayout = (invId: string): boolean => {
+    clearMessages();
+    if (!currentUser) return false;
+
+    const inv = investments.find(i => i.id === invId && i.userId === currentUser.id);
+    if (!inv) {
+      setErrorMsg('Active investment plan not found.');
+      return false;
+    }
+
+    if (inv.status === 'completed' || inv.weeksPaid >= inv.totalWeeks) {
+      setErrorMsg('This investment plan has already completed all scheduled weekly payouts.');
+      return false;
+    }
+
+    const nextWeeksPaid = inv.weeksPaid + 1;
+    const payoutAmount = inv.weeklyPayout;
+    const isCompleted = nextWeeksPaid === inv.totalWeeks;
+    const updatedBalance = currentUser.walletBalance + payoutAmount;
+
+    // 1. Credit User
+    const updatedUser = { ...currentUser, walletBalance: updatedBalance };
+    setCurrentUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+
+    // 2. Update Investment
+    const updatedInv: UserInvestment = {
+      ...inv,
+      weeksPaid: nextWeeksPaid,
+      status: isCompleted ? 'completed' : 'active',
+      lastPayoutDate: new Date().toISOString()
+    };
+    setInvestments(prev => prev.map(i => i.id === invId ? updatedInv : i));
+
+    // 3. Create Transaction
+    const payoutTxId = 'tx_payout_' + Date.now() + '_' + inv.id;
+    const logTx: Transaction = {
+      id: payoutTxId,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      type: 'payout',
+      amount: payoutAmount,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      description: `Weekly payout: ${inv.planName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`
+    };
+    setTransactions(prev => [logTx, ...prev]);
+
+    // 4. Trigger slide-in notification toast
+    triggerPayoutToast({
+      planName: inv.planName,
+      amount: payoutAmount,
+      weeksPaid: nextWeeksPaid,
+      totalWeeks: inv.totalWeeks,
+      walletBalance: updatedBalance,
+      type: 'payout'
+    });
+
+    // 5. If investor was referred, credit sponsor 20% bonus
+    if (currentUser.referredByCode) {
+      const sponsorUser = users.find(u => u.referralCode === currentUser.referredByCode);
+      if (sponsorUser) {
+        const bonusAmount = payoutAmount * 0.2;
+        const updatedSponsorBal = sponsorUser.walletBalance + bonusAmount;
+        setUsers(prev => prev.map(u => u.id === sponsorUser.id ? { ...u, walletBalance: updatedSponsorBal } : u));
+        
+        const bonusTxId = 'tx_ref_bonus_' + Date.now() + '_' + inv.id;
+        const refTx: Transaction = {
+          id: bonusTxId,
+          userId: sponsorUser.id,
+          userName: sponsorUser.name,
+          type: 'referral_bonus',
+          amount: bonusAmount,
+          status: 'completed',
+          createdAt: new Date().toISOString(),
+          description: `20% Referral bonus from ${currentUser.name}'s ${inv.planName} weekly payout`
+        };
+        setTransactions(prev => [refTx, ...prev]);
+      }
+    }
+
+    setSuccessMsg(`₦${payoutAmount.toLocaleString()} weekly yield credited directly to your wallet!`);
     return true;
   };
 
@@ -1303,11 +1442,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSuccessMsg(`Rejected task submission for ${sub.userName}.`);
   };
 
-  // Fast testing: Simulate next day (Midnight Reset)
+  // Fast testing: Simulate next day (Midnight Reset & Liquidity Accretion)
   const simulateNextDay = () => {
     clearMessages();
     setVirtualDayOffset(prev => prev + 1);
-    setSuccessMsg('Simulated next day! Daily tasks board has reset with fresh daily yield opportunities.');
+    setSuccessMsg('Simulated next day! Liquidity reserve increased by +₦530,234 Naira and daily tasks board has reset.');
   };
 
   const updateSettings = (newSettings: Partial<SystemSettings>) => {
@@ -1323,6 +1462,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     let payoutLog: string[] = [];
     let updatedUsers = [...users];
     let newTransactions: Transaction[] = [];
+    let pendingToasts: PayoutToastData[] = [];
 
     const updatedInvestments = investments.map(inv => {
       if (inv.status === 'completed' || inv.weeksPaid >= inv.totalWeeks) {
@@ -1334,12 +1474,28 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const isCompleted = nextWeeksPaid === inv.totalWeeks;
 
       // Credit the investor
+      let newInvestorBal = 0;
       updatedUsers = updatedUsers.map(u => {
         if (u.id === inv.userId) {
-          return { ...u, walletBalance: u.walletBalance + payoutAmount };
+          newInvestorBal = u.walletBalance + payoutAmount;
+          return { ...u, walletBalance: newInvestorBal };
         }
         return u;
       });
+
+      // If this investment belongs to the currently logged in user, trigger slide-in toast
+      if (currentUser && currentUser.id === inv.userId) {
+        pendingToasts.push({
+          id: 'toast_payout_' + Date.now() + '_' + inv.id + '_' + Math.random().toString(36).substring(2, 6),
+          planName: inv.planName,
+          amount: payoutAmount,
+          weeksPaid: nextWeeksPaid,
+          totalWeeks: inv.totalWeeks,
+          walletBalance: newInvestorBal,
+          type: 'payout',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+      }
 
       // Create payout transaction
       const payoutTxId = 'tx_payout_' + Date.now() + '_' + inv.id;
@@ -1362,14 +1518,31 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const sponsorUser = updatedUsers.find(u => u.referralCode === investorUser.referredByCode);
         if (sponsorUser) {
           const bonusAmount = payoutAmount * 0.2;
+          let newSponsorBal = 0;
           
           // Credit the sponsor
           updatedUsers = updatedUsers.map(u => {
             if (u.id === sponsorUser.id) {
-              return { ...u, walletBalance: u.walletBalance + bonusAmount };
+              newSponsorBal = u.walletBalance + bonusAmount;
+              return { ...u, walletBalance: newSponsorBal };
             }
             return u;
           });
+
+          // If current logged-in user is the sponsor, trigger referral bonus slide-in toast
+          if (currentUser && currentUser.id === sponsorUser.id) {
+            pendingToasts.push({
+              id: 'toast_ref_' + Date.now() + '_' + inv.id + '_' + Math.random().toString(36).substring(2, 6),
+              planName: `20% Referral Commission (${investorUser.name})`,
+              amount: bonusAmount,
+              weeksPaid: nextWeeksPaid,
+              totalWeeks: inv.totalWeeks,
+              walletBalance: newSponsorBal,
+              type: 'referral_bonus',
+              sourceUserName: investorUser.name,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+          }
 
           // Create referral bonus transaction
           const bonusTxId = 'tx_ref_bonus_' + Date.now() + '_' + inv.id;
@@ -1405,6 +1578,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (currentUser) {
       const refreshedCur = updatedUsers.find(u => u.id === currentUser.id);
       if (refreshedCur) setCurrentUser(refreshedCur);
+    }
+
+    if (pendingToasts.length > 0) {
+      setPayoutToasts(prev => [...pendingToasts, ...prev]);
+      playPayoutChime();
     }
 
     if (payoutLog.length > 0) {
@@ -1480,6 +1658,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       approveTaskSubmission,
       rejectTaskSubmission,
       recordAdImpression,
+      payoutToasts,
+      dismissPayoutToast,
+      triggerPayoutToast,
+      processSingleInvestmentPayout,
       simulateWeek,
       simulateNextDay,
       resetAll,

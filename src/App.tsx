@@ -34,9 +34,21 @@ import {
   Globe
 } from 'lucide-react';
 import { INVESTMENT_PLANS } from './types';
+import { PayoutToastContainer } from './components/PayoutToast';
 
 function MainAppContent() {
-  const { currentUser, users, register, login, successMsg, errorMsg, clearMessages } = useAppState();
+  const { 
+    currentUser, 
+    users, 
+    settings,
+    register, 
+    login, 
+    successMsg, 
+    errorMsg, 
+    clearMessages,
+    payoutToasts,
+    dismissPayoutToast
+  } = useAppState();
   const [isRegistering, setIsRegistering] = useState(false);
   const [adminView, setAdminView] = useState<'admin' | 'user'>('admin');
   const [currentPage, setCurrentPage] = useState<'pminvest' | 'aujoten'>(() => {
@@ -129,6 +141,10 @@ function MainAppContent() {
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-between font-sans">
+        <PayoutToastContainer
+          toasts={payoutToasts}
+          onDismiss={dismissPayoutToast}
+        />
         {/* Affiliation Header bar */}
         <div className="bg-[#0f172a] px-4 py-2.5 text-center text-xs text-slate-300 border-b border-slate-800 flex items-center justify-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
@@ -480,8 +496,8 @@ function MainAppContent() {
               <p className="text-slate-300">Operating transparent escrow reserves under supervision of the Treasure Homes asset board.</p>
             </div>
             <div className="space-y-1 border-t md:border-t-0 md:border-x border-slate-800 py-4 md:py-0">
-              <span className="text-amber-400 font-bold text-sm block">₦78M+ RESERVE BACKING</span>
-              <p className="text-slate-300">Ensuring complete stability with physical properties and liquid collateral holding records.</p>
+              <span className="text-amber-400 font-bold text-sm block font-mono">₦{settings ? (settings.liquidityReserve / 1000000).toFixed(1) : '78.9'}M+ RESERVE BACKING</span>
+              <p className="text-slate-300">₦{settings ? settings.liquidityReserve.toLocaleString() : '78,917,279'} Naira in active escrow holdings (+₦530,234 Naira daily).</p>
             </div>
             <div className="space-y-1">
               <span className="text-amber-400 font-bold text-sm block">KYC INTEGRITY GATE</span>
@@ -498,6 +514,19 @@ function MainAppContent() {
   // Authenticated workspace
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-between font-sans pb-10" id="app_workspace_root">
+      <PayoutToastContainer
+        toasts={payoutToasts}
+        onDismiss={dismissPayoutToast}
+        onNavigateToWallet={() => {
+          if (currentUser?.role === 'admin') {
+            setAdminView('user');
+          }
+          const walletEl = document.getElementById('user_dashboard_container');
+          if (walletEl) {
+            walletEl.scrollIntoView({ behavior: 'smooth' });
+          }
+        }}
+      />
       <div>
         <BrandingHeader />
         
