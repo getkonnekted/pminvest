@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   TrendingUp, 
@@ -22,11 +22,15 @@ import {
   Sparkles,
   Flame,
   Award,
-  ExternalLink
+  ExternalLink,
+  Zap,
+  Menu,
+  X
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
 import { INVESTMENT_PLANS, InvestmentPlan } from '../types';
 import { DailyTasksHub } from './DailyTasksHub';
+import { NIGERIAN_BANKS, resolveNigerianAccount } from '../lib/paystack';
 
 export const UserDashboard: React.FC = () => {
   const { 
@@ -51,8 +55,69 @@ export const UserDashboard: React.FC = () => {
   } = useAppState();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'tasks' | 'finance' | 'referrals' | 'kyc'>('overview');
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+  // Dashboard Menu Items for Hamburger & Tab Navigation
+  const menuItems: {
+    id: 'overview' | 'invest' | 'tasks' | 'finance' | 'referrals' | 'kyc';
+    label: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: React.ReactNode;
+  }[] = [
+    {
+      id: 'overview',
+      label: 'Overview',
+      description: 'Portfolio overview, metrics & active plans',
+      icon: TrendingUp,
+    },
+    {
+      id: 'invest',
+      label: 'Buy Plans',
+      description: 'Explore asset-backed real estate investment tiers',
+      icon: Sparkles,
+      badge: <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Explore</span>
+    },
+    {
+      id: 'tasks',
+      label: 'Daily Tasks',
+      description: 'Complete daily tasks & earn shared bonus pool',
+      icon: Flame,
+      badge: currentUser && (
+        <span className="bg-amber-500/20 text-amber-900 border border-amber-400/40 text-[10px] font-bold px-1.5 py-0.2 rounded-full font-mono">
+          🔥 {getUserProgress(currentUser.id).streakCount}d
+        </span>
+      )
+    },
+    {
+      id: 'finance',
+      label: 'Deposit & Withdraw',
+      description: 'Manual bank deposit proof & payout withdrawals',
+      icon: Wallet,
+    },
+    {
+      id: 'referrals',
+      label: 'Referral 7.5%',
+      description: 'Earn 7.5% weekly commission from downline investors',
+      icon: Users,
+      badge: <span className="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-2 py-0.5 rounded-full">7.5%</span>
+    },
+    {
+      id: 'kyc',
+      label: 'KYC Verification',
+      description: 'Identity verification for security & priority clearance',
+      icon: FileText,
+      badge: currentUser?.kycStatus === 'verified' ? (
+        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">Verified</span>
+      ) : currentUser?.kycStatus === 'pending' ? (
+        <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">Pending</span>
+      ) : (
+        <span className="bg-slate-100 text-slate-600 text-[10px] font-medium px-1.5 py-0.5 rounded-full">Optional</span>
+      )
+    }
+  ];
   
-  // Deposit state
+  // Manual Escrow Deposit state
   const [depAmount, setDepAmount] = useState<string>('');
   const [depMethod, setDepMethod] = useState<string>('Bank Transfer (Treasure Homes Escrow)');
   const [depDetails, setDepDetails] = useState<string>('');
@@ -65,6 +130,26 @@ export const UserDashboard: React.FC = () => {
   // Withdrawal state
   const [withAmount, setWithAmount] = useState<string>('');
   const [withDetails, setWithDetails] = useState<string>('');
+  const [selectedBankCode, setSelectedBankCode] = useState<string>('999992'); // Default OPay
+  const [bankAccountNumber, setBankAccountNumber] = useState<string>('');
+  const [accountResolution, setAccountResolution] = useState<{ verified: boolean; name: string } | null>(null);
+
+  // Auto-resolve Nigerian bank account whenever account number or bank changes
+  useEffect(() => {
+    const cleaned = bankAccountNumber.replace(/\D/g, '');
+    if (cleaned.length === 10) {
+      const res = resolveNigerianAccount(cleaned, selectedBankCode, currentUser?.name);
+      if (res.success && res.accountName) {
+        setAccountResolution({ verified: true, name: res.accountName });
+        const selectedBank = NIGERIAN_BANKS.find(b => b.code === selectedBankCode);
+        setWithDetails(`${selectedBank?.name || 'Bank'} - ${cleaned} - ${res.accountName}`);
+      } else {
+        setAccountResolution(null);
+      }
+    } else {
+      setAccountResolution(null);
+    }
+  }, [bankAccountNumber, selectedBankCode, currentUser?.name]);
 
   // KYC state
   const [kycName, setKycName] = useState<string>(currentUser?.name || '');
@@ -83,7 +168,7 @@ export const UserDashboard: React.FC = () => {
     },
     {
       question: "How do payout cycles work?",
-      answer: "All plans run on a 4-week cycle. Payouts are generated and credited to your wallet balance weekly (every 7 days from plan activation). When payouts occur, sponsors of referred users receive an automated 20% affiliate commission credited directly to their withdrawable balances."
+      answer: "All plans run on a 4-week cycle. Payouts are generated and credited to your wallet balance weekly (every 7 days from plan activation). When payouts occur, sponsors of referred users receive an automated 7.5% affiliate commission credited directly to their withdrawable balances."
     },
     {
       question: "What is the withdrawal workflow and clearance time?",
@@ -176,10 +261,18 @@ export const UserDashboard: React.FC = () => {
     e.preventDefault();
     const amt = parseFloat(withAmount);
     if (isNaN(amt) || amt <= 0) return;
-    const success = submitWithdrawal(amt, withDetails);
+
+    let targetDetails = withDetails;
+    if (!targetDetails.trim() && bankAccountNumber.trim()) {
+      const selectedBank = NIGERIAN_BANKS.find(b => b.code === selectedBankCode);
+      targetDetails = `${selectedBank?.name || 'Bank'} - ${bankAccountNumber} - ${accountResolution?.name || currentUser?.name || 'Account Holder'}`;
+    }
+
+    const success = submitWithdrawal(amt, targetDetails);
     if (success) {
       setWithAmount('');
       setWithDetails('');
+      setBankAccountNumber('');
     }
   };
 
@@ -235,80 +328,121 @@ export const UserDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Tab Navigation */}
-      <div className="flex overflow-x-auto pb-1 mb-6 border-b border-slate-200 gap-1 sm:gap-2">
-        <button
-          onClick={() => { setActiveTab('overview'); clearMessages(); }}
-          className={`px-4 py-2.5 rounded-t-lg font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-            activeTab === 'overview'
-              ? 'bg-slate-100 text-slate-950 border-t-2 border-amber-500 shadow-sm'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_user_overview"
-        >
-          <TrendingUp className="w-4 h-4 text-amber-500" /> Overview
-        </button>
-        <button
-          onClick={() => { setActiveTab('invest'); clearMessages(); }}
-          className={`px-4 py-2.5 rounded-t-lg font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-            activeTab === 'invest'
-              ? 'bg-slate-100 text-slate-950 border-t-2 border-amber-500 shadow-sm'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_user_invest"
-        >
-          <Sparkles className="w-4 h-4 text-amber-500" /> Buy Plans
-        </button>
-        <button
-          onClick={() => { setActiveTab('tasks'); clearMessages(); }}
-          className={`px-4 py-2.5 rounded-t-lg font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-            activeTab === 'tasks'
-              ? 'bg-slate-100 text-slate-950 border-t-2 border-amber-500 shadow-sm'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_user_tasks"
-        >
-          <Flame className="w-4 h-4 text-amber-500" />
-          <span>Daily Tasks</span>
-          {currentUser && (
-            <span className="bg-amber-500/20 text-amber-900 border border-amber-400/40 text-[10px] font-bold px-1.5 py-0.2 rounded-full font-mono">
-              🔥 {getUserProgress(currentUser.id).streakCount}d
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => { setActiveTab('finance'); clearMessages(); }}
-          className={`px-4 py-2.5 rounded-t-lg font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-            activeTab === 'finance'
-              ? 'bg-slate-100 text-slate-950 border-t-2 border-amber-500 shadow-sm'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_user_finance"
-        >
-          <Wallet className="w-4 h-4 text-amber-500" /> Deposit & Withdraw
-        </button>
-        <button
-          onClick={() => { setActiveTab('referrals'); clearMessages(); }}
-          className={`px-4 py-2.5 rounded-t-lg font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-            activeTab === 'referrals'
-              ? 'bg-slate-100 text-slate-950 border-t-2 border-amber-500 shadow-sm'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_user_referrals"
-        >
-          <Users className="w-4 h-4 text-amber-500" /> Referral 20%
-        </button>
-        <button
-          onClick={() => { setActiveTab('kyc'); clearMessages(); }}
-          className={`px-4 py-2.5 rounded-t-lg font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all whitespace-nowrap shrink-0 flex items-center gap-2 ${
-            activeTab === 'kyc'
-              ? 'bg-slate-100 text-slate-950 border-t-2 border-amber-500 shadow-sm'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_user_kyc"
-        >
-          <FileText className="w-4 h-4 text-amber-500" /> KYC Verification
-        </button>
+      {/* Responsive Hamburger Navigation Bar & Dropdown Drawer */}
+      <div className="mb-6 bg-white border border-slate-200 rounded-2xl p-2.5 sm:p-3 shadow-xs">
+        <div className="flex items-center justify-between gap-3">
+          {/* Hamburger Menu Toggle Button */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm shrink-0"
+            id="btn_dashboard_hamburger"
+            aria-label="Toggle navigation menu"
+          >
+            {isMenuOpen ? <X className="w-4 h-4 text-amber-400" /> : <Menu className="w-4 h-4 text-amber-400" />}
+            <span>{isMenuOpen ? 'Close' : 'Menu'}</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse hidden xs:inline" />
+          </button>
+
+          {/* Current Active Section Badge */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-slate-800 text-xs font-bold truncate">
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono hidden sm:inline">Active:</span>
+            {(() => {
+              const currentItem = menuItems.find(m => m.id === activeTab) || menuItems[0];
+              const CurrentIcon = currentItem.icon;
+              return (
+                <div className="flex items-center gap-1.5 truncate">
+                  <CurrentIcon className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span className="text-slate-900 font-extrabold truncate">{currentItem.label}</span>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Desktop Navigation Tabs (visible on wide screens) */}
+          <div className="hidden lg:flex items-center gap-1 border-l border-slate-200 pl-3 overflow-x-auto">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => { setActiveTab(item.id); clearMessages(); setIsMenuOpen(false); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                    isActive 
+                      ? 'bg-slate-100 text-slate-950 font-bold border border-slate-200 shadow-xs' 
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                  id={`tab_desktop_${item.id}`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Mobile / Expanded Hamburger Drawer with clean quick-navigation cards */}
+        {isMenuOpen && (
+          <div className="mt-3 pt-3 border-t border-slate-100 animate-fadeIn">
+            <div className="px-1 mb-2 flex items-center justify-between text-[11px] font-mono text-slate-400">
+              <span className="font-bold text-slate-600 uppercase tracking-wider">Dashboard Navigation</span>
+              <span className="text-amber-600 font-semibold">{menuItems.length} Menus Available</span>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id);
+                      setIsMenuOpen(false);
+                      clearMessages();
+                    }}
+                    className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-3 cursor-pointer group ${
+                      isActive 
+                        ? 'bg-amber-50/70 border-amber-400 shadow-xs ring-1 ring-amber-400/30' 
+                        : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300'
+                    }`}
+                    id={`menu_item_${item.id}`}
+                  >
+                    <div className={`p-2 rounded-lg shrink-0 transition-colors ${
+                      isActive 
+                        ? 'bg-amber-500 text-slate-950 shadow-xs' 
+                        : 'bg-slate-100 text-slate-700 group-hover:bg-amber-100 group-hover:text-amber-900'
+                    }`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className={`text-xs font-bold ${isActive ? 'text-slate-950 font-extrabold' : 'text-slate-800'}`}>
+                          {item.label}
+                        </span>
+                        {item.badge}
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
+                        {item.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <span>Wallet: <strong className="text-slate-900 font-mono font-bold">₦{currentUser?.walletBalance.toLocaleString()}</strong></span>
+              <button
+                onClick={() => setIsMenuOpen(false)}
+                className="text-slate-500 hover:text-slate-800 font-semibold text-[11px] uppercase tracking-wider"
+              >
+                Close Menu ✕
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* TAB CONTENTS */}
@@ -357,7 +491,7 @@ export const UserDashboard: React.FC = () => {
               <div>
                 <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Referral Income</p>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">₦{totalReferralBonus.toLocaleString()}</h3>
-                <span className="text-[10px] text-emerald-600 font-semibold font-sans">20% weekly commission active</span>
+                <span className="text-[10px] text-emerald-600 font-semibold font-sans">7.5% weekly commission active</span>
               </div>
               <div className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700">
                 <Users className="w-5 h-5" />
@@ -635,7 +769,7 @@ export const UserDashboard: React.FC = () => {
                       </li>
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
-                        <span>20% Weekly Sponsor Referral Commission</span>
+                        <span>7.5% Weekly Sponsor Referral Commission</span>
                       </li>
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
@@ -672,185 +806,193 @@ export const UserDashboard: React.FC = () => {
       {/* FINANCE (DEPOSIT & WITHDRAWAL) TAB */}
       {activeTab === 'finance' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* DEPOSIT MODULE */}
+          {/* DEPOSIT MODULE (DIRECT BANK TRANSFER & RECEIPT PROOF) */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
-            <div className="border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <ArrowDownLeft className="w-5 h-5 text-emerald-600" />
-                Capital Deposit (Escrow Transfer)
-              </h3>
-              <p className="text-xs text-slate-500 mt-1">
-                Fund your wallet by transferring to the registered Treasure Homes bank details below. Submit your details and proof to initiate verification.
-              </p>
-            </div>
-
-            {/* Treasure Homes Escrow Accounts */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-                <Building className="w-4 h-4 text-amber-500" />
-                <span>TREASURE HOMES ESCROW DEPOSIT ACCOUNTS</span>
+            <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <ArrowDownLeft className="w-5 h-5 text-emerald-600" />
+                  Wallet Deposit & Funding
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Transfer funds to the verified corporate bank accounts below and submit your Proof of Payment (receipt) for audit clearance.
+                </p>
               </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Account 1: PAGA */}
-                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden shadow-xs">
-                  <div className="absolute top-0 right-0 bg-amber-500/10 text-amber-700 font-mono font-bold text-[9px] uppercase px-2 py-0.5 rounded-bl-lg">
-                    Account 1
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Bank Name:</span>
-                    <span className="font-semibold text-slate-900">PAGA</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Account Name:</span>
-                    <span className="font-semibold text-slate-900">EZE JUDE TREASURE</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
-                    <span className="text-slate-500">Account No:</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-amber-600 font-mono text-sm">0001327256</span>
-                      {copiedAccount ? (
-                        <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider font-mono">Copied!</span>
-                      ) : (
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText('0001327256');
-                            setCopiedAccount(true);
-                            setTimeout(() => setCopiedAccount(false), 2000);
-                          }}
-                          className="p-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
-                          title="Copy Account Number"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Account 2: Moniepoint */}
-                <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden shadow-xs">
-                  <div className="absolute top-0 right-0 bg-emerald-500/10 text-emerald-700 font-mono font-bold text-[9px] uppercase px-2 py-0.5 rounded-bl-lg">
-                    Account 2
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Bank Name:</span>
-                    <span className="font-semibold text-slate-900">Moniepoint</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Account Name:</span>
-                    <span className="font-semibold text-slate-900">EZE JUDE TREASURE</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
-                    <span className="text-slate-500">Account No:</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-emerald-600 font-mono text-sm">6814600103</span>
-                      {copiedAccount2 ? (
-                        <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider font-mono">Copied!</span>
-                      ) : (
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText('6814600103');
-                            setCopiedAccount2(true);
-                            setTimeout(() => setCopiedAccount2(false), 2000);
-                          }}
-                          className="p-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
-                          title="Copy Account Number"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+              <div className="flex items-center gap-1.5 self-start sm:self-auto bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold text-emerald-800">
+                <Building className="w-3.5 h-3.5 text-emerald-600" />
+                <span>DIRECT BANK TRANSFER</span>
               </div>
             </div>
 
-            <form onSubmit={handleDepositSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs text-slate-500 font-medium mb-1">Transfer Amount (₦)</label>
-                <input 
-                  type="number" 
-                  value={depAmount}
-                  onChange={(e) => setDepAmount(e.target.value)}
-                  placeholder="e.g. 50000"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-500 font-medium mb-1">Payment Method</label>
-                <select 
-                  value={depMethod}
-                  onChange={(e) => setDepMethod(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                >
-                  <option>Bank Transfer (Treasure Homes Escrow)</option>
-                  <option>USDT-TRC20 Stablecoin Account</option>
-                  <option>Naira Cards (Instant Gateway)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-500 font-medium mb-1">Sender Bank & Name / Transaction Reference</label>
-                <input 
-                  type="text" 
-                  value={depDetails}
-                  onChange={(e) => setDepDetails(e.target.value)}
-                  placeholder="e.g. Access Bank - John Doe Transfer"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                  required
-                />
-              </div>
-
-              {/* Receipt Upload with Drag & Drop & Click */}
-              <div className="space-y-2">
-                <label className="block text-xs text-slate-500 font-medium">Attach Receipt / Payment Proof</label>
-                <div 
-                  onDragEnter={handleDrag}
-                  onDragOver={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
-                    dragActive 
-                      ? 'border-amber-500 bg-amber-50/50' 
-                      : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100/50'
-                  }`}
-                >
-                  <input 
-                    type="file" 
-                    id="receipt-upload-input" 
-                    className="hidden" 
-                    accept="image/*,application/pdf"
-                    onChange={handleFileChange}
-                  />
-                  <label htmlFor="receipt-upload-input" className="cursor-pointer block space-y-1.5">
-                    <UploadCloud className="w-6 h-6 text-slate-400 mx-auto animate-bounce-slow" />
-                    <div className="text-xs text-slate-600">
-                      {receiptFile ? (
-                        <span className="font-bold text-amber-600 font-mono text-[11px] break-all">
-                          Selected: {receiptFile.name}
-                        </span>
-                      ) : (
-                        <span>Drag and drop your receipt here, or <strong className="text-amber-600 hover:underline">browse files</strong></span>
-                      )}
+            <div className="space-y-4">
+              {/* Treasure Homes Escrow Accounts */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                    <Building className="w-4 h-4 text-amber-500" />
+                    <span>TREASURE HOMES ESCROW DEPOSIT ACCOUNTS</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Account 1: PAGA */}
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden shadow-xs">
+                      <div className="absolute top-0 right-0 bg-amber-500/10 text-amber-700 font-mono font-bold text-[9px] uppercase px-2 py-0.5 rounded-bl-lg">
+                        Account 1
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Bank Name:</span>
+                        <span className="font-semibold text-slate-900">PAGA</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Account Name:</span>
+                        <span className="font-semibold text-slate-900">EZE JUDE TREASURE</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
+                        <span className="text-slate-500">Account No:</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-amber-600 font-mono text-sm">0001327256</span>
+                          {copiedAccount ? (
+                            <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider font-mono">Copied!</span>
+                          ) : (
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText('0001327256');
+                                setCopiedAccount(true);
+                                setTimeout(() => setCopiedAccount(false), 2000);
+                              }}
+                              className="p-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                              title="Copy Account Number"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-slate-400">Supports PNG, JPG, or PDF (Max 5MB)</p>
-                  </label>
-                </div>
-              </div>
 
-              <button
-                type="submit"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-sm shadow-emerald-600/10"
-                id="btn_submit_deposit"
-              >
-                Submit Deposit proof
-              </button>
-            </form>
+                    {/* Account 2: Moniepoint */}
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden shadow-xs">
+                      <div className="absolute top-0 right-0 bg-emerald-500/10 text-emerald-700 font-mono font-bold text-[9px] uppercase px-2 py-0.5 rounded-bl-lg">
+                        Account 2
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Bank Name:</span>
+                        <span className="font-semibold text-slate-900">Moniepoint</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Account Name:</span>
+                        <span className="font-semibold text-slate-900">EZE JUDE TREASURE</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
+                        <span className="text-slate-500">Account No:</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-emerald-600 font-mono text-sm">6814600103</span>
+                          {copiedAccount2 ? (
+                            <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider font-mono">Copied!</span>
+                          ) : (
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText('6814600103');
+                                setCopiedAccount2(true);
+                                setTimeout(() => setCopiedAccount2(false), 2000);
+                              }}
+                              className="p-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                              title="Copy Account Number"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <form onSubmit={handleDepositSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs text-slate-500 font-medium mb-1">Transfer Amount (₦)</label>
+                    <input 
+                      type="number" 
+                      value={depAmount}
+                      onChange={(e) => setDepAmount(e.target.value)}
+                      placeholder="e.g. 50000"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-slate-500 font-medium mb-1">Payment Method</label>
+                    <select 
+                      value={depMethod}
+                      onChange={(e) => setDepMethod(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    >
+                      <option>Bank Transfer (Treasure Homes Escrow)</option>
+                      <option>USDT-TRC20 Stablecoin Account</option>
+                      <option>Naira Cards (Instant Gateway)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-slate-500 font-medium mb-1">Sender Bank & Name / Transaction Reference</label>
+                    <input 
+                      type="text" 
+                      value={depDetails}
+                      onChange={(e) => setDepDetails(e.target.value)}
+                      placeholder="e.g. Access Bank - John Doe Transfer"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      required
+                    />
+                  </div>
+
+                  {/* Receipt Upload with Drag & Drop & Click */}
+                  <div className="space-y-2">
+                    <label className="block text-xs text-slate-500 font-medium">Attach Receipt / Payment Proof</label>
+                    <div 
+                      onDragEnter={handleDrag}
+                      onDragOver={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDrop={handleDrop}
+                      className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
+                        dragActive 
+                          ? 'border-amber-500 bg-amber-50/50' 
+                          : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100/50'
+                      }`}
+                    >
+                      <input 
+                        type="file" 
+                        id="receipt-upload-input" 
+                        className="hidden" 
+                        accept="image/*,application/pdf"
+                        onChange={handleFileChange}
+                      />
+                      <label htmlFor="receipt-upload-input" className="cursor-pointer block space-y-1.5">
+                        <UploadCloud className="w-6 h-6 text-slate-400 mx-auto animate-bounce-slow" />
+                        <div className="text-xs text-slate-600">
+                          {receiptFile ? (
+                            <span className="font-bold text-amber-600 font-mono text-[11px] break-all">
+                              Selected: {receiptFile.name}
+                            </span>
+                          ) : (
+                            <span>Drag and drop your receipt here, or <strong className="text-amber-600 hover:underline">browse files</strong></span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-slate-400">Supports PNG, JPG, or PDF (Max 5MB)</p>
+                      </label>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-sm shadow-emerald-600/10 cursor-pointer"
+                    id="btn_submit_deposit"
+                  >
+                    Submit Deposit proof
+                  </button>
+                </form>
+              </div>
 
             {/* List of User Pending Deposits */}
             {pendingDeposits.length > 0 && (
@@ -875,77 +1017,97 @@ export const UserDashboard: React.FC = () => {
 
           {/* WITHDRAWAL MODULE */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
-            <div className="border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <ArrowUpRight className="w-5 h-5 text-rose-600" />
-                Wallet Withdrawal
-              </h3>
-              <p className="text-xs text-slate-500 mt-1">
-                Initiate payouts directly to your personal bank account. Manual audit systems enforce security limits to preserve asset liquidity.
-              </p>
-            </div>
-
-            <div className="bg-rose-50 border border-rose-100 p-4 rounded-xl text-xs text-rose-800 space-y-2">
-              <div className="flex items-center gap-1.5 font-bold text-rose-700">
-                <ShieldCheck className="w-4 h-4 text-rose-600" />
-                <span>STABILITY CONTROLS & WITHDRAWAL TIERS</span>
+            <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <ArrowUpRight className="w-5 h-5 text-rose-600" />
+                  Wallet Withdrawal
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Request payouts directly to your registered personal Nigerian bank account. Processed manually by finance admin within 1-24 hours.
+                </p>
               </div>
-              <ul className="list-disc pl-4 space-y-1 text-slate-600 text-[11px]">
-                {getUserActiveWeeklyPayout(currentUser.id) === 0 ? (
-                  <>
-                    <li className="text-amber-900 font-semibold">
-                      🎁 <strong>Free Starter Trial:</strong> You can withdraw up to <strong className="text-slate-900">₦{(settings.freeStarterWithdrawalLimit || 3000).toLocaleString()}</strong> free from daily tasks.
-                    </li>
-                    <li>
-                      Withdrawn so far: <strong>₦{(getUserProgress(currentUser.id).totalFreeEarningsWithdrawn || 0).toLocaleString()} / ₦{(settings.freeStarterWithdrawalLimit || 3000).toLocaleString()}</strong>
-                    </li>
-                    <li>
-                      To unlock uncapped withdrawals up to ₦{settings.maxWithdrawal.toLocaleString()}/day, activate any investment plan.
-                    </li>
-                  </>
-                ) : (
-                  <>
-                    <li>Minimum single withdrawal: <strong className="text-slate-900">₦{settings.minWithdrawal.toLocaleString()}</strong></li>
-                    <li>Maximum single withdrawal: <strong className="text-slate-900">₦{settings.maxWithdrawal.toLocaleString()}</strong></li>
-                    <li>Investment-backed account: Unlimited withdrawals enabled.</li>
-                  </>
-                )}
-                <li>Pending limits check: KYC verified users receive faster clearance.</li>
-                <li>Refund Guarantee: Rejected withdrawals are automatically credited back to your wallet.</li>
-              </ul>
+              <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold text-slate-700">
+                <Clock className="w-3.5 h-3.5 text-slate-500" />
+                <span>MANUAL BANK SETTLEMENT</span>
+              </div>
             </div>
 
             <form onSubmit={handleWithdrawalSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs text-slate-500 font-medium mb-1">Withdrawal Amount (₦)</label>
+                <label className="block text-xs text-slate-600 font-semibold mb-1">Withdrawal Amount (₦)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 font-bold text-slate-400 text-sm">₦</span>
+                  <input 
+                    type="number" 
+                    value={withAmount}
+                    onChange={(e) => setWithAmount(e.target.value)}
+                    placeholder={`Min ₦${settings.minWithdrawal.toLocaleString()}`}
+                    min={settings.minWithdrawal}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 pl-8 text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Destination Nigerian Bank Selector */}
+              <div>
+                <label className="block text-xs text-slate-600 font-semibold mb-1">Select Destination Nigerian Bank</label>
+                <select
+                  value={selectedBankCode}
+                  onChange={(e) => setSelectedBankCode(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold text-slate-900 focus:outline-none focus:border-rose-500"
+                >
+                  {NIGERIAN_BANKS.map((bank) => (
+                    <option key={bank.code} value={bank.code}>
+                      {bank.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 10-Digit NUBAN Account Number */}
+              <div>
+                <label className="block text-xs text-slate-600 font-semibold mb-1">10-Digit NUBAN Account Number</label>
                 <input 
-                  type="number" 
-                  value={withAmount}
-                  onChange={(e) => setWithAmount(e.target.value)}
-                  placeholder={`Min ₦${settings.minWithdrawal}`}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  type="text" 
+                  maxLength={10}
+                  value={bankAccountNumber}
+                  onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ''))}
+                  placeholder="e.g. 0123456789"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-sm font-mono font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-rose-500"
                   required
                 />
               </div>
 
-              <div>
-                <label className="block text-xs text-slate-500 font-medium mb-1">Your Receiving Bank Details / Account Number</label>
-                <textarea 
-                  rows={3}
-                  value={withDetails}
-                  onChange={(e) => setWithDetails(e.target.value)}
-                  placeholder="e.g. GTBank - 0123456789 - Olayinka Williams"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                  required
-                />
-              </div>
+              {/* Live NIBSS Account Resolution Indicator */}
+              {accountResolution && (
+                <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl flex items-center gap-2 text-xs text-emerald-800">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div>
+                    <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider block">Account Name Verified (NIBSS)</span>
+                    <span className="font-bold text-slate-900">{accountResolution.name}</span>
+                  </div>
+                </div>
+              )}
 
               <button
                 type="submit"
-                className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-sm"
+                className={`w-full py-3 rounded-xl text-xs uppercase tracking-wider font-bold transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer ${
+                  settings.automatedPayouts 
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20' 
+                    : 'bg-[#0f172a] hover:bg-[#1e293b] text-white'
+                }`}
                 id="btn_submit_withdrawal"
               >
-                Request Withdrawal
+                {settings.automatedPayouts ? (
+                  <>
+                    <Zap className="w-4 h-4 text-amber-300" />
+                    <span>Instant Bank Disbursal (₦{Number(withAmount || 0).toLocaleString()})</span>
+                  </>
+                ) : (
+                  <span>Request Withdrawal</span>
+                )}
               </button>
             </form>
 
@@ -953,16 +1115,19 @@ export const UserDashboard: React.FC = () => {
             {pendingWithdrawals.length > 0 && (
               <div className="pt-3 border-t border-slate-100 space-y-2">
                 <h4 className="text-xs font-bold text-amber-600 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 animate-spin" /> Pending Security Clearance ({pendingWithdrawals.length})
+                  <Clock className="w-3.5 h-3.5 animate-spin" /> Pending Disbursals ({pendingWithdrawals.length})
                 </h4>
                 {pendingWithdrawals.map(t => (
-                  <div key={t.id} className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs flex justify-between items-center shadow-sm">
+                  <div key={t.id} className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs flex justify-between items-center shadow-xs">
                     <div>
                       <p className="font-bold text-slate-900">₦{t.amount.toLocaleString()}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">To: {t.accountDetails} - {new Date(t.createdAt).toLocaleTimeString()}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">To: {t.accountDetails}</p>
+                      {t.gatewayReference && (
+                        <p className="text-[9px] font-mono text-emerald-600 mt-0.5">Ref: {t.gatewayReference}</p>
+                      )}
                     </div>
                     <span className="text-[9px] bg-amber-50 text-amber-700 px-2 py-0.5 border border-amber-200 rounded font-mono uppercase tracking-widest animate-pulse font-bold">
-                      Reviewing
+                      Processing
                     </span>
                   </div>
                 ))}
@@ -978,10 +1143,10 @@ export const UserDashboard: React.FC = () => {
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-center max-w-3xl mx-auto space-y-3">
             <h3 className="text-lg font-bold text-slate-900 tracking-wide uppercase flex items-center justify-center gap-2">
               <Users className="w-5 h-5 text-amber-500" />
-              Supercharged 20% Referral Commission Engine
+              Supercharged 7.5% Referral Commission Engine
             </h3>
             <p className="text-xs text-slate-600 max-w-xl mx-auto">
-              Our unique system pays sponsors **20% of their referral's weekly payouts**. When your friends earn their weekly returns, you receive a massive 20% commission automatically!
+              Our unique system pays sponsors **7.5% of their referral's weekly payouts**. When your friends earn their weekly returns, you receive an automated 7.5% commission automatically!
             </p>
             <div className="bg-slate-50 inline-flex items-center gap-2 border border-slate-200 px-4 py-2.5 rounded-xl text-sm">
               <span className="text-slate-500 text-xs">My Sponsor Code:</span>
@@ -1016,7 +1181,7 @@ export const UserDashboard: React.FC = () => {
             <div className="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
               <p className="text-xs text-slate-500 font-medium">Commission Credited</p>
               <h3 className="text-3xl font-extrabold text-amber-600 mt-1">₦{totalReferralBonus.toLocaleString()}</h3>
-              <p className="text-[10px] text-emerald-600 font-medium mt-1">From automated weekly 20% shares</p>
+              <p className="text-[10px] text-emerald-600 font-medium mt-1">From automated weekly 7.5% shares</p>
             </div>
           </div>
 

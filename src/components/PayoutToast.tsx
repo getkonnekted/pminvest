@@ -88,7 +88,7 @@ export const PayoutToastItem: React.FC<PayoutToastItemProps> = ({
                 : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
             }`}>
               <span className={`w-1.5 h-1.5 rounded-full animate-ping ${isReferral ? 'bg-amber-400' : 'bg-emerald-400'}`} />
-              <span>{isReferral ? '20% Referral Commission' : 'Investment Payout Credited'}</span>
+              <span>{isReferral ? '7.5% Referral Commission' : 'Investment Payout Credited'}</span>
             </span>
           </div>
 

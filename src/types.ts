@@ -51,6 +51,8 @@ export interface Transaction {
   paymentMethod?: string;
   accountDetails?: string;
   proofUrl?: string; // Mock uploaded proof image
+  gatewayReference?: string;
+  gatewayChannel?: string;
   createdAt: string;
   description: string;
 }
@@ -133,6 +135,8 @@ export interface SystemSettings {
   minWithdrawal: number;
   maxWithdrawal: number;
   autoApproveDeposits: boolean;
+  automatedPayouts: boolean;
+  paystackTestMode: boolean;
   isMaintenanceMode: boolean;
   pauseInvestments: boolean;
   pauseWithdrawals: boolean;

@@ -25,7 +25,8 @@ import {
   BarChart3,
   Share2,
   Award,
-  CheckCircle2
+  CheckCircle2,
+  Zap
 } from 'lucide-react';
 import { INVESTMENT_PLANS } from '../types';
 
@@ -61,6 +62,7 @@ export const AdminPanel: React.FC = () => {
   const [resetConfirmationInput, setResetConfirmationInput] = useState('');
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [payoutConfirmationInput, setPayoutConfirmationInput] = useState('');
+  const [depositAdjustedAmounts, setDepositAdjustedAmounts] = useState<Record<string, string>>({});
 
   // Stats
   const activeInvestments = investments.filter(i => i.status === 'active');
@@ -306,43 +308,88 @@ export const AdminPanel: React.FC = () => {
             <p className="text-xs text-slate-500 text-center py-8">No pending deposits require verification.</p>
           ) : (
             <div className="space-y-4">
-              {pendingDeposits.map((tx) => (
-                <div key={tx.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-xs">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 text-sm">₦{tx.amount.toLocaleString()}</span>
-                      <span className="text-[10px] font-mono text-slate-500 font-medium">by {tx.userName}</span>
-                    </div>
-                    <p className="text-slate-600">Method: <strong className="text-slate-900 font-medium">{tx.paymentMethod}</strong> | Account details: <strong className="text-slate-900 font-medium">{tx.accountDetails}</strong></p>
-                    <p className="text-slate-400 text-[10px] font-mono">ID: {tx.id} | Submitted: {new Date(tx.createdAt).toLocaleString()}</p>
-                  </div>
+              {pendingDeposits.map((tx) => {
+                const currentValStr = depositAdjustedAmounts[tx.id] !== undefined ? depositAdjustedAmounts[tx.id] : String(tx.amount);
+                const currentNum = Number(currentValStr);
+                const isAdjusted = !isNaN(currentNum) && currentNum > 0 && currentNum !== tx.amount;
 
-                  {/* Receipt display & actions */}
-                  <div className="flex items-center gap-4 shrink-0 w-full md:w-auto justify-between md:justify-end">
-                    {tx.proofUrl && (
-                      <a href={tx.proofUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-amber-600 hover:underline hover:text-amber-800 font-semibold">
-                        <Eye className="w-3.5 h-3.5" /> View Receipt Proof
-                      </a>
-                    )}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => approveDeposit(tx.id)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg px-3 py-1.5 transition-colors"
-                        id={`btn_approve_dep_${tx.id}`}
-                      >
-                        <Check className="w-3.5 h-3.5" /> Approve
-                      </button>
-                      <button
-                        onClick={() => rejectDeposit(tx.id)}
-                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold rounded-lg px-3 py-1.5 transition-colors"
-                        id={`btn_reject_dep_${tx.id}`}
-                      >
-                        <X className="w-3.5 h-3.5" /> Reject
-                      </button>
+                return (
+                  <div key={tx.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-xs">
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-bold text-slate-900 text-sm">Claimed: ₦{tx.amount.toLocaleString()}</span>
+                        <span className="text-[10px] font-mono text-slate-500 font-medium">by {tx.userName}</span>
+                        {isAdjusted && (
+                          <span className="text-[10px] bg-amber-100 text-amber-900 border border-amber-300 font-semibold px-2 py-0.5 rounded-full">
+                            Adjusted to ₦{currentNum.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-slate-600">Method: <strong className="text-slate-900 font-medium">{tx.paymentMethod}</strong> | Account details: <strong className="text-slate-900 font-medium">{tx.accountDetails}</strong></p>
+                      <p className="text-slate-400 text-[10px] font-mono">ID: {tx.id} | Submitted: {new Date(tx.createdAt).toLocaleString()}</p>
+                      
+                      {/* Editable field for Admin to match true bank receipt */}
+                      <div className="pt-2 flex flex-wrap items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
+                        <label className="text-[11px] font-semibold text-slate-700 whitespace-nowrap">
+                          Reconciled Bank Amount (₦):
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1000"
+                          value={currentValStr}
+                          onChange={(e) => setDepositAdjustedAmounts(prev => ({ ...prev, [tx.id]: e.target.value }))}
+                          className="w-36 bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                          title="If the investor typed a wrong amount or bank fees apply, edit here to credit the exact receipt amount"
+                        />
+                        {isAdjusted && (
+                          <button
+                            type="button"
+                            onClick={() => setDepositAdjustedAmounts(prev => {
+                              const next = { ...prev };
+                              delete next[tx.id];
+                              return next;
+                            })}
+                            className="text-[10px] text-slate-500 hover:text-slate-800 underline font-mono"
+                          >
+                            Reset to Original
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Receipt display & actions */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0 w-full md:w-auto justify-between md:justify-end">
+                      {tx.proofUrl && (
+                        <a href={tx.proofUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-amber-600 hover:underline hover:text-amber-800 font-semibold">
+                          <Eye className="w-3.5 h-3.5" /> View Receipt Proof
+                        </a>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            const finalToCredit = (!isNaN(currentNum) && currentNum > 0) ? currentNum : tx.amount;
+                            approveDeposit(tx.id, finalToCredit);
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg px-3 py-1.5 transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                          id={`btn_approve_dep_${tx.id}`}
+                          title={isAdjusted ? `Approve adjusted amount ₦${currentNum.toLocaleString()}` : `Approve ₦${tx.amount.toLocaleString()}`}
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>{isAdjusted ? `Approve ₦${currentNum.toLocaleString()}` : 'Approve'}</span>
+                        </button>
+                        <button
+                          onClick={() => rejectDeposit(tx.id)}
+                          className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold rounded-lg px-3 py-1.5 transition-colors flex items-center gap-1.5 cursor-pointer"
+                          id={`btn_reject_dep_${tx.id}`}
+                        >
+                          <X className="w-3.5 h-3.5" /> Reject
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -382,14 +429,14 @@ export const AdminPanel: React.FC = () => {
                     <div className="flex gap-2 shrink-0">
                       <button
                         onClick={() => approveWithdrawal(tx.id)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg px-3 py-1.5 transition-colors"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg px-3.5 py-1.5 transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm text-xs"
                         id={`btn_approve_with_${tx.id}`}
                       >
-                        <Check className="w-3.5 h-3.5" /> Clear & Pay
+                        <Check className="w-3.5 h-3.5" /> Approve & Mark Disbursed
                       </button>
                       <button
                         onClick={() => rejectWithdrawal(tx.id)}
-                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold rounded-lg px-3 py-1.5 transition-colors"
+                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold rounded-lg px-3 py-1.5 transition-colors flex items-center gap-1.5 cursor-pointer text-xs"
                         id={`btn_reject_with_${tx.id}`}
                       >
                         <X className="w-3.5 h-3.5" /> Reject & Refund
@@ -505,7 +552,7 @@ export const AdminPanel: React.FC = () => {
               </div>
               <button
                 onClick={() => updateSettings({ pauseWithdrawals: !settings.pauseWithdrawals })}
-                className={`w-12 h-6.5 rounded-full p-1 transition-colors relative ${
+                className={`w-12 h-6.5 rounded-full p-1 transition-colors relative cursor-pointer ${
                   settings.pauseWithdrawals ? 'bg-rose-500' : 'bg-slate-200'
                 }`}
                 type="button"

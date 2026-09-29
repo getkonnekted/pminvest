@@ -46,6 +46,7 @@ interface StateContextType {
   
   // User actions
   submitDeposit: (amount: number, method: string, accountDetails: string, proofUrl?: string) => void;
+  processAutomatedDeposit: (amount: number, reference: string, channel: string) => void;
   submitWithdrawal: (amount: number, accountDetails: string) => boolean;
   purchaseInvestment: (planId: string) => boolean;
   submitKyc: (fullName: string, idType: string, idNumber: string) => void;
@@ -58,7 +59,7 @@ interface StateContextType {
   claimGuestTrialEarnings: () => number;
   
   // Admin actions
-  approveDeposit: (txId: string) => void;
+  approveDeposit: (txId: string, adjustedAmount?: number) => void;
   rejectDeposit: (txId: string) => void;
   approveWithdrawal: (txId: string) => void;
   rejectWithdrawal: (txId: string) => void;
@@ -134,7 +135,9 @@ const DEFAULT_SETTINGS: SystemSettings = {
   riskAlertLevel: 'low',
   minWithdrawal: 5000,
   maxWithdrawal: 1000000,
-  autoApproveDeposits: false,
+  autoApproveDeposits: true,
+  automatedPayouts: true,
+  paystackTestMode: true,
   isMaintenanceMode: false,
   pauseInvestments: false,
   pauseWithdrawals: false,
@@ -627,6 +630,46 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const processAutomatedDeposit = (amount: number, reference: string, channel: string) => {
+    clearMessages();
+    if (!currentUser) return;
+
+    if (amount <= 0) {
+      setErrorMsg('Deposit amount must be greater than zero.');
+      return;
+    }
+
+    const txId = 'tx_' + Date.now();
+    const newTx: Transaction = {
+      id: txId,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      type: 'deposit',
+      amount,
+      status: 'completed',
+      paymentMethod: `Paystack (${channel}) - Test Mode`,
+      accountDetails: `Paystack Ref: ${reference}`,
+      gatewayReference: reference,
+      gatewayChannel: channel,
+      createdAt: new Date().toISOString(),
+      description: `Automated Paystack Deposit of ₦${amount.toLocaleString()} via ${channel}`
+    };
+
+    setTransactions(prev => [newTx, ...prev]);
+
+    // Instantly credit user balance
+    setUsers(prev => prev.map(u => {
+      if (u.id === currentUser.id) {
+        const updated = { ...u, walletBalance: u.walletBalance + amount };
+        if (currentUser.id === u.id) setCurrentUser(updated);
+        return updated;
+      }
+      return u;
+    }));
+
+    setSuccessMsg(`⚡ Instant Automated Deposit Approved! ₦${amount.toLocaleString()} has been credited to your wallet via Paystack (${channel}). Reference: ${reference}`);
+  };
+
   const submitWithdrawal = (amount: number, accountDetails: string): boolean => {
     clearMessages();
     if (!currentUser) return false;
@@ -637,46 +680,18 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     if (currentUser.id === 'usr_demo_investor') {
-      setErrorMsg('Demo Account Protection: Sandbox withdrawals are restricted on the shared demo account. Please register a free personal account to test custom withdrawal submissions.');
+      setErrorMsg('Demo Account Protection: Withdrawals are restricted on the shared demo account. Please register a personal account to test custom withdrawal submissions.');
       return false;
     }
 
-    const userActiveCapital = getUserActiveWeeklyPayout(currentUser.id);
-    const progress = getUserProgress(currentUser.id);
-    const freeLimit = settings.freeStarterWithdrawalLimit ?? 3000;
-    const previouslyWithdrawn = progress.totalFreeEarningsWithdrawn || 0;
-    const hasActivePlans = userActiveCapital > 0;
+    if (amount < settings.minWithdrawal) {
+      setErrorMsg(`Minimum withdrawal limit is ₦${settings.minWithdrawal.toLocaleString()}`);
+      return false;
+    }
 
-    // If user has NO active plan, allow them to withdraw up to their ₦3,000 free trial limit
-    if (!hasActivePlans) {
-      if (previouslyWithdrawn >= freeLimit) {
-        setErrorMsg(`Starter Milestone Reached: You have successfully withdrawn your maximum free trial starter limit of ₦${freeLimit.toLocaleString()}. To unlock unlimited daily yields and larger withdrawals, please activate an investment plan.`);
-        return false;
-      }
-
-      if (previouslyWithdrawn + amount > freeLimit) {
-        const remainingFree = freeLimit - previouslyWithdrawn;
-        setErrorMsg(`Free Trial Cap: Your remaining free starter cashout allowance is ₦${remainingFree.toLocaleString()} (out of ₦${freeLimit.toLocaleString()} max). Please adjust withdrawal amount or activate an investment plan.`);
-        return false;
-      }
-
-      // Allow starter user to withdraw with a lower starter minimum (e.g., ₦1,000 or up to ₦3,000)
-      const starterMin = Math.min(1000, settings.minWithdrawal);
-      if (amount < starterMin) {
-        setErrorMsg(`Minimum starter withdrawal limit is ₦${starterMin.toLocaleString()}`);
-        return false;
-      }
-    } else {
-      // Standard paid investor thresholds
-      if (amount < settings.minWithdrawal) {
-        setErrorMsg(`Minimum withdrawal limit is ₦${settings.minWithdrawal.toLocaleString()}`);
-        return false;
-      }
-
-      if (amount > settings.maxWithdrawal) {
-        setErrorMsg(`Maximum single withdrawal limit is ₦${settings.maxWithdrawal.toLocaleString()}`);
-        return false;
-      }
+    if (amount > settings.maxWithdrawal) {
+      setErrorMsg(`Maximum single withdrawal limit is ₦${settings.maxWithdrawal.toLocaleString()}`);
+      return false;
     }
 
     if (currentUser.walletBalance < amount) {
@@ -685,7 +700,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     if (!accountDetails.trim()) {
-      setErrorMsg('Bank account details/wallet address is required.');
+      setErrorMsg('Bank account details are required.');
       return false;
     }
 
@@ -699,18 +714,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return u;
     }));
 
-    // If starter user, update their totalFreeEarningsWithdrawn
-    if (!hasActivePlans) {
-      setUserDailyProgress(prev => ({
-        ...prev,
-        [currentUser.id]: {
-          ...progress,
-          totalFreeEarningsWithdrawn: (progress.totalFreeEarningsWithdrawn || 0) + amount
-        }
-      }));
-    }
-
     const txId = 'tx_' + Date.now();
+
     const newTx: Transaction = {
       id: txId,
       userId: currentUser.id,
@@ -720,13 +725,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       status: 'pending',
       accountDetails,
       createdAt: new Date().toISOString(),
-      description: hasActivePlans 
-        ? `Investment Payout Withdrawal of ₦${amount.toLocaleString()} to: ${accountDetails}`
-        : `Free Starter Task Yield Withdrawal (₦3k Trial) of ₦${amount.toLocaleString()} to: ${accountDetails}`
+      description: `Manual Bank Withdrawal of ₦${amount.toLocaleString()} to: ${accountDetails}`
     };
 
     setTransactions(prev => [newTx, ...prev]);
-    setSuccessMsg(`Withdrawal of ₦${amount.toLocaleString()} submitted. Manual review pending for stability control.`);
+    setSuccessMsg(`Withdrawal request of ₦${amount.toLocaleString()} submitted. Our finance team will review and disburse to ${accountDetails} within 1-24 hours.`);
     return true;
   };
 
@@ -858,11 +861,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       type: 'payout'
     });
 
-    // 5. If investor was referred, credit sponsor 20% bonus
+    // 5. If investor was referred, credit sponsor 7.5% bonus
     if (currentUser.referredByCode) {
       const sponsorUser = users.find(u => u.referralCode === currentUser.referredByCode);
       if (sponsorUser) {
-        const bonusAmount = payoutAmount * 0.2;
+        const bonusAmount = payoutAmount * 0.075;
         const updatedSponsorBal = sponsorUser.walletBalance + bonusAmount;
         setUsers(prev => prev.map(u => u.id === sponsorUser.id ? { ...u, walletBalance: updatedSponsorBal } : u));
         
@@ -875,7 +878,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           amount: bonusAmount,
           status: 'completed',
           createdAt: new Date().toISOString(),
-          description: `20% Referral bonus from ${currentUser.name}'s ${inv.planName} weekly payout`
+          description: `7.5% Referral bonus from ${currentUser.name}'s ${inv.planName} weekly payout`
         };
         setTransactions(prev => [refTx, ...prev]);
       }
@@ -910,19 +913,30 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSuccessMsg('KYC documents submitted. Treasure Homes compliance team will review shortly.');
   };
 
-  // Admin approval workflow
-  const approveDeposit = (txId: string) => {
+  // Admin approval workflow with optional manual amount adjustment to match verified bank receipt
+  const approveDeposit = (txId: string, adjustedAmount?: number) => {
     clearMessages();
     const tx = transactions.find(t => t.id === txId);
     if (!tx || tx.type !== 'deposit' || tx.status !== 'pending') return;
 
-    // Update transaction
-    setTransactions(prev => prev.map(t => t.id === txId ? { ...t, status: 'completed' } : t));
+    // Use adjusted amount if valid positive number provided, otherwise use original claim
+    const finalAmount = (typeof adjustedAmount === 'number' && adjustedAmount > 0) ? adjustedAmount : tx.amount;
+    const wasAdjusted = finalAmount !== tx.amount;
 
-    // Credit user wallet
+    // Update transaction
+    setTransactions(prev => prev.map(t => t.id === txId ? { 
+      ...t, 
+      amount: finalAmount,
+      status: 'completed',
+      description: wasAdjusted
+        ? `${t.description || 'Bank Transfer Deposit'} (Reconciled from ₦${tx.amount.toLocaleString()} to ₦${finalAmount.toLocaleString()})`
+        : t.description
+    } : t));
+
+    // Credit user wallet with verified receipt amount
     setUsers(prev => prev.map(u => {
       if (u.id === tx.userId) {
-        const updated = { ...u, walletBalance: u.walletBalance + tx.amount };
+        const updated = { ...u, walletBalance: u.walletBalance + finalAmount };
         if (currentUser && currentUser.id === u.id) {
           setCurrentUser(updated);
         }
@@ -931,7 +945,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return u;
     }));
 
-    setSuccessMsg(`Approved deposit of ₦${tx.amount.toLocaleString()} for ${tx.userName}.`);
+    if (wasAdjusted) {
+      setSuccessMsg(`Approved deposit for ${tx.userName}. Credited reconciled bank amount of ₦${finalAmount.toLocaleString()} (adjusted from original ₦${tx.amount.toLocaleString()}).`);
+    } else {
+      setSuccessMsg(`Approved deposit of ₦${finalAmount.toLocaleString()} for ${tx.userName}.`);
+    }
   };
 
   const rejectDeposit = (txId: string) => {
@@ -948,8 +966,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const tx = transactions.find(t => t.id === txId);
     if (!tx || tx.type !== 'withdrawal' || tx.status !== 'pending') return;
 
-    setTransactions(prev => prev.map(t => t.id === txId ? { ...t, status: 'completed' } : t));
-    setSuccessMsg(`Approved and paid withdrawal of ₦${tx.amount.toLocaleString()} for ${tx.userName}.`);
+    setTransactions(prev => prev.map(t => t.id === txId ? { 
+      ...t, 
+      status: 'completed',
+      description: `${t.description} (Manually Disbursed by Finance Admin)`
+    } : t));
+
+    setSuccessMsg(`Approved and marked withdrawal of ₦${tx.amount.toLocaleString()} as disbursed to ${tx.accountDetails} for ${tx.userName}.`);
   };
 
   const rejectWithdrawal = (txId: string) => {
@@ -1512,12 +1535,12 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       payoutLog.push(`Credited ₦${payoutAmount.toLocaleString()} to ${inv.userName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`);
 
-      // REFERRAL BONUS SYSTEM: "Users earn 20% of their referral's weekly payout."
+      // REFERRAL BONUS SYSTEM: "Users earn 7.5% of their referral's weekly payout."
       const investorUser = users.find(u => u.id === inv.userId);
       if (investorUser && investorUser.referredByCode) {
         const sponsorUser = updatedUsers.find(u => u.referralCode === investorUser.referredByCode);
         if (sponsorUser) {
-          const bonusAmount = payoutAmount * 0.2;
+          const bonusAmount = payoutAmount * 0.075;
           let newSponsorBal = 0;
           
           // Credit the sponsor
@@ -1533,7 +1556,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if (currentUser && currentUser.id === sponsorUser.id) {
             pendingToasts.push({
               id: 'toast_ref_' + Date.now() + '_' + inv.id + '_' + Math.random().toString(36).substring(2, 6),
-              planName: `20% Referral Commission (${investorUser.name})`,
+              planName: `7.5% Referral Commission (${investorUser.name})`,
               amount: bonusAmount,
               weeksPaid: nextWeeksPaid,
               totalWeeks: inv.totalWeeks,
@@ -1554,7 +1577,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             amount: bonusAmount,
             status: 'completed',
             createdAt: new Date().toISOString(),
-            description: `20% Referral bonus from ${investorUser.name}'s ${inv.planName} weekly payout`
+            description: `7.5% Referral bonus from ${investorUser.name}'s ${inv.planName} weekly payout`
           });
 
           payoutLog.push(`Ref Bonus: Credited ₦${bonusAmount.toLocaleString()} to sponsor ${sponsorUser.name}`);
@@ -1641,6 +1664,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       logout,
       switchUser,
       submitDeposit,
+      processAutomatedDeposit,
       submitWithdrawal,
       purchaseInvestment,
       submitKyc,

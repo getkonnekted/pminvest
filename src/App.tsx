@@ -112,7 +112,20 @@ function MainAppContent() {
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
-  const [regRef, setRegRef] = useState('TREASURE_ADMIN');
+  const [regRef, setRegRef] = useState('');
+
+  // Check URL params for referral code if provided
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const refParam = urlParams.get('ref');
+      if (refParam) {
+        setRegRef(refParam.toUpperCase().trim());
+      }
+    } catch {
+      // Ignore if URLSearchParams is unavailable
+    }
+  }, []);
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,6 +139,7 @@ function MainAppContent() {
       setRegName('');
       setRegEmail('');
       setRegPassword('');
+      setRegRef('');
     }
   };
 
@@ -196,8 +210,8 @@ function MainAppContent() {
               <div className="flex items-start gap-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <Users className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-slate-900 uppercase tracking-wider">20% Referral Commission</h4>
-                  <p className="text-slate-500 mt-0.5">Earn 20% of your referral's weekly payouts automatically credited to your balance.</p>
+                  <h4 className="font-bold text-slate-900 uppercase tracking-wider">7.5% Referral Commission</h4>
+                  <p className="text-slate-500 mt-0.5">Earn 7.5% of your referral's weekly payouts automatically credited to your balance.</p>
                 </div>
               </div>
             </div>
@@ -410,23 +424,19 @@ function MainAppContent() {
 
                 <div>
                   <div className="flex justify-between items-baseline mb-1">
-                    <label className="block text-xs font-semibold text-slate-700">Sponsor Referral Code</label>
-                    <span className="text-[10px] text-amber-600 font-mono font-bold">Auto-Assigned</span>
+                    <label className="block text-xs font-semibold text-slate-700">Referral Code</label>
+                    <span className="text-[10px] text-slate-400 font-medium">Optional</span>
                   </div>
                   <div className="relative">
                     <input 
                       type="text" 
                       value={regRef}
                       onChange={(e) => setRegRef(e.target.value.toUpperCase())}
-                      placeholder="e.g. TREASURE_ADMIN"
+                      placeholder="Enter referral code (optional)"
                       className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-mono uppercase"
-                      required
                     />
                     <Users className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Default: <strong className="text-slate-600">TREASURE_ADMIN</strong>. You may also enter a friend or partner's code.
-                  </p>
                 </div>
 
                 <button
