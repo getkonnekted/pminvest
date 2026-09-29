@@ -1,32 +1,21 @@
 import React from 'react';
 import { 
   ShieldCheck, 
-  Landmark, 
-  Sparkles, 
   LogOut, 
   Wallet 
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
+import { PmLogo } from './PmLogo';
 
 export const BrandingHeader: React.FC = () => {
   const { currentUser, logout } = useAppState();
 
   return (
     <header className="w-full bg-[#0f172a] border-b border-slate-700 text-white shadow-md">
-      {/* Top Banner indicating Treasure Homes affiliation */}
-      <div className="bg-[#1e293b] px-4 py-2 text-xs text-center border-b border-slate-800 text-slate-300 flex items-center justify-center gap-1.5 font-sans">
-        <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-        <span>PM Invest operates as a premium subsidiary under <strong>TREASURE HOMES</strong></span>
-        <span className="hidden md:inline text-slate-500">|</span>
-        <span className="hidden md:inline">Registered Asset & Wealth Management Group</span>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Brand logo & tagline */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center font-bold text-slate-900 shadow-lg shadow-amber-500/20">
-            <Landmark className="w-5 h-5 text-slate-900" />
-          </div>
+          <PmLogo className="w-11 h-11" />
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xl font-extrabold tracking-tight uppercase font-sans text-white">PM <span className="text-amber-400">Invest</span></span>

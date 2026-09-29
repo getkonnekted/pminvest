@@ -39,6 +39,8 @@ export interface UserInvestment {
   status: 'active' | 'completed';
   createdAt: string;
   lastPayoutDate?: string;
+  nextPayoutDate?: string;
+  autoReinvest?: boolean;
 }
 
 export interface Transaction {

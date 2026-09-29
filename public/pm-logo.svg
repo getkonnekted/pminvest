@@ -25,10 +25,14 @@
       <stop offset="50%" stop-color="#B45309" />
       <stop offset="100%" stop-color="#78350F" />
     </linearGradient>
+
+    <filter id="pmBadgeShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
   </defs>
 
   <!-- Outer Fine Edge Highlight -->
-  <circle cx="256" cy="256" r="248" fill="none" stroke="#FEF3C7" stroke-width="3" opacity="0.8" />
+  <circle cx="256" cy="256" r="248" fill="none" stroke="#FEF3C7" stroke-width="2.5" opacity="0.75" />
 
   <!-- Broad Gold Perimeter Ring -->
   <circle cx="256" cy="256" r="232" fill="none" stroke="url(#pmBadgeGoldGrad)" stroke-width="28" />
@@ -40,7 +44,7 @@
   <circle cx="256" cy="256" r="213" fill="url(#pmBadgeDarkBg)" />
 
   <!-- Monogram Symbol "PM" -->
-  <g>
+  <g filter="url(#pmBadgeShadow)">
     <!-- Main Stem of Letter P -->
     <rect x="140" y="145" width="48" height="220" rx="3" fill="url(#pmBadgeLetterGold)" />
 

@@ -25,12 +25,18 @@ import {
   ExternalLink,
   Zap,
   Menu,
-  X
+  X,
+  Loader2,
+  RotateCw,
+  PlusCircle,
+  ArrowRight
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
 import { INVESTMENT_PLANS, InvestmentPlan } from '../types';
 import { DailyTasksHub } from './DailyTasksHub';
 import { NIGERIAN_BANKS, resolveNigerianAccount } from '../lib/paystack';
+import { PmLogo } from './PmLogo';
+import { PayoutCountdown } from './PayoutCountdown';
 
 export const UserDashboard: React.FC = () => {
   const { 
@@ -44,8 +50,10 @@ export const UserDashboard: React.FC = () => {
     getUserDailyPool,
     getUserActiveWeeklyPayout,
     submitDeposit, 
+    processAutomatedDeposit,
     submitWithdrawal, 
     purchaseInvestment, 
+    toggleAutoReinvest,
     submitKyc,
     processSingleInvestmentPayout,
     triggerPayoutToast,
@@ -164,7 +172,7 @@ export const UserDashboard: React.FC = () => {
   const faqItems = [
     {
       question: "How do I fund my account (Deposits)?",
-      answer: "To fund your account, go to the 'Deposit & Withdraw' tab, select your preferred plan or enter a custom amount, and copy the provided banking transfer details. Pay using your banking app, upload your receipt/Proof of Payment (PoP), and submit. The compliance team audits transfers and approves deposits within 1 to 24 hours."
+      answer: "To fund your account, go to the 'Deposit & Withdraw' tab, select your preferred plan or enter a custom amount, and copy the provided banking transfer details. Pay using your banking app, upload your receipt/Proof of Payment (PoP), and submit. The compliance team audits transfers and approves deposits within 10 to 30min"
     },
     {
       question: "How do payout cycles work?",
@@ -281,8 +289,44 @@ export const UserDashboard: React.FC = () => {
     submitKyc(kycName, kycType, kycNumber);
   };
 
+  const [investingPlanId, setInvestingPlanId] = useState<string | null>(null);
+  const [justActivatedPlanId, setJustActivatedPlanId] = useState<string | null>(null);
+  const [activatedPlanModal, setActivatedPlanModal] = useState<{ plan: InvestmentPlan; nextPayoutDate: string } | null>(null);
+  const [quickTopUpPlan, setQuickTopUpPlan] = useState<InvestmentPlan | null>(null);
+  const [isProcessingQuickTopUp, setIsProcessingQuickTopUp] = useState<boolean>(false);
+
   const handlePurchase = (plan: InvestmentPlan) => {
-    purchaseInvestment(plan.id);
+    if (investingPlanId) return; // Prevent double-triggering while animating
+    setInvestingPlanId(plan.id);
+
+    setTimeout(() => {
+      const success = purchaseInvestment(plan.id);
+      setInvestingPlanId(null);
+      if (success) {
+        setJustActivatedPlanId(plan.id);
+        const nextDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        setActivatedPlanModal({ plan, nextPayoutDate: nextDate });
+        setTimeout(() => {
+          setJustActivatedPlanId(null);
+        }, 3000);
+      }
+    }, 750);
+  };
+
+  const handleExecuteQuickTopUp = (plan: InvestmentPlan, autoInvestAfter: boolean = true) => {
+    const shortfall = Math.max(0, plan.cost - (currentUser?.walletBalance || 0));
+    if (shortfall <= 0) return;
+    setIsProcessingQuickTopUp(true);
+    setTimeout(() => {
+      processAutomatedDeposit(shortfall, 'quick_topup_' + Date.now(), 'card');
+      setIsProcessingQuickTopUp(false);
+      setQuickTopUpPlan(null);
+      if (autoInvestAfter) {
+        setTimeout(() => {
+          handlePurchase(plan);
+        }, 400);
+      }
+    }, 900);
   };
 
   return (
@@ -385,9 +429,12 @@ export const UserDashboard: React.FC = () => {
         {/* Mobile / Expanded Hamburger Drawer with clean quick-navigation cards */}
         {isMenuOpen && (
           <div className="mt-3 pt-3 border-t border-slate-100 animate-fadeIn">
-            <div className="px-1 mb-2 flex items-center justify-between text-[11px] font-mono text-slate-400">
-              <span className="font-bold text-slate-600 uppercase tracking-wider">Dashboard Navigation</span>
-              <span className="text-amber-600 font-semibold">{menuItems.length} Menus Available</span>
+            <div className="px-1 mb-2.5 flex items-center justify-between text-[11px] font-mono text-slate-400">
+              <div className="flex items-center gap-2">
+                <PmLogo className="w-5 h-5" />
+                <span className="font-bold text-slate-700 uppercase tracking-wider">PM Invest Menus</span>
+              </div>
+              <span className="text-amber-600 font-semibold">{menuItems.length} Available</span>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
@@ -537,7 +584,7 @@ export const UserDashboard: React.FC = () => {
 
           {/* Active Investments section */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-100 pb-3">
+            <div id="active_investments_section" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-100 pb-3">
               <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                 <span className="w-2.5 h-2.5 bg-amber-500 rounded-full" />
                 My Active Investments ({activeInvestments.length})
@@ -625,6 +672,37 @@ export const UserDashboard: React.FC = () => {
                               style={{ width: `${percentComplete}%` }}
                             />
                           </div>
+                        </div>
+
+                        {/* Live Payout Countdown Timer */}
+                        <div className="my-2.5">
+                          <PayoutCountdown targetDate={inv.nextPayoutDate} />
+                        </div>
+
+                        {/* Auto-Compounding Rollover Toggle */}
+                        <div className="flex items-center justify-between bg-white border border-slate-200/90 rounded-xl p-2.5 my-2">
+                          <div className="flex items-center gap-2">
+                            <RotateCw className={`w-3.5 h-3.5 ${inv.autoReinvest ? 'text-amber-500 animate-spin-slow' : 'text-slate-400'}`} />
+                            <div>
+                              <span className="text-[11px] font-bold text-slate-800 block leading-tight">Auto-Compounding</span>
+                              <span className="text-[9px] text-slate-400 block">Auto-reinvest upon completing 4 weeks</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => toggleAutoReinvest(inv.id)}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              inv.autoReinvest ? 'bg-amber-500' : 'bg-slate-300'
+                            }`}
+                            id={`toggle_autoreinvest_${inv.id}`}
+                            title="Toggle automatic reinvestment of principal at maturity"
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                inv.autoReinvest ? 'translate-x-4' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
                         </div>
                       </div>
 
@@ -734,12 +812,18 @@ export const UserDashboard: React.FC = () => {
               return (
                 <div 
                   key={plan.id} 
-                  className={`bg-white border rounded-2xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-all relative overflow-hidden ${
-                    isAffordable ? 'border-amber-300 hover:border-amber-500 hover:shadow-lg' : 'border-slate-200 opacity-90'
+                  className={`bg-white border rounded-2xl p-6 flex flex-col justify-between shadow-sm transition-all duration-300 relative overflow-hidden ${
+                    justActivatedPlanId === plan.id
+                      ? 'border-emerald-500 ring-4 ring-emerald-500/20 shadow-xl scale-[1.01]'
+                      : investingPlanId === plan.id
+                        ? 'border-amber-400 ring-2 ring-amber-400/40 shadow-lg scale-[1.005]'
+                        : isAffordable ? 'border-amber-300 hover:border-amber-500 hover:shadow-lg' : 'border-slate-200 opacity-90'
                   }`}
                 >
-                  <div className="absolute top-0 right-0 bg-amber-500 text-slate-900 text-[9px] font-extrabold uppercase px-3 py-1 rounded-bl-lg tracking-widest font-mono">
-                    REAL ESTATE TRUST
+                  <div className={`absolute top-0 right-0 text-[9px] font-extrabold uppercase px-3 py-1 rounded-bl-lg tracking-widest font-mono transition-colors duration-300 ${
+                    justActivatedPlanId === plan.id ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-slate-900'
+                  }`}>
+                    {justActivatedPlanId === plan.id ? 'ACTIVATED' : 'REAL ESTATE TRUST'}
                   </div>
 
                   <div>
@@ -778,23 +862,48 @@ export const UserDashboard: React.FC = () => {
                     </ul>
                   </div>
 
-                  <button
-                    onClick={() => handlePurchase(plan)}
-                    disabled={!isAffordable}
-                    className={`w-full py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-300 ${
-                      isAffordable 
-                        ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shadow-sm cursor-pointer' 
-                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                    }`}
-                    id={`btn_purchase_${plan.id}`}
-                  >
-                    {isAffordable ? `Invest ₦${plan.cost.toLocaleString()}` : 'Insufficient Balance'}
-                  </button>
-                  
-                  {!isAffordable && (
-                    <p className="text-[10px] text-center text-rose-600 mt-2 font-sans">
-                      Add at least ₦{(plan.cost - currentUser.walletBalance).toLocaleString()} to buy this plan.
-                    </p>
+                  {isAffordable ? (
+                    <button
+                      onClick={() => handlePurchase(plan)}
+                      disabled={investingPlanId === plan.id}
+                      className={`w-full py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden active:scale-95 cursor-pointer ${
+                        justActivatedPlanId === plan.id
+                          ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]'
+                          : investingPlanId === plan.id
+                            ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-md animate-pulse cursor-wait'
+                            : 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shadow-sm hover:shadow-md cursor-pointer'
+                      }`}
+                      id={`btn_purchase_${plan.id}`}
+                    >
+                      {justActivatedPlanId === plan.id ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-white animate-bounce" />
+                          <span>Investment Activated!</span>
+                        </>
+                      ) : investingPlanId === plan.id ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                          <span className="tracking-widest">Activating Plan...</span>
+                        </>
+                      ) : (
+                        `Invest ₦${plan.cost.toLocaleString()}`
+                      )}
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setQuickTopUpPlan(plan)}
+                        className="w-full py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:to-amber-600 text-slate-950 flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-95 font-sans"
+                        id={`btn_quick_topup_${plan.id}`}
+                      >
+                        <PlusCircle className="w-4 h-4 text-slate-950 shrink-0" />
+                        <span>Top Up ₦{(plan.cost - currentUser.walletBalance).toLocaleString()} & Invest</span>
+                      </button>
+                      <p className="text-[10px] text-center text-slate-500 font-sans flex items-center justify-center gap-1">
+                        <span>Balance short by ₦{(plan.cost - currentUser.walletBalance).toLocaleString()}</span>
+                        <span className="text-amber-600 font-semibold">• 1-Click Paystack</span>
+                      </p>
+                    </div>
                   )}
                 </div>
               );
@@ -815,7 +924,7 @@ export const UserDashboard: React.FC = () => {
                   Wallet Deposit & Funding
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Transfer funds to the verified corporate bank accounts below and submit your Proof of Payment (receipt) for audit clearance.
+                  Transfer funds to the verified corporate bank accounts below and submit your Proof of Payment (receipt). The compliance team audits transfers and approves deposits within 10 to 30min.
                 </p>
               </div>
               <div className="flex items-center gap-1.5 self-start sm:self-auto bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold text-emerald-800">
@@ -1392,6 +1501,168 @@ export const UserDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ─── POST-INVESTMENT CELEBRATION MODAL ─── */}
+      {activatedPlanModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 border border-amber-300 shadow-2xl relative overflow-hidden animate-scaleUp">
+            {/* Top decorative gradient bar */}
+            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-400 via-amber-500 to-emerald-500" />
+            
+            <button
+              onClick={() => setActivatedPlanModal(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-tr from-amber-400 to-amber-500 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-amber-500/30 text-slate-950 mb-4 animate-bounce">
+                <Sparkles className="w-8 h-8 text-slate-950" />
+              </div>
+
+              <span className="text-[10px] font-mono font-extrabold uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                Contract Activated
+              </span>
+
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight mt-3">
+                {activatedPlanModal.plan.name}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Your investment is secured and generating structured mortgage yield.
+              </p>
+            </div>
+
+            {/* Contract Highlights */}
+            <div className="my-5 bg-slate-50 border border-slate-200/90 rounded-2xl p-4 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Invested Capital:</span>
+                <span className="font-extrabold text-slate-900 text-sm">₦{activatedPlanModal.plan.cost.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Weekly Direct Payout:</span>
+                <span className="font-extrabold text-emerald-600 text-sm">₦{activatedPlanModal.plan.weeklyPayout.toLocaleString()} / wk</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Total Returns (4 Weeks):</span>
+                <span className="font-extrabold text-amber-600 text-sm">₦{activatedPlanModal.plan.totalReturns.toLocaleString()}</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200">
+                <PayoutCountdown targetDate={activatedPlanModal.nextPayoutDate} />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2.5">
+              <button
+                onClick={() => {
+                  setActivatedPlanModal(null);
+                  setActiveTab('overview');
+                  setTimeout(() => {
+                    document.getElementById('active_investments_section')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                }}
+                className="w-full py-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-amber-400 font-extrabold text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
+                id="btn_modal_go_portfolio"
+              >
+                <TrendingUp className="w-4 h-4 text-amber-400" />
+                <span>View in My Portfolio</span>
+              </button>
+
+              <button
+                onClick={() => setActivatedPlanModal(null)}
+                className="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+              >
+                Done / Explore More Plans
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── QUICK TOP-UP FOR INSUFFICIENT BALANCE MODAL ─── */}
+      {quickTopUpPlan && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 border border-amber-300 shadow-2xl relative overflow-hidden animate-scaleUp">
+            <button
+              onClick={() => {
+                if (!isProcessingQuickTopUp) setQuickTopUpPlan(null);
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-slate-950 shadow-md shadow-amber-500/20">
+                <CreditCard className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono font-bold text-amber-600 uppercase tracking-widest block">
+                  Quick Wallet Top-Up
+                </span>
+                <h3 className="text-lg font-extrabold text-slate-900 uppercase">
+                  Fund {quickTopUpPlan.name}
+                </h3>
+              </div>
+            </div>
+
+            {/* Calculations Breakdown */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 my-4 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Plan Required Capital:</span>
+                <span className="font-bold text-slate-900">₦{quickTopUpPlan.cost.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Your Current Balance:</span>
+                <span className="font-bold text-slate-700">₦{(currentUser?.walletBalance || 0).toLocaleString()}</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-sm">
+                <span className="font-bold text-rose-600">Missing Difference:</span>
+                <span className="font-extrabold text-amber-600 text-base">
+                  ₦{Math.max(0, quickTopUpPlan.cost - (currentUser?.walletBalance || 0)).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-500 mb-5 leading-relaxed">
+              Instantly fund the exact difference of <strong className="text-slate-900">₦{Math.max(0, quickTopUpPlan.cost - (currentUser?.walletBalance || 0)).toLocaleString()}</strong> via simulated Paystack gateway and activate this plan immediately.
+            </p>
+
+            <div className="space-y-2.5">
+              <button
+                onClick={() => handleExecuteQuickTopUp(quickTopUpPlan, true)}
+                disabled={isProcessingQuickTopUp}
+                className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-75 text-slate-950 font-bold text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
+                id="btn_confirm_quick_topup"
+              >
+                {isProcessingQuickTopUp ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                    <span>Processing Gateway Funding...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 text-slate-950" />
+                    <span>Pay ₦{Math.max(0, quickTopUpPlan.cost - (currentUser?.walletBalance || 0)).toLocaleString()} & Activate Plan</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  setQuickTopUpPlan(null);
+                  setActiveTab('finance');
+                }}
+                disabled={isProcessingQuickTopUp}
+                className="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider transition-all cursor-pointer"
+              >
+                Deposit Custom Amount in Finance Tab
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

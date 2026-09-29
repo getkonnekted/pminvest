@@ -9,10 +9,10 @@ import { BrandingHeader, LegalDisclosures } from './components/BrandingHeader';
 import { UserDashboard } from './components/UserDashboard';
 import { AdminPanel } from './components/AdminPanel';
 import { AujotenPage } from './components/AujotenPage';
+import { PmLogo } from './components/PmLogo';
 import { 
   Building, 
   ShieldCheck, 
-  Landmark, 
   ArrowRight, 
   Lock, 
   Mail, 
@@ -30,7 +30,9 @@ import {
   CheckCircle2,
   User as UserIcon,
   X,
-  Globe
+  Globe,
+  KeyRound,
+  RotateCcw
 } from 'lucide-react';
 import { INVESTMENT_PLANS } from './types';
 import { PayoutToastContainer } from './components/PayoutToast';
@@ -42,6 +44,8 @@ function MainAppContent() {
     settings,
     register, 
     login, 
+    requestPasswordReset,
+    confirmPasswordReset,
     successMsg, 
     errorMsg, 
     clearMessages,
@@ -143,6 +147,74 @@ function MainAppContent() {
     }
   };
 
+  // Password reset state & flow
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [resetStep, setResetStep] = useState<1 | 2 | 3>(1); // 1 = Request, 2 = Verify Code & Confirm New Password, 3 = Reset Confirmed
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [generatedCodeBanner, setGeneratedCodeBanner] = useState<string | null>(null);
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [showResetNewPassword, setShowResetNewPassword] = useState(false);
+  const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
+  const [resetLocalError, setResetLocalError] = useState<string | null>(null);
+
+  const handleRequestResetCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLocalError(null);
+    clearMessages();
+    const emailToUse = resetEmail.trim().toLowerCase();
+    if (!emailToUse) {
+      setResetLocalError('Please enter your registered email address.');
+      return;
+    }
+    const res = requestPasswordReset(emailToUse);
+    if (res.success && res.code) {
+      setGeneratedCodeBanner(res.code);
+      setResetStep(2);
+    }
+  };
+
+  const handleConfirmResetSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLocalError(null);
+    clearMessages();
+
+    const codeToUse = resetCode.trim();
+    if (!codeToUse) {
+      setResetLocalError('Please enter the 6-digit confirmation code.');
+      return;
+    }
+
+    if (!resetNewPassword || resetNewPassword.length < 4) {
+      setResetLocalError('New password must be at least 4 characters long.');
+      return;
+    }
+
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetLocalError('Password confirmation does not match. Please ensure both passwords match.');
+      return;
+    }
+
+    const success = confirmPasswordReset(resetEmail.trim().toLowerCase(), codeToUse, resetNewPassword);
+    if (success) {
+      setResetStep(3);
+    }
+  };
+
+  const handleFinishResetToSignIn = () => {
+    setLoginEmail(resetEmail.trim().toLowerCase());
+    setLoginPassword(resetNewPassword);
+    setIsResettingPassword(false);
+    setResetStep(1);
+    setResetCode('');
+    setGeneratedCodeBanner(null);
+    setResetNewPassword('');
+    setResetConfirmPassword('');
+    setResetLocalError(null);
+    clearMessages();
+  };
+
   // Unauthenticated Landing Page
   if (!currentUser) {
     return (
@@ -160,12 +232,10 @@ function MainAppContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-grow">
           {/* LEFT PANEL: Promotional, brand values, plans preview */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
-                <Landmark className="w-6 h-6 text-slate-900" />
-              </div>
+            <div className="flex items-center gap-3.5">
+              <PmLogo className="w-14 h-14 sm:w-16 sm:h-16 drop-shadow-md" />
               <div>
-                <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest block">TREASURE HOMES GROUP</span>
+                <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest block font-mono">TREASURE HOMES GROUP</span>
                 <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight uppercase">PM <span className="text-amber-500">Invest</span> Platform</h1>
               </div>
             </div>
@@ -226,9 +296,9 @@ function MainAppContent() {
             <div className="flex bg-slate-100 p-1 rounded-xl mb-5 border border-slate-200/80">
               <button
                 type="button"
-                onClick={() => { setIsRegistering(false); clearMessages(); }}
+                onClick={() => { setIsRegistering(false); setIsResettingPassword(false); clearMessages(); }}
                 className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  !isRegistering
+                  !isRegistering && !isResettingPassword
                     ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
@@ -239,9 +309,9 @@ function MainAppContent() {
               </button>
               <button
                 type="button"
-                onClick={() => { setIsRegistering(true); clearMessages(); }}
+                onClick={() => { setIsRegistering(true); setIsResettingPassword(false); clearMessages(); }}
                 className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  isRegistering
+                  isRegistering && !isResettingPassword
                     ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
@@ -255,15 +325,34 @@ function MainAppContent() {
             {/* Subtitle Header */}
             <div className="mb-4">
               <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-tight">
-                {isRegistering ? 'Open Investor Account' : 'Welcome Back'}
+                {isResettingPassword
+                  ? 'Reset & Confirm Password'
+                  : isRegistering
+                    ? 'Open Investor Account'
+                    : 'Welcome Back'}
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                {isRegistering 
-                  ? 'Join PM Invest to start earning weekly mortgage returns.'
-                  : 'Enter your credentials to access your portfolio dashboard.'
+                {isResettingPassword
+                  ? 'Authenticate your registered email to establish and confirm a new password.'
+                  : isRegistering 
+                    ? 'Access is invite-only. Join PM Invest to start earning weekly mortgage returns.'
+                    : 'Enter your credentials to access your portfolio dashboard.'
                 }
               </p>
             </div>
+
+            {/* Invite-Only Gating Banner for Registration */}
+            {isRegistering && !isResettingPassword && (
+              <div className="mb-4 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-900 shadow-xs">
+                <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-slate-900 block">Invite-Only Access Gate</span>
+                  <span className="text-[11px] text-slate-600 mt-0.5 block leading-relaxed">
+                    Account creation is gated. You must provide a valid sponsor referral code from an existing member or partner to register.
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* General Feedback Notifications */}
             {successMsg && (
@@ -297,7 +386,239 @@ function MainAppContent() {
               </div>
             )}
 
-            {!isRegistering ? (
+            {isResettingPassword ? (
+              /* PASSWORD RESET & CONFIRMATION WORKFLOW */
+              <div className="space-y-4">
+                {resetLocalError && (
+                  <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs flex items-start gap-2 shadow-xs">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span className="font-medium leading-relaxed">{resetLocalError}</span>
+                  </div>
+                )}
+
+                {resetStep === 1 && (
+                  /* Step 1: Request Reset Confirmation Code */
+                  <form onSubmit={handleRequestResetCode} className="space-y-3.5">
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-600 space-y-1">
+                      <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                        <Key className="w-4 h-4 text-amber-500" />
+                        <span>Step 1 of 2: Request Confirmation Code</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Enter your registered account email. A secure 6-digit confirmation code will be issued to authorize resetting your password.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Registered Email Address</label>
+                      <div className="relative">
+                        <input 
+                          type="email" 
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                          placeholder="e.g. investor@gmail.com"
+                          autoComplete="email"
+                          className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-sans"
+                          required
+                        />
+                        <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full bg-slate-950 hover:bg-slate-900 active:scale-[0.99] text-white font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer mt-2"
+                      id="btn_request_reset_code"
+                    >
+                      <span>Send Reset Confirmation Code</span>
+                      <ArrowRight className="w-4 h-4 text-amber-400" />
+                    </button>
+
+                    <div className="text-center pt-2 text-xs text-slate-500">
+                      <span>Remembered your password? </span>
+                      <button 
+                        type="button"
+                        onClick={() => { setIsResettingPassword(false); setResetStep(1); clearMessages(); }}
+                        className="text-amber-600 hover:text-amber-700 font-bold hover:underline cursor-pointer"
+                      >
+                        Return to Sign In
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {resetStep === 2 && (
+                  /* Step 2: Enter Code, New Password & Confirm Match */
+                  <form onSubmit={handleConfirmResetSubmit} className="space-y-3.5">
+                    {/* Security Code Banner with Quick Autofill */}
+                    {generatedCodeBanner && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 space-y-1.5 shadow-xs animate-fadeIn">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 font-bold text-amber-800">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Security Confirmation Code</span>
+                          </div>
+                          <span className="text-[10px] bg-amber-200/80 text-amber-900 font-mono px-2 py-0.5 rounded font-bold">15m Expiry</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600">
+                          Reset authorization for <strong className="text-slate-900">{resetEmail}</strong>:
+                        </p>
+                        <div className="flex items-center gap-2 pt-0.5">
+                          <span className="font-mono font-extrabold text-sm tracking-widest text-slate-900 bg-white px-3 py-1 rounded border border-amber-300 shadow-2xs">
+                            {generatedCodeBanner}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setResetCode(generatedCodeBanner)}
+                            className="text-[11px] font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2.5 py-1 rounded transition-colors cursor-pointer"
+                            id="btn_autofill_reset_code"
+                          >
+                            Autofill Code
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs font-semibold text-slate-700">6-Digit Confirmation Code</label>
+                        <span className="text-[10px] text-slate-400 font-mono">Compulsory</span>
+                      </div>
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          value={resetCode}
+                          onChange={(e) => setResetCode(e.target.value.trim())}
+                          placeholder="e.g. 583920"
+                          maxLength={6}
+                          className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm font-mono tracking-widest text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-semibold"
+                          required
+                        />
+                        <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Create New Password</label>
+                      <div className="relative">
+                        <input 
+                          type={showResetNewPassword ? 'text' : 'password'}
+                          value={resetNewPassword}
+                          onChange={(e) => setResetNewPassword(e.target.value)}
+                          placeholder="At least 4 characters"
+                          className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-10 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-mono"
+                          required
+                          minLength={4}
+                        />
+                        <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                        <button
+                          type="button"
+                          onClick={() => setShowResetNewPassword(!showResetNewPassword)}
+                          className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                          tabIndex={-1}
+                          title={showResetNewPassword ? "Hide password" : "Show password"}
+                        >
+                          {showResetNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs font-semibold text-slate-700">Confirm New Password</label>
+                        {resetNewPassword && resetConfirmPassword && (
+                          resetNewPassword === resetConfirmPassword ? (
+                            <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
+                              <CheckCircle2 className="w-3 h-3" /> Passwords match
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-rose-600 font-bold flex items-center gap-0.5">
+                              <AlertTriangle className="w-3 h-3" /> Passwords do not match
+                            </span>
+                          )
+                        )}
+                      </div>
+                      <div className="relative">
+                        <input 
+                          type={showResetConfirmPassword ? 'text' : 'password'}
+                          value={resetConfirmPassword}
+                          onChange={(e) => setResetConfirmPassword(e.target.value)}
+                          placeholder="Re-enter new password"
+                          className={`w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border rounded-xl py-2.5 pl-9 pr-10 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition-all font-mono ${
+                            resetNewPassword && resetConfirmPassword && resetNewPassword !== resetConfirmPassword
+                              ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10'
+                              : 'border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10'
+                          }`}
+                          required
+                          minLength={4}
+                        />
+                        <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                        <button
+                          type="button"
+                          onClick={() => setShowResetConfirmPassword(!showResetConfirmPassword)}
+                          className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                          tabIndex={-1}
+                          title={showResetConfirmPassword ? "Hide password" : "Show password"}
+                        >
+                          {showResetConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={!resetCode.trim() || !resetNewPassword || resetNewPassword !== resetConfirmPassword}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] text-white font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer mt-2"
+                      id="btn_confirm_reset_password"
+                    >
+                      <ShieldCheck className="w-4 h-4 text-emerald-200" />
+                      <span>Confirm & Reset Password</span>
+                    </button>
+
+                    <div className="flex justify-between items-center pt-2 text-xs">
+                      <button 
+                        type="button"
+                        onClick={() => { setResetStep(1); setResetLocalError(null); }}
+                        className="text-slate-500 hover:text-slate-800 font-semibold cursor-pointer"
+                      >
+                        ← Change Email
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => { setIsResettingPassword(false); setResetStep(1); clearMessages(); }}
+                        className="text-amber-600 hover:text-amber-700 font-bold hover:underline cursor-pointer"
+                      >
+                        Cancel & Sign In
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {resetStep === 3 && (
+                  /* Step 3: Password Reset Confirmed Success Card */
+                  <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-5 text-center space-y-4 animate-scaleIn">
+                    <div className="w-12 h-12 bg-emerald-100 border border-emerald-300 rounded-full flex items-center justify-center mx-auto text-emerald-600 shadow-xs">
+                      <CheckCircle2 className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-bold text-slate-900">Password Reset Confirmed!</h4>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                        Your account password for <strong className="text-slate-900">{resetEmail}</strong> has been successfully updated and verified.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleFinishResetToSignIn}
+                      className="w-full bg-slate-950 hover:bg-slate-900 text-white font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                      id="btn_proceed_to_signin"
+                    >
+                      <span>Proceed to Sign In</span>
+                      <ArrowRight className="w-4 h-4 text-amber-400" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : !isRegistering ? (
               /* CLEAN SIGN IN FORM */
               <form onSubmit={handleLoginSubmit} className="space-y-3.5">
                 <div>
@@ -319,7 +640,19 @@ function MainAppContent() {
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <label className="block text-xs font-semibold text-slate-700">Password</label>
-                    <span className="text-[10px] text-slate-400 font-normal">Optional for unseeded guest accounts</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsResettingPassword(true);
+                        setResetEmail(loginEmail || '');
+                        setResetStep(1);
+                        setResetLocalError(null);
+                        clearMessages();
+                      }}
+                      className="text-[11px] text-amber-600 hover:text-amber-700 font-semibold hover:underline cursor-pointer"
+                    >
+                      Forgot password?
+                    </button>
                   </div>
                   <div className="relative">
                     <input 
@@ -424,19 +757,27 @@ function MainAppContent() {
 
                 <div>
                   <div className="flex justify-between items-baseline mb-1">
-                    <label className="block text-xs font-semibold text-slate-700">Referral Code</label>
-                    <span className="text-[10px] text-slate-400 font-medium">Optional</span>
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Sponsor Referral Code <span className="text-rose-500 font-bold">*</span>
+                    </label>
+                    <span className="text-[10px] text-amber-800 bg-amber-100 border border-amber-300 font-mono font-bold px-1.5 py-0.5 rounded uppercase">
+                      Compulsory
+                    </span>
                   </div>
                   <div className="relative">
                     <input 
                       type="text" 
                       value={regRef}
                       onChange={(e) => setRegRef(e.target.value.toUpperCase())}
-                      placeholder="Enter referral code (optional)"
+                      placeholder="Enter verified sponsor code (required)"
                       className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-mono uppercase"
+                      required
                     />
                     <Users className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   </div>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    🔒 Account creation is gated. Registration requires an active referral code from an existing member or sponsor.
+                  </p>
                 </div>
 
                 <button

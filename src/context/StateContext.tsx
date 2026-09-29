@@ -41,6 +41,8 @@ interface StateContextType {
   // Auth actions
   register: (name: string, email: string, referredByCode?: string, password?: string) => boolean;
   login: (email: string, password?: string) => boolean;
+  requestPasswordReset: (email: string) => { success: boolean; code?: string; message: string };
+  confirmPasswordReset: (email: string, code: string, newPassword: string) => boolean;
   logout: () => void;
   switchUser: (userId: string) => void;
   
@@ -49,6 +51,7 @@ interface StateContextType {
   processAutomatedDeposit: (amount: number, reference: string, channel: string) => void;
   submitWithdrawal: (amount: number, accountDetails: string) => boolean;
   purchaseInvestment: (planId: string) => boolean;
+  toggleAutoReinvest: (investmentId: string) => void;
   submitKyc: (fullName: string, idType: string, idNumber: string) => void;
 
   // Daily Tasks user actions
@@ -59,6 +62,7 @@ interface StateContextType {
   claimGuestTrialEarnings: () => number;
   
   // Admin actions
+  adminUpdateUser: (userId: string, updates: { walletBalance?: number; role?: 'user' | 'admin'; kycStatus?: 'unverified' | 'pending' | 'verified'; name?: string; password?: string }) => boolean;
   approveDeposit: (txId: string, adjustedAmount?: number) => void;
   rejectDeposit: (txId: string) => void;
   approveWithdrawal: (txId: string) => void;
@@ -484,13 +488,17 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
-    // Normalize referral code or fall back to TREASURE_ADMIN
-    const codeToUse = (referredByCode || '').trim() || 'TREASURE_ADMIN';
+    // Referral code is strictly compulsory for Account Creation (Gated Platform)
+    const cleanRef = (referredByCode || '').trim();
+    if (!cleanRef) {
+      setErrorMsg('Referral code is compulsory for account creation. PM Invest is an invite-only platform; please enter a valid sponsor code to register.');
+      return false;
+    }
 
-    // Validate referral code
-    const sponsor = users.find(u => u.referralCode.toUpperCase() === codeToUse.toUpperCase());
+    // Validate referral code against existing users
+    const sponsor = users.find(u => u.referralCode.toUpperCase() === cleanRef.toUpperCase());
     if (!sponsor) {
-      setErrorMsg(`Invalid sponsor referral code "${codeToUse}". Please use a valid sponsor code (e.g. TREASURE_ADMIN, DEMO_INVESTOR).`);
+      setErrorMsg(`Invalid referral code "${cleanRef}". Account creation is gated to verified invite codes.`);
       return false;
     }
 
@@ -569,6 +577,146 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return false;
   };
 
+  const [pendingResets, setPendingResets] = useState<Record<string, { code: string; expiresAt: number; email: string }>>({});
+
+  const requestPasswordReset = (email: string): { success: boolean; code?: string; message: string } => {
+    clearMessages();
+    const normEmail = email.toLowerCase().trim();
+    if (!normEmail) {
+      setErrorMsg('Please enter your registered email address.');
+      return { success: false, message: 'Please enter your registered email address.' };
+    }
+
+    const user = users.find(u => u.email.toLowerCase() === normEmail) || (normEmail === ADMIN_EMAIL.toLowerCase().trim() ? { email: ADMIN_EMAIL, name: 'Treasure Homes Admin' } : null);
+
+    if (!user) {
+      setErrorMsg(`No account found matching email "${normEmail}".`);
+      return { success: false, message: `No account found matching email "${normEmail}".` };
+    }
+
+    // Generate 6-digit verification confirmation code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 mins
+
+    setPendingResets(prev => ({
+      ...prev,
+      [normEmail]: { code, expiresAt, email: normEmail }
+    }));
+
+    const msg = `Security confirmation code generated: ${code}. Enter this 6-digit code with your new password to confirm the reset.`;
+    setSuccessMsg(msg);
+    return { success: true, code, message: msg };
+  };
+
+  const confirmPasswordReset = (email: string, code: string, newPassword: string): boolean => {
+    clearMessages();
+    const normEmail = email.toLowerCase().trim();
+    const trimmedCode = code.trim();
+
+    if (!normEmail) {
+      setErrorMsg('Email address is required.');
+      return false;
+    }
+
+    if (!trimmedCode) {
+      setErrorMsg('Confirmation code is required.');
+      return false;
+    }
+
+    if (!newPassword || newPassword.length < 4) {
+      setErrorMsg('New password must be at least 4 characters long.');
+      return false;
+    }
+
+    const pending = pendingResets[normEmail];
+    if (!pending) {
+      setErrorMsg('No active password reset request found for this email. Please request a new confirmation code.');
+      return false;
+    }
+
+    if (Date.now() > pending.expiresAt) {
+      setErrorMsg('The confirmation code has expired. Please request a new reset code.');
+      return false;
+    }
+
+    if (pending.code !== trimmedCode) {
+      setErrorMsg('Invalid confirmation code. Please enter the exact 6-digit code provided.');
+      return false;
+    }
+
+    // Confirmation code verified! Update user password
+    setUsers(prev => prev.map(u => {
+      if (u.email.toLowerCase() === normEmail) {
+        const updated = { ...u, password: newPassword };
+        if (currentUser && currentUser.id === u.id) {
+          setCurrentUser(updated);
+        }
+        syncUserToSupabase(updated);
+        return updated;
+      }
+      return u;
+    }));
+
+    setPendingResets(prev => {
+      const next = { ...prev };
+      delete next[normEmail];
+      return next;
+    });
+
+    setSuccessMsg('Password reset confirmed! Your password has been successfully updated. You can now sign in.');
+    return true;
+  };
+
+  const adminUpdateUser = (
+    userId: string, 
+    updates: { walletBalance?: number; role?: 'user' | 'admin'; kycStatus?: 'unverified' | 'pending' | 'verified'; name?: string; password?: string }
+  ): boolean => {
+    clearMessages();
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser) {
+      setErrorMsg('User not found.');
+      return false;
+    }
+
+    let balanceDiff = 0;
+    if (updates.walletBalance !== undefined && !isNaN(updates.walletBalance)) {
+      balanceDiff = updates.walletBalance - targetUser.walletBalance;
+    }
+
+    const updatedUser: User = {
+      ...targetUser,
+      name: updates.name !== undefined && updates.name.trim() ? updates.name.trim() : targetUser.name,
+      walletBalance: updates.walletBalance !== undefined && !isNaN(updates.walletBalance) ? updates.walletBalance : targetUser.walletBalance,
+      role: updates.role !== undefined ? updates.role : targetUser.role,
+      kycStatus: updates.kycStatus !== undefined ? updates.kycStatus : targetUser.kycStatus,
+      password: updates.password !== undefined && updates.password.trim() ? updates.password.trim() : targetUser.password
+    };
+
+    setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser(updatedUser);
+    }
+    syncUserToSupabase(updatedUser);
+
+    if (balanceDiff !== 0) {
+      const auditTx: Transaction = {
+        id: 'tx_adj_' + Date.now(),
+        userId: targetUser.id,
+        userName: targetUser.name,
+        type: balanceDiff > 0 ? 'deposit' : 'withdrawal',
+        amount: Math.abs(balanceDiff),
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+        description: `Admin Wallet Balance Adjustment: ${balanceDiff > 0 ? '+' : '-'}₦${Math.abs(balanceDiff).toLocaleString()} (New Balance: ₦${updatedUser.walletBalance.toLocaleString()})`
+      };
+      setTransactions(prev => [auditTx, ...prev]);
+      syncTransactionToSupabase(auditTx);
+    }
+
+    setSuccessMsg(`Successfully updated account and wallet balance for ${updatedUser.name}.`);
+    return true;
+  };
+
   const logout = () => {
     setCurrentUser(null);
     setSuccessMsg('Logged out successfully.');
@@ -626,7 +774,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }));
       setSuccessMsg(`Deposit of ₦${amount.toLocaleString()} has been automatically credited!`);
     } else {
-      setSuccessMsg(`Deposit of ₦${amount.toLocaleString()} submitted successfully. Awaiting Treasure Homes Escrow confirmation.`);
+      setSuccessMsg(`Deposit of ₦${amount.toLocaleString()} submitted successfully. The compliance team audits transfers and approves deposits within 10 to 30min.`);
     }
   };
 
@@ -770,6 +918,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Create Investment record
     const invId = 'inv_' + Date.now();
+    const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const newInv: UserInvestment = {
       id: invId,
       userId: currentUser.id,
@@ -782,7 +931,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       weeksPaid: 0,
       totalWeeks: plan.weeksDuration,
       status: 'active',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      nextPayoutDate: nextPayout,
+      autoReinvest: false
     };
 
     // Log internally
@@ -829,12 +980,26 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
 
     // 2. Update Investment
-    const updatedInv: UserInvestment = {
-      ...inv,
-      weeksPaid: nextWeeksPaid,
-      status: isCompleted ? 'completed' : 'active',
-      lastPayoutDate: new Date().toISOString()
-    };
+    const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    let updatedInv: UserInvestment;
+    if (isCompleted && inv.autoReinvest) {
+      updatedInv = {
+        ...inv,
+        weeksPaid: 0,
+        status: 'active',
+        lastPayoutDate: new Date().toISOString(),
+        nextPayoutDate: nextPayout
+      };
+      setSuccessMsg(`₦${payoutAmount.toLocaleString()} weekly payout credited! ${inv.planName} has automatically rolled over into a new 4-week compounding cycle.`);
+    } else {
+      updatedInv = {
+        ...inv,
+        weeksPaid: nextWeeksPaid,
+        status: isCompleted ? 'completed' : 'active',
+        lastPayoutDate: new Date().toISOString(),
+        nextPayoutDate: isCompleted ? undefined : nextPayout
+      };
+    }
     setInvestments(prev => prev.map(i => i.id === invId ? updatedInv : i));
 
     // 3. Create Transaction
@@ -886,6 +1051,21 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setSuccessMsg(`₦${payoutAmount.toLocaleString()} weekly yield credited directly to your wallet!`);
     return true;
+  };
+
+  const toggleAutoReinvest = (investmentId: string) => {
+    setInvestments(prev => prev.map(inv => {
+      if (inv.id === investmentId) {
+        const nextState = !inv.autoReinvest;
+        setSuccessMsg(
+          nextState 
+            ? `Auto-Compounding activated for ${inv.planName}. Principal will automatically roll over upon maturity.`
+            : `Auto-Compounding disabled for ${inv.planName}. Funds will be released to your wallet upon maturity.`
+        );
+        return { ...inv, autoReinvest: nextState };
+      }
+      return inv;
+    }));
   };
 
   const submitKyc = (fullName: string, idType: string, idNumber: string) => {
@@ -1584,11 +1764,24 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       }
 
+      const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      if (isCompleted && inv.autoReinvest) {
+        payoutLog.push(`🔄 Auto-Compounding: ${inv.planName} for ${inv.userName} completed 4 weeks and auto-rolled over into a new cycle!`);
+        return {
+          ...inv,
+          weeksPaid: 0,
+          status: 'active',
+          lastPayoutDate: new Date().toISOString(),
+          nextPayoutDate: nextPayout
+        };
+      }
+
       return {
         ...inv,
         weeksPaid: nextWeeksPaid,
         status: isCompleted ? 'completed' : 'active',
-        lastPayoutDate: new Date().toISOString()
+        lastPayoutDate: new Date().toISOString(),
+        nextPayoutDate: isCompleted ? undefined : nextPayout
       };
     });
 
@@ -1661,18 +1854,22 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       getUserProgress,
       register,
       login,
+      requestPasswordReset,
+      confirmPasswordReset,
       logout,
       switchUser,
       submitDeposit,
       processAutomatedDeposit,
       submitWithdrawal,
       purchaseInvestment,
+      toggleAutoReinvest,
       submitKyc,
       completeInstantTask,
       applyRewardedAdBoost,
       submitTaskProof,
       claimStreakBonus,
       claimGuestTrialEarnings,
+      adminUpdateUser,
       approveDeposit,
       rejectDeposit,
       approveWithdrawal,

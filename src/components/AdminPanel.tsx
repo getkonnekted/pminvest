@@ -26,9 +26,11 @@ import {
   Share2,
   Award,
   CheckCircle2,
-  Zap
+  Zap,
+  Edit3
 } from 'lucide-react';
-import { INVESTMENT_PLANS } from '../types';
+import { User, INVESTMENT_PLANS } from '../types';
+import { PmLogo } from './PmLogo';
 
 export const AdminPanel: React.FC = () => {
   const { 
@@ -47,6 +49,7 @@ export const AdminPanel: React.FC = () => {
     updateSettings, 
     approveTaskSubmission,
     rejectTaskSubmission,
+    adminUpdateUser,
     switchUser,
     simulateWeek,
     simulateNextDay,
@@ -63,6 +66,32 @@ export const AdminPanel: React.FC = () => {
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [payoutConfirmationInput, setPayoutConfirmationInput] = useState('');
   const [depositAdjustedAmounts, setDepositAdjustedAmounts] = useState<Record<string, string>>({});
+
+  // Admin User & Wallet Edit State
+  const [selectedEditUser, setSelectedEditUser] = useState<User | null>(null);
+  const [editUserName, setEditUserName] = useState('');
+  const [editUserBalance, setEditUserBalance] = useState('');
+  const [editUserRole, setEditUserRole] = useState<'user' | 'admin'>('user');
+  const [editUserKyc, setEditUserKyc] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
+  const [editUserPassword, setEditUserPassword] = useState('');
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+
+  const handleSaveUserEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEditUser) return;
+    const parsedBal = parseFloat(editUserBalance);
+    const success = adminUpdateUser(selectedEditUser.id, {
+      name: editUserName,
+      walletBalance: !isNaN(parsedBal) ? parsedBal : selectedEditUser.walletBalance,
+      role: editUserRole,
+      kycStatus: editUserKyc,
+      password: editUserPassword.trim() ? editUserPassword.trim() : undefined
+    });
+    if (success) {
+      setShowEditUserModal(false);
+      setSelectedEditUser(null);
+    }
+  };
 
   // Stats
   const activeInvestments = investments.filter(i => i.status === 'active');
@@ -89,11 +118,14 @@ export const AdminPanel: React.FC = () => {
     <div className="w-full text-slate-800 p-1" id="admin_panel_container">
       {/* Admin Action Bar */}
       <div className="mb-6 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
-        <div>
-          <span className="text-[10px] text-amber-600 font-mono tracking-widest block uppercase font-extrabold">Treasure Homes Control Centre</span>
-          <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-            <ShieldAlert className="w-5 h-5 text-amber-500" /> PM Invest Master Dashboard
-          </h2>
+        <div className="flex items-center gap-3">
+          <PmLogo className="w-10 h-10" />
+          <div>
+            <span className="text-[10px] text-amber-600 font-mono tracking-widest block uppercase font-extrabold">Treasure Homes Control Centre</span>
+            <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">
+              PM Invest Master Dashboard
+            </h2>
+          </div>
         </div>
 
         {/* Live Simulator Quick Trigger */}
@@ -986,20 +1018,180 @@ export const AdminPanel: React.FC = () => {
                         {u.role}
                       </td>
                       <td className="py-2.5 text-center">
-                        <button
-                          onClick={() => switchUser(u.id)}
-                          className="bg-slate-50 hover:bg-amber-500 hover:text-slate-950 text-slate-700 border border-slate-200 px-3 py-1 rounded-lg text-[10px] font-bold transition-colors"
-                          id={`btn_switch_user_${u.id}`}
-                          title={`Switch session to ${u.name}`}
-                        >
-                          <Eye className="w-3 h-3" /> Login As
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setSelectedEditUser(u);
+                              setEditUserName(u.name);
+                              setEditUserBalance(String(u.walletBalance));
+                              setEditUserRole(u.role);
+                              setEditUserKyc(u.kycStatus);
+                              setEditUserPassword('');
+                              setShowEditUserModal(true);
+                            }}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                            id={`btn_edit_user_${u.id}`}
+                            title={`Edit account and wallet balance for ${u.name}`}
+                          >
+                            <Edit3 className="w-3 h-3 text-amber-600" /> Edit
+                          </button>
+                          <button
+                            onClick={() => switchUser(u.id)}
+                            className="bg-slate-50 hover:bg-amber-500 hover:text-slate-950 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                            id={`btn_switch_user_${u.id}`}
+                            title={`Switch session to ${u.name}`}
+                          >
+                            <Eye className="w-3 h-3" /> Login As
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Admin User & Wallet Editor Modal */}
+      {showEditUserModal && selectedEditUser && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-xl animate-scaleIn">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-950">Admin User & Wallet Editor</h3>
+                  <p className="text-[11px] text-slate-500 font-mono">
+                    ID: {selectedEditUser.id} • {selectedEditUser.email}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditUserModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveUserEdit} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">Full Legal Name</label>
+                <input
+                  type="text"
+                  value={editUserName}
+                  onChange={(e) => setEditUserName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-amber-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-baseline mb-1">
+                  <label className="block text-slate-700 font-semibold">Wallet Balance (₦)</label>
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    Current: ₦{selectedEditUser.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 1 })}
+                  </span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 font-bold text-slate-400 text-sm">₦</span>
+                  <input
+                    type="number"
+                    step="any"
+                    value={editUserBalance}
+                    onChange={(e) => setEditUserBalance(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-8 pr-3 text-slate-900 font-mono font-bold focus:outline-none focus:border-amber-500"
+                    required
+                  />
+                </div>
+                {/* Quick adjustments */}
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  <span className="text-[10px] text-slate-400">Quick Adjust:</span>
+                  {[10000, 50000, 100000, 500000].map((adj) => (
+                    <button
+                      key={adj}
+                      type="button"
+                      onClick={() => {
+                        const cur = parseFloat(editUserBalance) || 0;
+                        setEditUserBalance(String(cur + adj));
+                      }}
+                      className="text-[10px] bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 px-2 py-0.5 rounded font-mono font-semibold transition-colors cursor-pointer"
+                    >
+                      +₦{adj.toLocaleString()}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setEditUserBalance('0')}
+                    className="text-[10px] bg-slate-100 hover:bg-rose-50 hover:text-rose-700 border border-slate-200 px-2 py-0.5 rounded font-mono font-semibold transition-colors cursor-pointer"
+                  >
+                    Set ₦0
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">KYC Status</label>
+                  <select
+                    value={editUserKyc}
+                    onChange={(e) => setEditUserKyc(e.target.value as any)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-amber-500 font-semibold"
+                  >
+                    <option value="unverified">UNVERIFIED</option>
+                    <option value="pending">PENDING</option>
+                    <option value="verified">VERIFIED</option>
+                    <option value="rejected">REJECTED</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Account Role</label>
+                  <select
+                    value={editUserRole}
+                    onChange={(e) => setEditUserRole(e.target.value as any)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-amber-500 font-semibold"
+                  >
+                    <option value="user">USER</option>
+                    <option value="admin">ADMIN</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">
+                  Reset Password <span className="text-slate-400 font-normal">(Leave blank to keep unchanged)</span>
+                </label>
+                <input
+                  type="text"
+                  value={editUserPassword}
+                  onChange={(e) => setEditUserPassword(e.target.value)}
+                  placeholder="Enter new password to reset for this user"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowEditUserModal(false)}
+                  className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  id="btn_save_user_edit"
+                >
+                  <Check className="w-4 h-4" /> Save User & Wallet Updates
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
