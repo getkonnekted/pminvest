@@ -51,6 +51,7 @@ interface StateContextType {
   processAutomatedDeposit: (amount: number, reference: string, channel: string) => void;
   submitWithdrawal: (amount: number, accountDetails: string) => boolean;
   purchaseInvestment: (planId: string) => boolean;
+  topUpAndPurchaseInvestment: (planId: string, topUpAmount: number, reference?: string) => boolean;
   toggleAutoReinvest: (investmentId: string) => void;
   submitKyc: (fullName: string, idType: string, idNumber: string) => void;
 
@@ -735,11 +736,6 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     clearMessages();
     if (!currentUser) return;
 
-    if (currentUser.id === 'usr_demo_investor') {
-      setErrorMsg('Demo Account Protection: Sandbox payment submission is restricted on the shared demo account. Please register a free personal account to test custom proof of payment uploads.');
-      return;
-    }
-
     if (amount <= 0) {
       setErrorMsg('Deposit amount must be greater than zero.');
       return;
@@ -763,15 +759,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setTransactions(prev => [newTx, ...prev]);
 
     if (settings.autoApproveDeposits) {
-      // Instantly credit
-      setUsers(prev => prev.map(u => {
-        if (u.id === currentUser.id) {
-          const updated = { ...u, walletBalance: u.walletBalance + amount };
-          if (currentUser.id === u.id) setCurrentUser(updated);
-          return updated;
-        }
-        return u;
-      }));
+      // Instantly credit cleanly
+      const updatedUser = { ...currentUser, walletBalance: currentUser.walletBalance + amount };
+      setCurrentUser(updatedUser);
+      setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
       setSuccessMsg(`Deposit of ₦${amount.toLocaleString()} has been automatically credited!`);
     } else {
       setSuccessMsg(`Deposit of ₦${amount.toLocaleString()} submitted successfully. The compliance team audits transfers and approves deposits within 10 to 30min.`);
@@ -805,17 +796,12 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setTransactions(prev => [newTx, ...prev]);
 
-    // Instantly credit user balance
-    setUsers(prev => prev.map(u => {
-      if (u.id === currentUser.id) {
-        const updated = { ...u, walletBalance: u.walletBalance + amount };
-        if (currentUser.id === u.id) setCurrentUser(updated);
-        return updated;
-      }
-      return u;
-    }));
+    // Instantly credit user balance cleanly
+    const updatedUser = { ...currentUser, walletBalance: currentUser.walletBalance + amount };
+    setCurrentUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
 
-    setSuccessMsg(`⚡ Instant Automated Deposit Approved! ₦${amount.toLocaleString()} has been credited to your wallet via Paystack (${channel}). Reference: ${reference}`);
+    setSuccessMsg(`⚡ Instant Automated Deposit Approved! ₦${amount.toLocaleString()} has been credited to your wallet via Paystack (${channel}).`);
   };
 
   const submitWithdrawal = (amount: number, accountDetails: string): boolean => {
@@ -853,14 +839,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     // Deduct immediately on request for safety
-    setUsers(prev => prev.map(u => {
-      if (u.id === currentUser.id) {
-        const updated = { ...u, walletBalance: u.walletBalance - amount };
-        setCurrentUser(updated);
-        return updated;
-      }
-      return u;
-    }));
+    const updatedUser = { ...currentUser, walletBalance: currentUser.walletBalance - amount };
+    setCurrentUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
 
     const txId = 'tx_' + Date.now();
 
@@ -890,11 +871,6 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
-    if (currentUser.id === 'usr_demo_investor') {
-      setErrorMsg('Demo Account Protection: Sandbox investment purchases are restricted on the shared demo account. Please register a free personal account to test custom plan acquisitions.');
-      return false;
-    }
-
     const plan = INVESTMENT_PLANS.find(p => p.id === planId);
     if (!plan) {
       setErrorMsg('Selected investment plan is invalid.');
@@ -906,15 +882,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
-    // Deduct balance
-    setUsers(prev => prev.map(u => {
-      if (u.id === currentUser.id) {
-        const updated = { ...u, walletBalance: u.walletBalance - plan.cost };
-        setCurrentUser(updated);
-        return updated;
-      }
-      return u;
-    }));
+    // Deduct balance cleanly
+    const updatedUser = { ...currentUser, walletBalance: currentUser.walletBalance - plan.cost };
+    setCurrentUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
 
     // Create Investment record
     const invId = 'inv_' + Date.now();
@@ -948,9 +919,100 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       description: `Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`
     };
 
-    setInvestments(prev => [...prev, newInv]);
+    setInvestments(prev => [newInv, ...prev]);
     setTransactions(prev => [logTx, ...prev]);
-    setSuccessMsg(`Successfully invested ₦${plan.cost.toLocaleString()} in ${plan.name}! Direct weekly payouts will start.`);
+    setSuccessMsg(`Congratulations! You have successfully acquired ${plan.name}. First weekly payout due in 7 days.`);
+    return true;
+  };
+
+  const topUpAndPurchaseInvestment = (planId: string, topUpAmount: number, reference?: string): boolean => {
+    clearMessages();
+    if (!currentUser) return false;
+
+    if (settings.pauseInvestments) {
+      setErrorMsg('Investment Notice: Initiating new investment plans is currently paused by the administrator.');
+      return false;
+    }
+
+    const plan = INVESTMENT_PLANS.find(p => p.id === planId);
+    if (!plan) {
+      setErrorMsg('Selected investment plan is invalid.');
+      return false;
+    }
+
+    const requiredTopUp = Math.max(0, topUpAmount);
+    const totalAvailable = currentUser.walletBalance + requiredTopUp;
+
+    if (totalAvailable < plan.cost) {
+      setErrorMsg(`Insufficient funds. Plan cost is ₦${plan.cost.toLocaleString()}, total available is ₦${totalAvailable.toLocaleString()}.`);
+      return false;
+    }
+
+    const newBalance = totalAvailable - plan.cost;
+    const updatedUser = { ...currentUser, walletBalance: newBalance };
+    setCurrentUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+
+    const newTransactionsList: Transaction[] = [];
+
+    // 1. Log the completed deposit transaction if top-up occurred
+    if (requiredTopUp > 0) {
+      const depTxId = 'tx_dep_' + Date.now();
+      const depTx: Transaction = {
+        id: depTxId,
+        userId: currentUser.id,
+        userName: currentUser.name,
+        type: 'deposit',
+        amount: requiredTopUp,
+        status: 'completed',
+        paymentMethod: 'Paystack (card) - Quick Fund',
+        accountDetails: reference ? `Ref: ${reference}` : 'Instant Wallet Top-up',
+        gatewayReference: reference || 'ref_' + Date.now(),
+        gatewayChannel: 'card',
+        createdAt: new Date().toISOString(),
+        description: `Automated Paystack Deposit of ₦${requiredTopUp.toLocaleString()} via card`
+      };
+      newTransactionsList.push(depTx);
+    }
+
+    // 2. Log the investment purchase transaction
+    const invTxId = 'tx_inv_' + (Date.now() + 1);
+    const invTx: Transaction = {
+      id: invTxId,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      type: 'withdrawal',
+      amount: plan.cost,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      description: `Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`
+    };
+    newTransactionsList.push(invTx);
+
+    setTransactions(prev => [...newTransactionsList, ...prev]);
+
+    // 3. Create Investment record
+    const invId = 'inv_' + Date.now();
+    const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const newInv: UserInvestment = {
+      id: invId,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      planId: plan.id,
+      planName: plan.name,
+      cost: plan.cost,
+      weeklyPayout: plan.weeklyPayout,
+      totalReturns: plan.totalReturns,
+      weeksPaid: 0,
+      totalWeeks: plan.weeksDuration,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      nextPayoutDate: nextPayout,
+      autoReinvest: false
+    };
+
+    setInvestments(prev => [newInv, ...prev]);
+    setSuccessMsg(`🎉 Success! ₦${requiredTopUp.toLocaleString()} funded and ${plan.name} activated successfully.`);
     return true;
   };
 
@@ -1862,6 +1924,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       processAutomatedDeposit,
       submitWithdrawal,
       purchaseInvestment,
+      topUpAndPurchaseInvestment,
       toggleAutoReinvest,
       submitKyc,
       completeInstantTask,

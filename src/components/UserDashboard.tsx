@@ -53,6 +53,7 @@ export const UserDashboard: React.FC = () => {
     processAutomatedDeposit,
     submitWithdrawal, 
     purchaseInvestment, 
+    topUpAndPurchaseInvestment,
     toggleAutoReinvest,
     submitKyc,
     processSingleInvestmentPayout,
@@ -313,18 +314,21 @@ export const UserDashboard: React.FC = () => {
     }, 750);
   };
 
-  const handleExecuteQuickTopUp = (plan: InvestmentPlan, autoInvestAfter: boolean = true) => {
+  const handleExecuteQuickTopUp = (plan: InvestmentPlan) => {
     const shortfall = Math.max(0, plan.cost - (currentUser?.walletBalance || 0));
-    if (shortfall <= 0) return;
     setIsProcessingQuickTopUp(true);
     setTimeout(() => {
-      processAutomatedDeposit(shortfall, 'quick_topup_' + Date.now(), 'card');
+      const ref = 'paystack_quick_' + Date.now();
+      const success = topUpAndPurchaseInvestment(plan.id, shortfall, ref);
       setIsProcessingQuickTopUp(false);
       setQuickTopUpPlan(null);
-      if (autoInvestAfter) {
+      if (success) {
+        setJustActivatedPlanId(plan.id);
+        const nextDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        setActivatedPlanModal({ plan, nextPayoutDate: nextDate });
         setTimeout(() => {
-          handlePurchase(plan);
-        }, 400);
+          setJustActivatedPlanId(null);
+        }, 3000);
       }
     }, 900);
   };
@@ -1631,7 +1635,7 @@ export const UserDashboard: React.FC = () => {
 
             <div className="space-y-2.5">
               <button
-                onClick={() => handleExecuteQuickTopUp(quickTopUpPlan, true)}
+                onClick={() => handleExecuteQuickTopUp(quickTopUpPlan)}
                 disabled={isProcessingQuickTopUp}
                 className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-75 text-slate-950 font-bold text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
                 id="btn_confirm_quick_topup"
@@ -1639,7 +1643,7 @@ export const UserDashboard: React.FC = () => {
                 {isProcessingQuickTopUp ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
-                    <span>Processing Gateway Funding...</span>
+                    <span>Processing Gateway & Activating Plan...</span>
                   </>
                 ) : (
                   <>
