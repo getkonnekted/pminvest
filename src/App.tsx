@@ -29,6 +29,7 @@ import {
   EyeOff,
   CheckCircle2,
   User as UserIcon,
+  Phone,
   X,
   Globe,
   KeyRound,
@@ -114,6 +115,7 @@ function MainAppContent() {
   // Register state
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regRef, setRegRef] = useState('');
@@ -138,10 +140,11 @@ function MainAppContent() {
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const success = register(regName, regEmail, regRef, regPassword);
+    const success = register(regName, regEmail, regRef, regPassword, regPhone);
     if (success) {
       setRegName('');
       setRegEmail('');
+      setRegPhone('');
       setRegPassword('');
       setRegRef('');
     }
@@ -728,6 +731,22 @@ function MainAppContent() {
                       required
                     />
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number</label>
+                  <div className="relative">
+                    <input 
+                      type="tel" 
+                      value={regPhone}
+                      onChange={(e) => setRegPhone(e.target.value)}
+                      placeholder="e.g. 08012345678 or +234..."
+                      autoComplete="tel"
+                      className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-sans"
+                      required
+                    />
+                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   </div>
                 </div>
 

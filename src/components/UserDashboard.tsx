@@ -550,10 +550,10 @@ export const UserDashboard: React.FC = () => {
                     </span>
                   </div>
                   <h4 className="text-sm font-bold text-white mt-0.5">
-                    Today's Task Yield Pool: <span className="text-amber-400 font-mono">₦{getUserDailyPool(currentUser.id).toLocaleString()}</span>
+                    Daily Investor Quests &amp; Milestone Hub
                   </h4>
                   <p className="text-xs text-slate-400">
-                    Earn 5% proportional daily yields by completing fast property audits and check-ins.
+                    Claim active portfolio yields, earn ₦500 advocacy bounties, and reach Day 7 for the ₦1,500 milestone bonus.
                   </p>
                 </div>
               </div>

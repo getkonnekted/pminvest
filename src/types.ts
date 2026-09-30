@@ -2,6 +2,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   password?: string;
   referralCode: string;
   referredByCode?: string;
@@ -63,7 +64,7 @@ export interface DailyTask {
   id: string;
   title: string;
   subtitle: string;
-  category: 'inspection' | 'pulse' | 'attendance' | 'social_share' | 'quiz' | 'milestone';
+  category: 'attendance' | 'portfolio' | 'reinvest' | 'kyc' | 'social_share' | 'inspection' | 'pulse' | 'quiz' | 'milestone';
   rewardShare: number; // Share of daily reward pool (e.g., 0.4 for 40%, 0.3 for 30%)
   fixedReward?: number; // Optional fixed fallback or milestone bonus
   verificationType: 'instant' | 'submission';

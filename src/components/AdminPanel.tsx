@@ -998,6 +998,7 @@ export const AdminPanel: React.FC = () => {
                       <td className="py-2.5">
                         <div className="font-semibold text-slate-900">{u.name}</div>
                         <div className="text-[10px] text-slate-500 font-mono">{u.email}</div>
+                        {u.phone && <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">📞 {u.phone}</div>}
                       </td>
                       <td className="py-2.5 font-mono text-[11px] text-amber-600 font-bold">
                         {u.referralCode}

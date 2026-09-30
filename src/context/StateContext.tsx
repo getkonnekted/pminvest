@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS, DailyTask, TaskSubmission, UserDailyProgress, PayoutToastData } from '../types';
 import { DEFAULT_DAILY_TASKS } from '../data/dailyTasks';
 import { playPayoutChime } from '../lib/sound';
+import { getWatDateString, getWatYesterdayString } from '../lib/watTime';
 import { 
   isSupabaseConfigured, 
   supabase, 
@@ -39,7 +40,7 @@ interface StateContextType {
   getUserProgress: (userId: string) => UserDailyProgress;
   
   // Auth actions
-  register: (name: string, email: string, referredByCode?: string, password?: string) => boolean;
+  register: (name: string, email: string, referredByCode?: string, password?: string, phone?: string) => boolean;
   login: (email: string, password?: string) => boolean;
   requestPasswordReset: (email: string) => { success: boolean; code?: string; message: string };
   confirmPasswordReset: (email: string, code: string, newPassword: string) => boolean;
@@ -467,14 +468,20 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSuccessMsg(null);
   };
 
-  const register = (name: string, email: string, referredByCode?: string, password?: string): boolean => {
+  const register = (name: string, email: string, referredByCode?: string, password?: string, phone?: string): boolean => {
     clearMessages();
 
     const trimmedName = name.trim();
     const trimmedEmail = email.trim().toLowerCase();
+    const cleanPhone = (phone || '').trim();
 
     if (!trimmedName || !trimmedEmail) {
       setErrorMsg('Full legal name and email address are required.');
+      return false;
+    }
+
+    if (!cleanPhone) {
+      setErrorMsg('Phone number is required for account security and SMS transaction updates.');
       return false;
     }
 
@@ -515,6 +522,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: 'usr_' + Date.now(),
       name: trimmedName,
       email: trimmedEmail,
+      phone: cleanPhone,
       password: password || undefined,
       referralCode: refCode || ('INV' + Math.floor(1000 + Math.random() * 9000)),
       referredByCode: sponsor.referralCode,
@@ -526,6 +534,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
+    syncUserToSupabase(newUser);
     setSuccessMsg(`Account created successfully! Welcome to PM Invest, ${trimmedName}.`);
     return true;
   };
@@ -1272,10 +1281,15 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSuccessMsg(`KYC verification ${approve ? 'APPROVED' : 'REJECTED'} for selected user.`);
   };
 
-  // Daily Task Calculation Helpers
+  // Daily Task Calculation Helpers (Strictly West Africa Time - WAT / UTC+1)
   const getCurrentDateStr = (): string => {
     const d = new Date(Date.now() + virtualDayOffset * 86400000);
-    return d.toISOString().split('T')[0];
+    return getWatDateString(d);
+  };
+
+  const getYesterdayDateStr = (): string => {
+    const d = new Date(Date.now() + virtualDayOffset * 86400000);
+    return getWatYesterdayString(d);
   };
 
   const virtualDate = getCurrentDateStr();
@@ -1296,24 +1310,33 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const getUserDailyTaskReward = (userId: string, task: DailyTask): number => {
-    if (task.fixedReward && task.rewardShare === 0) {
+    if (task.fixedReward) {
       return task.fixedReward;
     }
     const pool = getUserDailyPool(userId);
-    return Math.max(50, Math.round(pool * task.rewardShare));
+    return Math.max(50, Math.round(pool * (task.rewardShare || 0.2)));
   };
 
   const getUserProgress = (userId: string): UserDailyProgress => {
     const today = getCurrentDateStr();
+    const yesterday = getYesterdayDateStr();
     const existing = userDailyProgress[userId];
+
     if (!existing || existing.currentDate !== today) {
-      const prevStreak = existing ? existing.streakCount : 0;
+      let currentStreak = existing ? existing.streakCount : 0;
+      // Genuine Consecutive Attendance Check:
+      // If the last completed attendance was NOT yesterday and NOT today,
+      // the user skipped a day -> streak genuinely resets to 0 (becomes Day 1 on next check-in)
+      if (existing?.lastCompletedDate && existing.lastCompletedDate !== yesterday && existing.lastCompletedDate !== today) {
+        currentStreak = 0;
+      }
+
       return {
         userId,
         currentDate: today,
         completedTaskIds: [],
-        pendingSubmissionTaskIds: [],
-        streakCount: prevStreak,
+        pendingSubmissionTaskIds: existing?.pendingSubmissionTaskIds || [],
+        streakCount: currentStreak,
         lastCompletedDate: existing?.lastCompletedDate,
         streakBonusClaimedDate: existing?.streakBonusClaimedDate,
         pollAnswers: existing?.pollAnswers || {}
@@ -1322,7 +1345,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return existing;
   };
 
-  // Instant Task Completion (Check-in, Property Inspection, Daily Poll, Sponsored Quiz)
+  // Instant Task Completion with Live In-App Verification
   const completeInstantTask = (taskId: string, answerIndex?: number, isAdBoosted?: boolean): boolean => {
     clearMessages();
     if (!currentUser) return false;
@@ -1339,14 +1362,44 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     const today = getCurrentDateStr();
+    const yesterday = getYesterdayDateStr();
     const progress = getUserProgress(currentUser.id);
 
     if (progress.completedTaskIds.includes(taskId)) {
-      setErrorMsg('You have already completed and claimed this task today!');
+      setErrorMsg('You have already completed and claimed this quest today!');
       return false;
     }
 
-    let rewardAmount = getUserDailyTaskReward(currentUser.id, task);
+    // 1. Real In-App Account Verification Checks
+    if (taskId === 'task_active_portfolio') {
+      const hasActive = investments.some(i => i.userId === currentUser.id && i.status === 'active');
+      if (!hasActive) {
+        setErrorMsg('Active Investment Required! You must hold at least one active investment plan to claim daily portfolio yields.');
+        return false;
+      }
+    }
+
+    if (taskId === 'task_auto_reinvest') {
+      const hasAutoCompounding = investments.some(i => i.userId === currentUser.id && i.status === 'active' && i.autoReinvest === true);
+      if (!hasAutoCompounding) {
+        setErrorMsg('Auto-Compounding Required! Enable Auto-Compounding on at least one of your active investment plans to claim this bonus.');
+        return false;
+      }
+    }
+
+    if (taskId === 'task_kyc_bounty') {
+      if (currentUser.kycStatus !== 'verified') {
+        setErrorMsg('KYC Verification Required! Submit and receive approval for your government ID to claim the ₦1,000 KYC bounty.');
+        return false;
+      }
+      const hasClaimedKycBefore = transactions.some(t => t.userId === currentUser.id && t.description?.includes('KYC Identity Verification Bounty'));
+      if (hasClaimedKycBefore) {
+        setErrorMsg('You have already claimed your one-time ₦1,000 KYC Verification Bounty.');
+        return false;
+      }
+    }
+
+    let rewardAmount = task.fixedReward || getUserDailyTaskReward(currentUser.id, task);
     if (isAdBoosted) {
       rewardAmount = rewardAmount * (settings.rewardedAdBonusMultiplier || 2);
     }
@@ -1372,8 +1425,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       status: 'completed',
       createdAt: new Date().toISOString(),
       description: isAdBoosted 
-        ? `Daily Task Reward (2X Ad Boosted): ${task.title}`
-        : `Daily Task Reward: ${task.title}`
+        ? `Daily Quest Reward (2X Boosted): ${task.title}`
+        : `Daily Quest Reward: ${task.title}`
     };
     setTransactions(prev => [taskTx, ...prev]);
 
@@ -1383,21 +1436,19 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ? [...(progress.adBoostedTaskIds || []), taskId]
       : (progress.adBoostedTaskIds || []);
     
-    // Check if user completed all primary daily instant tasks today
-    const instantTaskIds = dailyTasks.filter(t => t.verificationType === 'instant').map(t => t.id);
-    const allInstantDone = instantTaskIds.every(id => updatedCompleted.includes(id));
-    
     let newStreak = progress.streakCount;
     let newLastCompletedDate = progress.lastCompletedDate;
 
-    if (allInstantDone && progress.lastCompletedDate !== today) {
-      newStreak = (progress.streakCount || 0) + 1;
+    // Daily Attendance Streak Handling:
+    if (taskId === 'task_daily_attendance') {
+      if (progress.lastCompletedDate === yesterday) {
+        // Consecutive day
+        newStreak = (progress.streakCount || 0) + 1;
+      } else {
+        // Missed a day or first check-in -> genuinely resets to Day 1
+        newStreak = 1;
+      }
       newLastCompletedDate = today;
-    }
-
-    const updatedPollAnswers = { ...progress.pollAnswers };
-    if (answerIndex !== undefined) {
-      updatedPollAnswers[taskId] = answerIndex;
     }
 
     const updatedProg: UserDailyProgress = {
@@ -1407,7 +1458,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adBoostedTaskIds: updatedBoosted,
       streakCount: newStreak,
       lastCompletedDate: newLastCompletedDate,
-      pollAnswers: updatedPollAnswers
+      pollAnswers: { ...progress.pollAnswers }
     };
 
     setUserDailyProgress(prev => ({
@@ -1415,13 +1466,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       [currentUser.id]: updatedProg
     }));
 
-    // Record simulated sponsor ad revenue for system
-    setSettings(prev => ({
-      ...prev,
-      estimatedAdRevenueTotal: (prev.estimatedAdRevenueTotal || 0) + (isAdBoosted ? 35 : 15)
-    }));
-
-    setSuccessMsg(`🎉 Task Completed! Credited ₦${rewardAmount.toLocaleString()} to your available balance.`);
+    if (taskId === 'task_daily_attendance' && newStreak === 7) {
+      setSuccessMsg(`🎉 Day 7 Attendance Complete! Credited ₦${rewardAmount.toLocaleString()}. You have unlocked the ₦1,500 Unbroken Streak Milestone Bonus!`);
+    } else {
+      setSuccessMsg(`🎉 Quest Completed! Credited ₦${rewardAmount.toLocaleString()} to your available balance.`);
+    }
     return true;
   };
 
