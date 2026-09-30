@@ -37,6 +37,7 @@ import { DailyTasksHub } from './DailyTasksHub';
 import { NIGERIAN_BANKS, resolveNigerianAccount } from '../lib/paystack';
 import { PmLogo } from './PmLogo';
 import { PayoutCountdown } from './PayoutCountdown';
+import { InvestmentPayoutButton } from './InvestmentPayoutButton';
 import { CommunityBanner } from './CommunityBanner';
 
 export const UserDashboard: React.FC = () => {
@@ -58,7 +59,6 @@ export const UserDashboard: React.FC = () => {
     toggleAutoReinvest,
     submitKyc,
     processSingleInvestmentPayout,
-    triggerPayoutToast,
     successMsg,
     errorMsg,
     clearMessages
@@ -571,34 +571,11 @@ export const UserDashboard: React.FC = () => {
 
           {/* Active Investments section */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div id="active_investments_section" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-100 pb-3">
+            <div id="active_investments_section" className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
               <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                 <span className="w-2.5 h-2.5 bg-amber-500 rounded-full" />
                 My Active Investments ({activeInvestments.length})
               </h3>
-              <button
-                onClick={() => {
-                  const samplePlan = activeInvestments[0];
-                  const sampleAmount = samplePlan ? samplePlan.weeklyPayout : 16250;
-                  const sampleName = samplePlan ? samplePlan.planName : 'Plan 1 - Starter Growth';
-                  const sampleWeeksPaid = samplePlan ? (samplePlan.weeksPaid % samplePlan.totalWeeks) + 1 : 1;
-                  const sampleTotal = samplePlan ? samplePlan.totalWeeks : 4;
-                  triggerPayoutToast({
-                    planName: sampleName,
-                    amount: sampleAmount,
-                    weeksPaid: sampleWeeksPaid,
-                    totalWeeks: sampleTotal,
-                    walletBalance: (currentUser?.walletBalance || 250000) + sampleAmount,
-                    type: 'payout'
-                  });
-                }}
-                className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer shadow-2xs self-start sm:self-auto"
-                id="btn_test_payout_toast"
-                title="Preview the slide-in investment payout toast notification"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Test Payout Notification Toast</span>
-              </button>
             </div>
 
             {activeInvestments.length === 0 ? (
@@ -697,16 +674,10 @@ export const UserDashboard: React.FC = () => {
                         <div className="text-[10px] text-slate-400 font-mono">
                           <span>Invested: {new Date(inv.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <button
-                          onClick={() => processSingleInvestmentPayout(inv.id)}
-                          disabled={inv.weeksPaid >= inv.totalWeeks}
-                          className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
-                          id={`btn_credit_weekly_payout_${inv.id}`}
-                          title="Trigger and credit this plan's weekly payout directly to your wallet"
-                        >
-                          <ArrowUpRight className="w-3.5 h-3.5" />
-                          <span>Credit Due Yield (+₦{inv.weeklyPayout.toLocaleString()})</span>
-                        </button>
+                        <InvestmentPayoutButton
+                          investment={inv}
+                          onPayout={processSingleInvestmentPayout}
+                        />
                       </div>
                     </div>
                   );

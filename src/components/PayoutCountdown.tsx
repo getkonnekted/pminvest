@@ -60,6 +60,28 @@ export const PayoutCountdown: React.FC<PayoutCountdownProps> = ({
     );
   }
 
+  const isFinalMinute = !timeLeft.isDue && timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0;
+
+  if (isFinalMinute) {
+    if (compact) {
+      return (
+        <span className={`font-mono text-emerald-600 font-bold animate-pulse ${className}`}>
+          {timeLeft.seconds}s (Payout Active)
+        </span>
+      );
+    }
+    return (
+      <div className={`flex items-center gap-2 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-lg px-2.5 py-1.5 text-xs font-mono animate-pulse ${className}`}>
+        <Zap className="w-3.5 h-3.5 text-emerald-600 shrink-0 animate-bounce" />
+        <span className="text-[10px] text-emerald-800 font-sans font-bold uppercase tracking-wider">Final Minute:</span>
+        <div className="flex items-center gap-1 font-bold">
+          <span className="bg-emerald-200 text-emerald-950 px-1.5 py-0.5 rounded text-[11px]">{String(timeLeft.seconds).padStart(2, '0')}s</span>
+        </div>
+        <span className="text-[10px] text-emerald-700 font-sans font-bold uppercase ml-1">Payout Button Active</span>
+      </div>
+    );
+  }
+
   if (compact) {
     return (
       <span className={`font-mono text-amber-700 font-bold ${className}`}>

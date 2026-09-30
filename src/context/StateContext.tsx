@@ -1037,6 +1037,15 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
+    // Payouts button can only be active on the last minute of the countdown not before
+    if (inv.nextPayoutDate) {
+      const remainingMs = new Date(inv.nextPayoutDate).getTime() - Date.now();
+      if (remainingMs > 60 * 1000) {
+        setErrorMsg('Payout button can only be active on the last minute of the countdown.');
+        return false;
+      }
+    }
+
     const nextWeeksPaid = inv.weeksPaid + 1;
     const payoutAmount = inv.weeklyPayout;
     const isCompleted = nextWeeksPaid === inv.totalWeeks;
