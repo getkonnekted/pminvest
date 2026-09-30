@@ -37,6 +37,7 @@ import { DailyTasksHub } from './DailyTasksHub';
 import { NIGERIAN_BANKS, resolveNigerianAccount } from '../lib/paystack';
 import { PmLogo } from './PmLogo';
 import { PayoutCountdown } from './PayoutCountdown';
+import { CommunityBanner } from './CommunityBanner';
 
 export const UserDashboard: React.FC = () => {
   const { 
@@ -293,8 +294,6 @@ export const UserDashboard: React.FC = () => {
   const [investingPlanId, setInvestingPlanId] = useState<string | null>(null);
   const [justActivatedPlanId, setJustActivatedPlanId] = useState<string | null>(null);
   const [activatedPlanModal, setActivatedPlanModal] = useState<{ plan: InvestmentPlan; nextPayoutDate: string } | null>(null);
-  const [quickTopUpPlan, setQuickTopUpPlan] = useState<InvestmentPlan | null>(null);
-  const [isProcessingQuickTopUp, setIsProcessingQuickTopUp] = useState<boolean>(false);
 
   const handlePurchase = (plan: InvestmentPlan) => {
     if (investingPlanId) return; // Prevent double-triggering while animating
@@ -312,25 +311,6 @@ export const UserDashboard: React.FC = () => {
         }, 3000);
       }
     }, 750);
-  };
-
-  const handleExecuteQuickTopUp = (plan: InvestmentPlan) => {
-    const shortfall = Math.max(0, plan.cost - (currentUser?.walletBalance || 0));
-    setIsProcessingQuickTopUp(true);
-    setTimeout(() => {
-      const ref = 'paystack_quick_' + Date.now();
-      const success = topUpAndPurchaseInvestment(plan.id, shortfall, ref);
-      setIsProcessingQuickTopUp(false);
-      setQuickTopUpPlan(null);
-      if (success) {
-        setJustActivatedPlanId(plan.id);
-        const nextDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-        setActivatedPlanModal({ plan, nextPayoutDate: nextDate });
-        setTimeout(() => {
-          setJustActivatedPlanId(null);
-        }, 3000);
-      }
-    }, 900);
   };
 
   return (
@@ -375,6 +355,9 @@ export const UserDashboard: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Official WhatsApp & Telegram Community Invitation Banner */}
+      <CommunityBanner />
 
       {/* Responsive Hamburger Navigation Bar & Dropdown Drawer */}
       <div className="mb-6 bg-white border border-slate-200 rounded-2xl p-2.5 sm:p-3 shadow-xs">
@@ -896,17 +879,27 @@ export const UserDashboard: React.FC = () => {
                   ) : (
                     <div className="space-y-2">
                       <button
-                        onClick={() => setQuickTopUpPlan(plan)}
-                        className="w-full py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:to-amber-600 text-slate-950 flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-95 font-sans"
-                        id={`btn_quick_topup_${plan.id}`}
+                        onClick={() => {
+                          setDepAmount((plan.cost - currentUser.walletBalance).toString());
+                          setActiveTab('finance');
+                          setTimeout(() => {
+                            document.getElementById('deposit_form_container')?.scrollIntoView({ behavior: 'smooth' });
+                          }, 150);
+                        }}
+                        className="w-full py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider bg-slate-900 hover:bg-slate-800 text-amber-400 flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-95 font-sans"
+                        id={`btn_fund_wallet_${plan.id}`}
+                        title="Deposit funds via real bank transfer to activate this plan"
                       >
-                        <PlusCircle className="w-4 h-4 text-slate-950 shrink-0" />
-                        <span>Top Up ₦{(plan.cost - currentUser.walletBalance).toLocaleString()} & Invest</span>
+                        <Wallet className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span>Fund ₦{(plan.cost - currentUser.walletBalance).toLocaleString()} to Invest</span>
                       </button>
-                      <p className="text-[10px] text-center text-slate-500 font-sans flex items-center justify-center gap-1">
-                        <span>Balance short by ₦{(plan.cost - currentUser.walletBalance).toLocaleString()}</span>
-                        <span className="text-amber-600 font-semibold">• 1-Click Paystack</span>
-                      </p>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-sans px-0.5">
+                        <span>Shortfall: <strong className="text-rose-600 font-mono">₦{(plan.cost - currentUser.walletBalance).toLocaleString()}</strong></span>
+                        <span className="text-amber-700 font-semibold flex items-center gap-1">
+                          <Building className="w-3 h-3 text-amber-600" />
+                          Treasure Escrow Deposit
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -918,7 +911,7 @@ export const UserDashboard: React.FC = () => {
 
       {/* FINANCE (DEPOSIT & WITHDRAWAL) TAB */}
       {activeTab === 'finance' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="deposit_form_container">
           {/* DEPOSIT MODULE (DIRECT BANK TRANSFER & RECEIPT PROOF) */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
             <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -1578,90 +1571,6 @@ export const UserDashboard: React.FC = () => {
                 className="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
               >
                 Done / Explore More Plans
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── QUICK TOP-UP FOR INSUFFICIENT BALANCE MODAL ─── */}
-      {quickTopUpPlan && (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 border border-amber-300 shadow-2xl relative overflow-hidden animate-scaleUp">
-            <button
-              onClick={() => {
-                if (!isProcessingQuickTopUp) setQuickTopUpPlan(null);
-              }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-slate-950 shadow-md shadow-amber-500/20">
-                <CreditCard className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-[10px] font-mono font-bold text-amber-600 uppercase tracking-widest block">
-                  Quick Wallet Top-Up
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 uppercase">
-                  Fund {quickTopUpPlan.name}
-                </h3>
-              </div>
-            </div>
-
-            {/* Calculations Breakdown */}
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 my-4 space-y-2 text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Plan Required Capital:</span>
-                <span className="font-bold text-slate-900">₦{quickTopUpPlan.cost.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Your Current Balance:</span>
-                <span className="font-bold text-slate-700">₦{(currentUser?.walletBalance || 0).toLocaleString()}</span>
-              </div>
-              <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-sm">
-                <span className="font-bold text-rose-600">Missing Difference:</span>
-                <span className="font-extrabold text-amber-600 text-base">
-                  ₦{Math.max(0, quickTopUpPlan.cost - (currentUser?.walletBalance || 0)).toLocaleString()}
-                </span>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-500 mb-5 leading-relaxed">
-              Instantly fund the exact difference of <strong className="text-slate-900">₦{Math.max(0, quickTopUpPlan.cost - (currentUser?.walletBalance || 0)).toLocaleString()}</strong> via simulated Paystack gateway and activate this plan immediately.
-            </p>
-
-            <div className="space-y-2.5">
-              <button
-                onClick={() => handleExecuteQuickTopUp(quickTopUpPlan)}
-                disabled={isProcessingQuickTopUp}
-                className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-75 text-slate-950 font-bold text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
-                id="btn_confirm_quick_topup"
-              >
-                {isProcessingQuickTopUp ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
-                    <span>Processing Gateway & Activating Plan...</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4 text-slate-950" />
-                    <span>Pay ₦{Math.max(0, quickTopUpPlan.cost - (currentUser?.walletBalance || 0)).toLocaleString()} & Activate Plan</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={() => {
-                  setQuickTopUpPlan(null);
-                  setActiveTab('finance');
-                }}
-                disabled={isProcessingQuickTopUp}
-                className="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider transition-all cursor-pointer"
-              >
-                Deposit Custom Amount in Finance Tab
               </button>
             </div>
           </div>

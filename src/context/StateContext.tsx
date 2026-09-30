@@ -140,9 +140,9 @@ const DEFAULT_SETTINGS: SystemSettings = {
   riskAlertLevel: 'low',
   minWithdrawal: 5000,
   maxWithdrawal: 1000000,
-  autoApproveDeposits: true,
+  autoApproveDeposits: false, // Production live mode: real bank transfers verified by treasury
   automatedPayouts: true,
-  paystackTestMode: true,
+  paystackTestMode: false, // Production live mode
   isMaintenanceMode: false,
   pauseInvestments: false,
   pauseWithdrawals: false,
@@ -206,7 +206,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const saved = localStorage.getItem('pm_prod_settings_v1');
     if (saved) {
       try {
-        return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+        const parsed = JSON.parse(saved);
+        return { 
+          ...DEFAULT_SETTINGS, 
+          ...parsed,
+          autoApproveDeposits: false, // Force production mode
+          paystackTestMode: false // Force production mode
+        };
       } catch (e) {
         return DEFAULT_SETTINGS;
       }
@@ -765,7 +771,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
       setSuccessMsg(`Deposit of ₦${amount.toLocaleString()} has been automatically credited!`);
     } else {
-      setSuccessMsg(`Deposit of ₦${amount.toLocaleString()} submitted successfully. The compliance team audits transfers and approves deposits within 10 to 30min.`);
+      setSuccessMsg(`Deposit request of ₦${amount.toLocaleString()} submitted. Our compliance and treasury desk will confirm the bank transfer alert and credit your wallet within 10 to 30 minutes.`);
     }
   };
 
@@ -786,7 +792,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       type: 'deposit',
       amount,
       status: 'completed',
-      paymentMethod: `Paystack (${channel}) - Test Mode`,
+      paymentMethod: `Paystack (${channel})`,
       accountDetails: `Paystack Ref: ${reference}`,
       gatewayReference: reference,
       gatewayChannel: channel,
