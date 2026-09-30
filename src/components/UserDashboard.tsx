@@ -122,7 +122,7 @@ export const UserDashboard: React.FC = () => {
       ) : currentUser?.kycStatus === 'pending' ? (
         <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">Pending</span>
       ) : (
-        <span className="bg-slate-100 text-slate-600 text-[10px] font-medium px-1.5 py-0.5 rounded-full">Optional</span>
+        <span className="bg-slate-100 text-slate-600 text-[10px] font-medium px-1.5 py-0.5 rounded-full">Unverified</span>
       )
     }
   ];
@@ -342,7 +342,7 @@ export const UserDashboard: React.FC = () => {
           <div className="flex items-start gap-2.5">
             <ShieldCheck className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-slate-900">Optional KYC Verification Pending</p>
+              <p className="font-bold text-slate-900">KYC Verification Pending</p>
               <p className="text-slate-600 mt-0.5">Submit your identification details to prevent future manual withdrawal clearance holding times.</p>
             </div>
           </div>

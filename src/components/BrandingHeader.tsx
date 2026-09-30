@@ -30,37 +30,12 @@ export const BrandingHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Community Links & Current logged in user view / actions */}
+        {/* Current logged in user view / actions */}
         <div className="flex items-center gap-3 flex-wrap justify-end">
-          {/* Quick Community Buttons */}
-          <div className="flex items-center gap-2">
-            <a 
-              href={WHATSAPP_COMMUNITY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/40 text-[#25D366] px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs"
-              title="Join PM Invest Official WhatsApp Community"
-            >
-              <WhatsAppGoldIcon className="w-4 h-4" />
-              <span className="hidden md:inline">WhatsApp</span>
-            </a>
-            <a 
-              href={TELEGRAM_COMMUNITY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 bg-[#229ED9]/15 hover:bg-[#229ED9]/25 border border-[#229ED9]/40 text-[#2AABEE] px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs"
-              title="Join PM Invest Official Telegram Channel"
-            >
-              <TelegramGoldIcon className="w-4 h-4" />
-              <span className="hidden md:inline">Telegram</span>
-            </a>
-          </div>
-
           {currentUser && (
             <div className="flex items-center gap-4 bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
               <div className="text-right">
-                <p className="text-[10px] uppercase text-slate-400">Current Account</p>
-                <p className="text-sm font-semibold text-white flex items-center justify-end gap-1">
+                <p className="text-sm font-bold text-white flex items-center justify-end gap-1">
                   {currentUser.name}
                   {currentUser.role === 'admin' && (
                     <span className="text-[9px] bg-amber-500 text-slate-900 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Admin</span>
