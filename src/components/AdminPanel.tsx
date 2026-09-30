@@ -75,6 +75,7 @@ export const AdminPanel: React.FC = () => {
   const [editUserKyc, setEditUserKyc] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
   const [editUserPassword, setEditUserPassword] = useState('');
   const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [adminScreenshotPreview, setAdminScreenshotPreview] = useState<string | null>(null);
 
   const handleSaveUserEdit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -878,9 +879,31 @@ export const AdminPanel: React.FC = () => {
                           {sub.taskTitle}
                         </td>
                         <td className="py-3">
-                          <div className="max-w-xs font-mono text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-700 break-all select-all">
-                            {sub.proof}
-                          </div>
+                          {(() => {
+                            const imgMatch = sub.proof.match(/Image:\s*(data:image\/[^;]+;base64,[^ \]]+)/);
+                            const cleanText = sub.proof.replace(/\|\s*Image:\s*data:image\/[^;]+;base64,[^ \]]+/, '').trim();
+                            return (
+                              <div className="space-y-1.5">
+                                {imgMatch && (
+                                  <div 
+                                    onClick={() => setAdminScreenshotPreview(imgMatch[1])}
+                                    className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-300 cursor-pointer group bg-slate-100 shadow-2xs"
+                                    title="Click to view full screenshot"
+                                  >
+                                    <img src={imgMatch[1]} alt="Proof Screenshot" className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-[9px] font-bold">
+                                      View
+                                    </div>
+                                  </div>
+                                )}
+                                {cleanText && (
+                                  <div className="max-w-xs font-mono text-[11px] bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-700 break-words select-all">
+                                    {cleanText}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="py-3 text-right font-mono font-bold text-emerald-600">
                           +₦{sub.rewardAmount.toLocaleString()}
@@ -1323,6 +1346,28 @@ export const AdminPanel: React.FC = () => {
                 Trigger Payouts
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SCREENSHOT LIGHTBOX MODAL */}
+      {adminScreenshotPreview && (
+        <div 
+          onClick={() => setAdminScreenshotPreview(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn cursor-pointer"
+        >
+          <div className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden p-2 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setAdminScreenshotPreview(null)}
+              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-slate-950/80 text-white flex items-center justify-center hover:bg-slate-900 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img 
+              src={adminScreenshotPreview} 
+              alt="Proof Full Resolution" 
+              className="max-h-[85vh] w-auto max-w-full rounded-xl object-contain mx-auto" 
+            />
           </div>
         </div>
       )}

@@ -1581,30 +1581,28 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Task Submission (e.g., Social Share proof)
   const submitTaskProof = (taskId: string, proof: string): boolean => {
     clearMessages();
-    if (!currentUser) return false;
-
-    if (!proof.trim()) {
-      setErrorMsg('Please provide your post link, screenshot details, or proof text.');
+    if (!currentUser) {
+      setErrorMsg('Please sign in to an active account before submitting advocacy proof.');
       return false;
     }
 
-    const task = dailyTasks.find(t => t.id === taskId);
-    if (!task) return false;
+    if (!proof.trim()) {
+      setErrorMsg('Please provide your post link, screenshot upload, or proof details.');
+      return false;
+    }
+
+    const task = dailyTasks.find(t => t.id === taskId) || dailyTasks.find(t => t.category === 'social_share');
+    const taskTitle = task ? task.title : 'Social Advocacy & Proof-of-Work Bounty';
+    const taskIdToUse = task ? task.id : taskId;
+    const rewardAmount = task?.fixedReward || 500;
 
     const today = getCurrentDateStr();
     const progress = getUserProgress(currentUser.id);
 
-    if (progress.completedTaskIds.includes(taskId) || progress.pendingSubmissionTaskIds.includes(taskId)) {
-      setErrorMsg('You already have a submitted or completed entry for this task today.');
-      return false;
-    }
-
-    const rewardAmount = getUserDailyTaskReward(currentUser.id, task);
-
     const submission: TaskSubmission = {
       id: 'sub_' + Date.now(),
-      taskId: task.id,
-      taskTitle: task.title,
+      taskId: taskIdToUse,
+      taskTitle: taskTitle,
       userId: currentUser.id,
       userName: currentUser.name,
       userEmail: currentUser.email,
@@ -1620,7 +1618,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const updatedProg: UserDailyProgress = {
       ...progress,
       currentDate: today,
-      pendingSubmissionTaskIds: [...progress.pendingSubmissionTaskIds, taskId]
+      pendingSubmissionTaskIds: Array.from(new Set([...progress.pendingSubmissionTaskIds, taskIdToUse]))
     };
 
     setUserDailyProgress(prev => ({
@@ -1628,7 +1626,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       [currentUser.id]: updatedProg
     }));
 
-    setSuccessMsg(`Proof submitted! Treasure Homes compliance team will review and credit ₦${rewardAmount.toLocaleString()} to your wallet.`);
+    setSuccessMsg(`🎉 Proof submitted successfully! The Admin Control Centre will audit your submission and credit ₦${rewardAmount.toLocaleString()} to your wallet upon approval.`);
     return true;
   };
 

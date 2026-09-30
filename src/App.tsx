@@ -698,6 +698,23 @@ function MainAppContent() {
                     Create one now
                   </button>
                 </div>
+
+                <div className="mt-2 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Admin Control Desk</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginEmail('admin@treasurehomes.com');
+                      setLoginPassword('admin123');
+                    }}
+                    className="text-amber-600 hover:text-amber-700 font-bold hover:underline cursor-pointer font-mono"
+                  >
+                    Quick-Fill Admin Login
+                  </button>
+                </div>
               </form>
             ) : (
               /* CLEAN REGISTRATION FORM */

@@ -23,6 +23,7 @@ export const supabase = isSupabaseConfigured()
     id text primary key,
     name text not null,
     email text unique not null,
+    phone text,
     "referralCode" text not null,
     "referredByCode" text,
     "walletBalance" double precision not null default 0,
@@ -46,7 +47,9 @@ export const supabase = isSupabaseConfigured()
     "totalWeeks" integer not null default 4,
     status text not null default 'active',
     "createdAt" text not null,
-    "lastPayoutDate" text
+    "lastPayoutDate" text,
+    "nextPayoutDate" text,
+    "autoReinvest" boolean default false
   );
 
   -- Transactions Table
