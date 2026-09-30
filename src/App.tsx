@@ -243,13 +243,18 @@ function MainAppContent() {
               </div>
             </div>
 
-            <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl">
-              Multiply your capital with asset-backed security. Our yield models are directly leveraged against physical real estate development completions, premium rentals, and corporate mortgage assets managed by <strong>TREASURE HOMES</strong>.
-            </p>
+            <div className="space-y-2">
+              <p className="text-base sm:text-lg text-slate-800 font-semibold leading-relaxed max-w-xl">
+                Put your money into real properties. Get paid cash every Friday.
+              </p>
+              <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-xl">
+                Start with as little as ₦15,000. Backed by verified properties worldwide managed by <strong>TREASURE HOMES</strong>.
+              </p>
+            </div>
 
             {/* Quick Rates Grid */}
             <div className="space-y-3">
-              <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-widest">Active Investment Tiers (4-Week Cycles)</span>
+              <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-widest">Popular Property Plans (4-Week Cycles)</span>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {INVESTMENT_PLANS.slice(0, 3).map(plan => (
                   <div key={plan.id} className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
@@ -265,7 +270,7 @@ function MainAppContent() {
                 ))}
                 <div className="bg-slate-50 border border-dashed border-slate-300 p-4 rounded-xl flex flex-col justify-center items-center text-center">
                   <span className="text-[11px] text-slate-700 font-bold uppercase">Up to Plan 5</span>
-                  <span className="text-[10px] text-slate-500">₦500k Purchase → ₦1.16M Returns</span>
+                  <span className="text-[10px] text-slate-500">₦500k Plan → ₦1.16M Returns</span>
                 </div>
               </div>
             </div>
@@ -275,16 +280,16 @@ function MainAppContent() {
               <div className="flex items-start gap-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-slate-900 uppercase tracking-wider">Automated weekly payouts</h4>
-                  <p className="text-slate-500 mt-0.5">Yield is credited automatically to your investment wallet every week.</p>
+                  <h4 className="font-bold text-slate-900 uppercase tracking-wider">Weekly Cash Returns</h4>
+                  <p className="text-slate-500 mt-0.5">Your profit is paid directly into your wallet every Friday.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <Users className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-slate-900 uppercase tracking-wider">7.5% Referral Commission</h4>
-                  <p className="text-slate-500 mt-0.5">Earn 7.5% of your referral's weekly payouts automatically credited to your balance.</p>
+                  <h4 className="font-bold text-slate-900 uppercase tracking-wider">7.5% Referral Bonus</h4>
+                  <p className="text-slate-500 mt-0.5">Share your invite link. Earn 7.5% cash every time your friend gets paid.</p>
                 </div>
               </div>
             </div>
@@ -329,17 +334,17 @@ function MainAppContent() {
             <div className="mb-4">
               <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-tight">
                 {isResettingPassword
-                  ? 'Reset & Confirm Password'
+                  ? 'Reset Your Password'
                   : isRegistering
-                    ? 'Open Investor Account'
+                    ? 'Create Your Account'
                     : 'Welcome Back'}
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 {isResettingPassword
-                  ? 'Authenticate your registered email to establish and confirm a new password.'
+                  ? 'Enter your registered email to reset your password.'
                   : isRegistering 
-                    ? 'Access is invite-only. Join PM Invest to start earning weekly mortgage returns.'
-                    : 'Enter your credentials to access your portfolio dashboard.'
+                    ? 'Enter your details and your friend’s invite code to get started.'
+                    : 'Sign in to check your wallet and weekly profits.'
                 }
               </p>
             </div>
@@ -349,9 +354,9 @@ function MainAppContent() {
               <div className="mb-4 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-900 shadow-xs">
                 <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-slate-900 block">Invite-Only Access Gate</span>
+                  <span className="font-bold text-slate-900 block">Invite Code Required</span>
                   <span className="text-[11px] text-slate-600 mt-0.5 block leading-relaxed">
-                    Account creation is gated. You must provide a valid sponsor referral code from an existing member or partner to register.
+                    To join PM Invest, please enter the referral code given to you by your friend or sponsor.
                   </span>
                 </div>
               </div>
@@ -805,14 +810,14 @@ function MainAppContent() {
                       type="text" 
                       value={regRef}
                       onChange={(e) => setRegRef(e.target.value.toUpperCase())}
-                      placeholder="Enter verified sponsor code (required)"
+                      placeholder="e.g. INV1000 or friend's code"
                       className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all font-mono uppercase"
                       required
                     />
                     <Users className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1">
-                    🔒 Account creation is gated. Registration requires an active referral code from an existing member or sponsor.
+                    🔒 Registration requires an invite code from a friend or sponsor.
                   </p>
                 </div>
 

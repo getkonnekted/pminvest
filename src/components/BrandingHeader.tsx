@@ -26,7 +26,7 @@ export const BrandingHeader: React.FC = () => {
               <span className="text-xl font-extrabold tracking-tight uppercase font-sans text-white">PM <span className="text-amber-400">Invest</span></span>
               <span className="text-[10px] uppercase tracking-widest text-slate-400 font-mono font-bold leading-none">By Treasure Homes</span>
             </div>
-            <p className="text-xs text-slate-400 font-light mt-0.5">Secure wealth multiplication & estate-backed liquidity</p>
+            <p className="text-xs text-slate-300 font-normal mt-0.5">Earn steady cash returns backed by verified properties worldwide</p>
           </div>
         </div>
 
@@ -74,18 +74,18 @@ export const LegalDisclosures: React.FC = () => {
         <div>
           <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">TREASURE HOMES GROUP</h4>
           <p className="leading-relaxed mb-4 text-slate-300">
-            PM Invest is a premium high-yield investment platform owned and managed by TREASURE HOMES LTD. We leverage physical estate developments, verified property acquisition, and structured mortgage-backed securities to generate consistent yield for our active investors.
+            PM Invest is backed by real estate developed and managed by Treasure Homes Ltd. We put money into real building projects and verified rental properties worldwide to pay steady weekly returns to our investors.
           </p>
           <div className="flex items-center gap-2 text-white/80">
             <ShieldCheck className="w-5 h-5 text-amber-400" />
-            <span className="font-mono text-[10px] tracking-wider font-semibold">100% REGULATED LIQUIDITY RESERVE</span>
+            <span className="font-mono text-[10px] tracking-wider font-semibold">100% ASSET-BACKED CASH RESERVE</span>
           </div>
         </div>
 
         <div>
           <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">OFFICIAL INVESTOR COMMUNITY</h4>
           <p className="leading-relaxed mb-3 text-slate-300">
-            Join our verified platforms for daily payout alerts, platform notices, land allocations, and 24/7 investor support.
+            Join our verified groups for daily payout alerts, announcements, land allocations, and 24/7 friendly support.
           </p>
           <div className="space-y-2 mt-3">
             <a
@@ -116,22 +116,22 @@ export const LegalDisclosures: React.FC = () => {
         </div>
 
         <div>
-          <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">RISK MANAGEMENT & SECURITY</h4>
+          <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">CASH RESERVE & SAFETY</h4>
           <p className="leading-relaxed mb-3 text-slate-300">
-            To sustain our high payouts, PM Invest manages a dedicated <strong>liquidity reserve</strong> of over ₦{settings.liquidityReserve.toLocaleString()}. Under supervision of the Treasure Homes trust committee, withdrawals are processed under a tier-based risk alert system.
+            To guarantee your weekly payouts, PM Invest keeps a dedicated <strong>cash reserve</strong> of over ₦{settings.liquidityReserve.toLocaleString()} in bank escrow. This ensures every investor gets paid on time, every Friday.
           </p>
           <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700 text-[11px] text-slate-300">
-            <span className="font-semibold text-amber-400">Active Liquidity Reserve:</span> Backed by physical assets and real estate escrow accounts with current reserve liquidity of <strong className="text-white font-mono">₦{settings.liquidityReserve.toLocaleString()}</strong>.
+            <span className="font-semibold text-amber-400">Active Cash Reserve:</span> Backed by physical properties and bank escrow accounts with current reserve balance of <strong className="text-white font-mono">₦{settings.liquidityReserve.toLocaleString()}</strong>.
           </div>
         </div>
 
         <div>
-          <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">LEGAL DISCLAIMER</h4>
+          <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">NOTE ON PLANS</h4>
           <p className="leading-relaxed mb-3 text-slate-300">
-            Investments carry risk. Our weekly payouts are generated from real estate construction completions and rental yields managed by Treasure Homes. Active investments cannot be cancelled early and are locked for the full 4-week duration.
+            Your profit comes from physical property developments and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.
           </p>
           <p className="text-[11px] text-slate-500 font-mono">
-            © {new Date().getFullYear()} PM Invest Platforms under License of Treasure Homes Ltd. All rights reserved. Registered Corporate office: Treasure Homes Building, Lagos, Nigeria.
+            © {new Date().getFullYear()} PM Invest Platforms under License of Treasure Homes Ltd. All rights reserved. Corporate office: Treasure Homes Building, Lagos, Nigeria.
           </p>
         </div>
       </div>

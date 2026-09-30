@@ -246,18 +246,18 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
-                <ShieldCheck className="w-3 h-3 text-slate-950" />
-                Verified Accountability System
+                <Sparkles className="w-3 h-3 text-slate-950" />
+                Daily Rewards & Tasks
               </span>
               <span className="bg-slate-800/80 text-amber-300 text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-amber-500/30">
                 WAT (UTC+1)
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-              Daily Investor Quests & Milestone Hub
+              Daily Cash Rewards
             </h2>
             <p className="text-slate-300 text-xs sm:text-sm mt-1 max-w-xl">
-              Complete real investor actions, advocate for the community, and maintain an unbroken 7-day streak to claim cash dividends.
+              Complete simple daily actions, share on WhatsApp, and check in 7 days in a row to win bonus cash.
             </p>
           </div>
 
@@ -303,14 +303,14 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
             <div className="flex items-center gap-2">
               <Flame className="w-5 h-5 text-amber-500 animate-pulse" />
               <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider">
-                Consecutive Attendance Tracker
+                Daily Check-In Tracker
               </h3>
               <span className="bg-amber-100 text-amber-900 font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border border-amber-200">
                 {currentStreak} / 7 Days
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Genuinely resets back to Day 1 if a calendar day (WAT) is skipped. Hit Day 7 to unlock the <strong>₦1,500 Milestone Bonus</strong>.
+              Check in daily to collect your cash. Reach 7 days in a row without missing a day to win the <strong>₦1,500 Jackpot</strong>!
             </p>
           </div>
 
@@ -421,10 +421,10 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
           <div>
             <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <FileCheck className="w-4 h-4 text-emerald-600" />
-              Real In-App Account Verification Quests
+              Daily Account Rewards
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Tied directly to live database state. Uninvested or unverified accounts cannot claim rewards.
+              Instant cash rewards for active investors and verified accounts.
             </p>
           </div>
         </div>
@@ -435,30 +435,30 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
             <div>
               <div className="flex items-start justify-between gap-2 mb-3">
                 <span className="bg-emerald-50 text-emerald-800 text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-emerald-200">
-                  ACTIVE CAPITAL
+                  ACTIVE INVESTOR
                 </span>
                 <span className="text-xs font-mono font-bold text-emerald-600">
                   +₦300 Daily
                 </span>
               </div>
 
-              <h4 className="font-bold text-slate-900 text-sm">Active Portfolio Daily Yield</h4>
+              <h4 className="font-bold text-slate-900 text-sm">Active Investor Reward</h4>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Live database check: only accounts with at least one active real estate investment plan can claim daily portfolio yields.
+                If you have an active property plan, click here to collect an extra ₦300 bonus every day.
               </p>
 
               {/* Status display */}
               <div className="my-3.5 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-xs">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">Portfolio Status</span>
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">Your Plans</span>
                 {hasActivePlan ? (
                   <span className="text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    {activeInvestments.length} Active Plan{activeInvestments.length > 1 ? 's' : ''} Backing Account
+                    {activeInvestments.length} Active Plan{activeInvestments.length > 1 ? 's' : ''} Running
                   </span>
                 ) : (
                   <span className="text-rose-600 font-bold flex items-center gap-1 mt-0.5">
                     <AlertCircle className="w-3.5 h-3.5" />
-                    0 Active Plans (Claim Locked)
+                    No Active Plans (Buy a plan to unlock)
                   </span>
                 )}
               </div>
@@ -476,14 +476,14 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
                   id="btn_claim_active_portfolio"
                 >
-                  Claim Portfolio Yield (+₦300)
+                  Claim Daily Bonus (+₦300)
                 </button>
               ) : (
                 <button
                   onClick={onNavigateToInvest}
                   className="w-full bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs py-2 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <span>Activate Investment Plan</span>
+                  <span>Choose a Plan (From ₦15k)</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -495,30 +495,30 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
             <div>
               <div className="flex items-start justify-between gap-2 mb-3">
                 <span className="bg-amber-50 text-amber-800 text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-amber-200">
-                  AUTO COMPOUND
+                  AUTO RENEW
                 </span>
                 <span className="text-xs font-mono font-bold text-emerald-600">
                   +₦250 Daily
                 </span>
               </div>
 
-              <h4 className="font-bold text-slate-900 text-sm">Daily Reinvestment Quest</h4>
+              <h4 className="font-bold text-slate-900 text-sm">Auto-Renew Bonus</h4>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Reward for compounding wealth. Enable Auto-Reinvestment on any of your active plans to claim this daily bonus.
+                Turn on auto-renew on any of your active plans to collect an extra ₦250 cash every day.
               </p>
 
               {/* Status display */}
               <div className="my-3.5 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-xs">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">Compounding Status</span>
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">Auto-Renew Status</span>
                 {hasAutoCompounding ? (
                   <span className="text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    Auto-Compounding Enabled (Active)
+                    Auto-Renew is Turned ON
                   </span>
                 ) : (
                   <span className="text-amber-700 font-bold flex items-center gap-1 mt-0.5">
                     <RotateCw className="w-3.5 h-3.5 text-amber-500" />
-                    Auto-Compounding OFF
+                    Auto-Renew is OFF
                   </span>
                 )}
               </div>
@@ -536,7 +536,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
                   id="btn_claim_auto_reinvest"
                 >
-                  Claim Compounding Bonus (+₦250)
+                  Claim Auto-Renew Bonus (+₦250)
                 </button>
               ) : hasActivePlan ? (
                 <button
@@ -546,7 +546,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
                   }}
                   className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs py-2 rounded-xl transition-all shadow-xs cursor-pointer"
                 >
-                  Enable Auto-Compounding Now
+                  Turn On Auto-Renew
                 </button>
               ) : (
                 <button
@@ -565,35 +565,35 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
             <div>
               <div className="flex items-start justify-between gap-2 mb-3">
                 <span className="bg-purple-50 text-purple-800 text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-purple-200">
-                  COMPLIANCE BOUNTY
+                  ID GIFT
                 </span>
                 <span className="text-xs font-mono font-bold text-purple-700">
                   ₦1,000 One-Time
                 </span>
               </div>
 
-              <h4 className="font-bold text-slate-900 text-sm">KYC Completion Bounty</h4>
+              <h4 className="font-bold text-slate-900 text-sm">ID Verification Gift</h4>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Instant cash reward credited when your government identity document is audited and approved by compliance.
+                Get a free ₦1,000 cash bonus added to your wallet as soon as your ID is verified.
               </p>
 
               {/* Status display */}
               <div className="my-3.5 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-xs">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">KYC Standing</span>
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">Verification Status</span>
                 {isKycVerified ? (
                   <span className="text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    Government ID Verified
+                    ID Verified ✓
                   </span>
                 ) : isKycPending ? (
                   <span className="text-amber-700 font-bold flex items-center gap-1 mt-0.5">
                     <Clock className="w-3.5 h-3.5 animate-spin-slow" />
-                    Under Compliance Review
+                    Under Review (~10 mins)
                   </span>
                 ) : (
                   <span className="text-slate-600 font-bold flex items-center gap-1 mt-0.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-                    Unverified (Action Required)
+                    Not Yet Verified
                   </span>
                 )}
               </div>
@@ -611,21 +611,21 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-2 rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
                   id="btn_claim_kyc_bounty"
                 >
-                  Claim ₦1,000 KYC Bounty
+                  Claim ₦1,000 Cash Gift
                 </button>
               ) : isKycPending ? (
                 <button
                   disabled
                   className="w-full bg-slate-100 text-slate-400 font-bold text-xs py-2 rounded-xl cursor-not-allowed"
                 >
-                  Awaiting Admin Approval
+                  Review in Progress
                 </button>
               ) : (
                 <button
                   onClick={() => setIsKycModalOpen(true)}
                   className="w-full bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs py-2 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <span>Submit KYC for ₦1,000</span>
+                  <span>Verify ID for ₦1,000</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -641,14 +641,14 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
             <div className="flex items-center gap-2">
               <Share2 className="w-5 h-5 text-amber-500" />
               <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider">
-                Real Social Advocacy & Proof-of-Work Bounty
+                Post on WhatsApp &amp; Earn
               </h3>
               <span className="bg-amber-100 text-amber-900 text-xs font-mono font-bold px-2 py-0.5 rounded-full border border-amber-200">
-                ₦500 Per Approved Post
+                ₦500 Per Post
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              One-tap native sharing for WhatsApp and Telegram. Upload your screenshot proof or post link for live audit in the Admin Panel.
+              Share our flyer on your WhatsApp status or Telegram. Upload your screenshot proof to receive ₦500 cash.
             </p>
           </div>
 
@@ -662,7 +662,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
             id="btn_open_submit_proof_modal"
           >
             <Send className="w-3.5 h-3.5" />
-            <span>Submit Proof for Admin Audit</span>
+            <span>Upload Screenshot Proof</span>
           </button>
         </div>
 

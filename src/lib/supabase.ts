@@ -18,13 +18,13 @@ export const supabase = isSupabaseConfigured()
  * 
  * Copy and run this script in the Supabase SQL Editor to provision the exact tables required:
  * 
-  -- Users Table
-  create table if not exists users (
+  -- 1. USERS
+  create table if not exists public.users (
     id text primary key,
     name text not null,
     email text unique not null,
     phone text,
-    "referralCode" text not null,
+    "referralCode" text not null default 'INV1000',
     "referredByCode" text,
     "walletBalance" double precision not null default 0,
     "kycStatus" text not null default 'unverified',
@@ -32,9 +32,10 @@ export const supabase = isSupabaseConfigured()
     role text not null default 'user',
     "createdAt" text not null
   );
+  alter table public.users disable row level security;
 
-  -- Investments Table
-  create table if not exists investments (
+  -- 2. INVESTMENTS
+  create table if not exists public.investments (
     id text primary key,
     "userId" text not null,
     "userName" text not null,
@@ -51,9 +52,10 @@ export const supabase = isSupabaseConfigured()
     "nextPayoutDate" text,
     "autoReinvest" boolean default false
   );
+  alter table public.investments disable row level security;
 
-  -- Transactions Table
-  create table if not exists transactions (
+  -- 3. TRANSACTIONS
+  create table if not exists public.transactions (
     id text primary key,
     "userId" text not null,
     "userName" text not null,
@@ -66,9 +68,10 @@ export const supabase = isSupabaseConfigured()
     "createdAt" text not null,
     description text not null
   );
+  alter table public.transactions disable row level security;
 
-  -- Settings Table
-  create table if not exists settings (
+  -- 4. SETTINGS
+  create table if not exists public.settings (
     id text primary key default 'system_settings',
     "liquidityReserve" double precision not null,
     "riskAlertLevel" text not null,
@@ -77,38 +80,30 @@ export const supabase = isSupabaseConfigured()
     "autoApproveDeposits" boolean not null,
     "isMaintenanceMode" boolean not null
   );
+  alter table public.settings disable row level security;
 
-  -- System State Table
-  create table if not exists system_state (
+  -- 5. TASK SUBMISSIONS
+  create table if not exists public.task_submissions (
+    id text primary key,
+    "taskId" text not null,
+    "taskTitle" text not null,
+    "userId" text not null,
+    "userName" text not null,
+    "userEmail" text not null,
+    proof text not null,
+    "rewardAmount" double precision not null,
+    status text not null default 'pending',
+    "reviewedAt" text,
+    "createdAt" text not null
+  );
+  alter table public.task_submissions disable row level security;
+
+  -- 6. SYSTEM STATE
+  create table if not exists public.system_state (
     key text primary key,
     value text not null
   );
-
-  -- Enable RLS (or disable for simple fast testing by clicking Disable RLS in Supabase UI)
-  alter table users enable row level security;
-  alter table investments enable row level security;
-  alter table transactions enable row level security;
-  alter table settings enable row level security;
-  alter table system_state enable row level security;
-
-  -- Create permissive policies for development (replace with proper auth filters for production RLS)
-  create policy "Allow all public reads" on users for select using (true);
-  create policy "Allow all public inserts" on users for insert with check (true);
-  create policy "Allow all public updates" on users for update using (true);
-
-  create policy "Allow all public reads" on investments for select using (true);
-  create policy "Allow all public inserts" on investments for insert with check (true);
-  create policy "Allow all public updates" on investments for update using (true);
-
-  create policy "Allow all public reads" on transactions for select using (true);
-  create policy "Allow all public inserts" on transactions for insert with check (true);
-  create policy "Allow all public updates" on transactions for update using (true);
-
-  create policy "Allow all public reads" on settings for select using (true);
-  create policy "Allow all public upserts" on settings for all using (true);
-
-  create policy "Allow all public reads" on system_state for select using (true);
-  create policy "Allow all public upserts" on system_state for all using (true);
+  alter table public.system_state disable row level security;
  */
 
 export interface SupabaseFetchResult {

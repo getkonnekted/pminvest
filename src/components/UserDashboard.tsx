@@ -29,7 +29,9 @@ import {
   Loader2,
   RotateCw,
   PlusCircle,
-  ArrowRight
+  ArrowRight,
+  Link2,
+  Check
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
 import { INVESTMENT_PLANS, InvestmentPlan } from '../types';
@@ -78,20 +80,20 @@ export const UserDashboard: React.FC = () => {
     {
       id: 'overview',
       label: 'Overview',
-      description: 'Portfolio overview, metrics & active plans',
+      description: 'Your wallet, weekly profits & active plans',
       icon: TrendingUp,
     },
     {
       id: 'invest',
       label: 'Buy Plans',
-      description: 'Explore asset-backed real estate investment tiers',
+      description: 'Choose a property plan starting from ₦15,000',
       icon: Sparkles,
-      badge: <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Explore</span>
+      badge: <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">From ₦15k</span>
     },
     {
       id: 'tasks',
       label: 'Daily Tasks',
-      description: 'Complete daily tasks & earn shared bonus pool',
+      description: 'Check in daily, share on WhatsApp & earn bonuses',
       icon: Flame,
       badge: currentUser && (
         <span className="bg-amber-500/20 text-amber-900 border border-amber-400/40 text-[10px] font-bold px-1.5 py-0.2 rounded-full font-mono">
@@ -102,20 +104,20 @@ export const UserDashboard: React.FC = () => {
     {
       id: 'finance',
       label: 'Deposit & Withdraw',
-      description: 'Manual bank deposit proof & payout withdrawals',
+      description: 'Add money to wallet or send cash to your bank',
       icon: Wallet,
     },
     {
       id: 'referrals',
       label: 'Referral 7.5%',
-      description: 'Earn 7.5% weekly commission from downline investors',
+      description: 'Invite friends and earn 7.5% every Friday',
       icon: Users,
       badge: <span className="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-2 py-0.5 rounded-full">7.5%</span>
     },
     {
       id: 'kyc',
       label: 'KYC Verification',
-      description: 'Identity verification for security & priority clearance',
+      description: 'Verify your ID for fast bank withdrawals',
       icon: FileText,
       badge: currentUser?.kycStatus === 'verified' ? (
         <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">Verified</span>
@@ -167,26 +169,27 @@ export const UserDashboard: React.FC = () => {
   const [kycNumber, setKycNumber] = useState<string>('');
 
   const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [copiedAccount2, setCopiedAccount2] = useState(false);
   const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(null);
 
   const faqItems = [
     {
-      question: "How do I fund my account (Deposits)?",
-      answer: "To fund your account, go to the 'Deposit & Withdraw' tab, select your preferred plan or enter a custom amount, and copy the provided banking transfer details. Pay using your banking app, upload your receipt/Proof of Payment (PoP), and submit. The compliance team audits transfers and approves deposits within 10 to 30min"
+      question: "How do I add money to my wallet?",
+      answer: "Go to the 'Deposit & Withdraw' tab, copy our official bank account details, and make a transfer from your bank app. Then upload your transfer receipt. Your wallet will be credited within 10 to 30 minutes."
     },
     {
-      question: "How do payout cycles work?",
-      answer: "All plans run on a 4-week cycle. Payouts are generated and credited to your wallet balance weekly (every 7 days from plan activation). When payouts occur, sponsors of referred users receive an automated 7.5% affiliate commission credited directly to their withdrawable balances."
+      question: "How do weekly Friday payouts work?",
+      answer: "Every property plan runs for 4 weeks. Every Friday, your weekly cash profit is paid straight into your wallet. You can withdraw it to your bank account anytime."
     },
     {
-      question: "What is the withdrawal workflow and clearance time?",
-      answer: "You can request withdrawals from your available balance under the 'Deposit & Withdraw' tab. Standard withdrawals below ₦100,000 are processed swiftly. For security, higher withdrawals and unverified accounts may undergo security clearance reviews lasting up to 24–48 business hours. Completing your identity verification under the 'KYC Compliance' tab unlocks higher limits and fast-tracks clearance."
+      question: "How do I withdraw cash to my bank?",
+      answer: "Go to 'Deposit & Withdraw', enter the amount you want to withdraw, and choose your bank account. Your money will arrive in your bank account within a few hours."
     },
     {
-      question: "Is my capital guaranteed?",
-      answer: `Yes. PM Invest manages a physical-asset backed reserve of over ₦${settings.liquidityReserve.toLocaleString()} backed by real estate holdings under Treasure Homes supervision. This ensures the protection and stability of all participant investments.`
+      question: "Is my money safe?",
+      answer: `Yes. PM Invest is backed by real building projects and maintains a cash reserve of over ₦${settings.liquidityReserve.toLocaleString()} in bank escrow to ensure every payout is made on time.`
     }
   ];
 
@@ -216,6 +219,14 @@ export const UserDashboard: React.FC = () => {
     navigator.clipboard.writeText(currentUser.referralCode);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const handleCopyLink = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://treasurehomes.ng';
+    const link = `${origin}/?ref=${currentUser.referralCode}`;
+    navigator.clipboard.writeText(link);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -342,8 +353,8 @@ export const UserDashboard: React.FC = () => {
           <div className="flex items-start gap-2.5">
             <ShieldCheck className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-slate-900">KYC Verification Pending</p>
-              <p className="text-slate-600 mt-0.5">Submit your identification details to prevent future manual withdrawal clearance holding times.</p>
+              <p className="font-bold text-slate-900">Please Verify Your ID</p>
+              <p className="text-slate-600 mt-0.5">Verify your ID so you can withdraw money to your bank account anytime without delays.</p>
             </div>
           </div>
           <button 
@@ -490,7 +501,7 @@ export const UserDashboard: React.FC = () => {
               <div>
                 <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Wallet Balance</p>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">₦{currentUser.walletBalance.toLocaleString()}</h3>
-                <span className="text-[10px] text-amber-600 font-medium font-sans">Available for immediate withdrawal</span>
+                <span className="text-[10px] text-amber-600 font-medium font-sans">Ready to withdraw to your bank</span>
               </div>
               <div className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700">
                 <Wallet className="w-5 h-5" />
@@ -499,7 +510,7 @@ export const UserDashboard: React.FC = () => {
 
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Active Capital</p>
+                <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Money in Properties</p>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">
                   ₦{activeInvestments.reduce((sum, i) => sum + i.cost, 0).toLocaleString()}
                 </h3>
@@ -512,9 +523,9 @@ export const UserDashboard: React.FC = () => {
 
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Yield Earnings</p>
+                <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Total Profit Collected</p>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-amber-600 mt-1">₦{totalEarnedPayouts.toLocaleString()}</h3>
-                <span className="text-[10px] text-slate-400 font-sans">Received from payouts</span>
+                <span className="text-[10px] text-slate-400 font-sans">Paid into your wallet</span>
               </div>
               <div className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-amber-500">
                 <ArrowUpRight className="w-5 h-5" />
@@ -523,9 +534,9 @@ export const UserDashboard: React.FC = () => {
 
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Referral Income</p>
+                <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Referral Bonus</p>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">₦{totalReferralBonus.toLocaleString()}</h3>
-                <span className="text-[10px] text-emerald-600 font-semibold font-sans">7.5% weekly commission active</span>
+                <span className="text-[10px] text-emerald-600 font-semibold font-sans">7.5% weekly bonus active</span>
               </div>
               <div className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700">
                 <Users className="w-5 h-5" />
@@ -550,10 +561,10 @@ export const UserDashboard: React.FC = () => {
                     </span>
                   </div>
                   <h4 className="text-sm font-bold text-white mt-0.5">
-                    Daily Investor Quests &amp; Milestone Hub
+                    Daily Cash Rewards &amp; Check-In
                   </h4>
                   <p className="text-xs text-slate-400">
-                    Claim active portfolio yields, earn ₦500 advocacy bounties, and reach Day 7 for the ₦1,500 milestone bonus.
+                    Check in every day, share on WhatsApp, and collect extra cash in your wallet.
                   </p>
                 </div>
               </div>
@@ -563,7 +574,7 @@ export const UserDashboard: React.FC = () => {
                 className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 px-4 rounded-xl transition-all shrink-0 flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
                 id="btn_overview_jump_to_tasks"
               >
-                <span>Go to Daily Quests</span>
+                <span>Go to Daily Tasks</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -611,15 +622,15 @@ export const UserDashboard: React.FC = () => {
 
                         <div className="grid grid-cols-2 gap-2 my-3 text-xs border-y border-slate-200 py-3">
                           <div>
-                            <span className="text-slate-500 block font-light">Capital Invested</span>
+                            <span className="text-slate-500 block font-light">Plan Cost</span>
                             <span className="text-sm font-bold text-slate-900">₦{inv.cost.toLocaleString()}</span>
                           </div>
                           <div>
-                            <span className="text-slate-500 block font-light">Target Returns</span>
+                            <span className="text-slate-500 block font-light">Total Returns</span>
                             <span className="text-sm font-bold text-amber-600">₦{inv.totalReturns.toLocaleString()}</span>
                           </div>
                           <div className="col-span-2 pt-1.5 border-t border-slate-100">
-                            <span className="text-slate-500 block font-light">Weekly Payout Credited</span>
+                            <span className="text-slate-500 block font-light">Paid Every Friday</span>
                             <span className="text-sm font-bold text-slate-900">₦{inv.weeklyPayout.toLocaleString()} / week</span>
                           </div>
                         </div>
@@ -627,8 +638,8 @@ export const UserDashboard: React.FC = () => {
                         {/* Progress */}
                         <div className="my-3">
                           <div className="flex justify-between text-[11px] mb-1 font-mono text-slate-500">
-                            <span>Payout Cycles</span>
-                            <span>{inv.weeksPaid} / {inv.totalWeeks} Weeks</span>
+                            <span>Plan Progress</span>
+                            <span>Week {inv.weeksPaid} of {inv.totalWeeks} Paid</span>
                           </div>
                           <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
                             <div 
@@ -648,8 +659,8 @@ export const UserDashboard: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <RotateCw className={`w-3.5 h-3.5 ${inv.autoReinvest ? 'text-amber-500 animate-spin-slow' : 'text-slate-400'}`} />
                             <div>
-                              <span className="text-[11px] font-bold text-slate-800 block leading-tight">Auto-Compounding</span>
-                              <span className="text-[9px] text-slate-400 block">Auto-reinvest upon completing 4 weeks</span>
+                              <span className="text-[11px] font-bold text-slate-800 block leading-tight">Auto-Renew</span>
+                              <span className="text-[9px] text-slate-400 block">Restart plan automatically after 4 weeks</span>
                             </div>
                           </div>
                           <button
@@ -754,13 +765,13 @@ export const UserDashboard: React.FC = () => {
       {activeTab === 'invest' && (
         <div className="space-y-6">
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-center max-w-3xl mx-auto">
-            <h3 className="text-lg font-bold text-slate-900 tracking-wide uppercase">Select Wealth Growth Plan</h3>
+            <h3 className="text-lg font-bold text-slate-900 tracking-wide uppercase">Choose a Property Plan</h3>
             <p className="text-xs text-slate-600 mt-1 max-w-xl mx-auto">
-              Our plans run for a fixed duration of <strong>4 weeks</strong>. Weekly payouts are credited automatically to your wallet and are fully withdrawable anytime.
+              Start with as little as <strong>₦15,000</strong>. All plans run for <strong>4 weeks</strong>. You get paid cash every Friday straight into your wallet, and you can withdraw to your bank anytime.
             </p>
             <div className="mt-4 inline-flex items-center gap-1.5 bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Mortgage & Real Estate backed by <strong>Treasure Homes</strong></span>
+              <span>Backed by verified properties worldwide by <strong>Treasure Homes</strong></span>
             </div>
           </div>
 
@@ -786,11 +797,11 @@ export const UserDashboard: React.FC = () => {
 
                   <div>
                     <h4 className="text-xl font-extrabold text-slate-900 uppercase tracking-wider">{plan.name}</h4>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">Asset Backed Fixed Yield</p>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Backed by real properties</p>
                     
                     <div className="my-5 bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-3">
                       <div className="flex justify-between items-baseline">
-                        <span className="text-xs text-slate-500">Purchase Price:</span>
+                        <span className="text-xs text-slate-500">Plan Cost:</span>
                         <span className="text-lg font-extrabold text-slate-900">₦{plan.cost.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-baseline">
@@ -799,7 +810,7 @@ export const UserDashboard: React.FC = () => {
                       </div>
                       <div className="h-px bg-slate-200 w-full" />
                       <div className="flex justify-between items-baseline">
-                        <span className="text-xs text-emerald-600 font-semibold">Weekly Payout:</span>
+                        <span className="text-xs text-emerald-600 font-semibold">Weekly Cash Payout:</span>
                         <span className="text-base font-bold text-emerald-600">₦{plan.weeklyPayout.toLocaleString()}</span>
                       </div>
                     </div>
@@ -807,15 +818,15 @@ export const UserDashboard: React.FC = () => {
                     <ul className="text-xs text-slate-600 space-y-2 mb-6">
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
-                        <span>4 automated weekly cycles</span>
+                        <span>Paid every Friday for 4 weeks</span>
                       </li>
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
-                        <span>7.5% Weekly Sponsor Referral Commission</span>
+                        <span>7.5% bonus for the friend who invited you</span>
                       </li>
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Instant Wallet credit on cycle end</span>
+                        <span>Cash sent straight to your wallet</span>
                       </li>
                     </ul>
                   </div>
@@ -836,7 +847,7 @@ export const UserDashboard: React.FC = () => {
                       {justActivatedPlanId === plan.id ? (
                         <>
                           <CheckCircle2 className="w-4 h-4 text-white animate-bounce" />
-                          <span>Investment Activated!</span>
+                          <span>Plan Activated!</span>
                         </>
                       ) : investingPlanId === plan.id ? (
                         <>
@@ -844,7 +855,7 @@ export const UserDashboard: React.FC = () => {
                           <span className="tracking-widest">Activating Plan...</span>
                         </>
                       ) : (
-                        `Invest ₦${plan.cost.toLocaleString()}`
+                        `Buy Plan (₦${plan.cost.toLocaleString()})`
                       )}
                     </button>
                   ) : (
@@ -1225,14 +1236,25 @@ export const UserDashboard: React.FC = () => {
             <p className="text-xs text-slate-600 max-w-xl mx-auto">
               Our unique system pays sponsors **7.5% of their referral's weekly payouts**. When your friends earn their weekly returns, you receive an automated 7.5% commission automatically!
             </p>
-            <div className="bg-slate-50 inline-flex items-center gap-2 border border-slate-200 px-4 py-2.5 rounded-xl text-sm">
-              <span className="text-slate-500 text-xs">My Sponsor Code:</span>
-              <strong className="text-slate-900 font-mono text-base tracking-wider font-extrabold">{currentUser.referralCode}</strong>
+            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+              <div className="bg-slate-50 inline-flex items-center gap-2 border border-slate-200 px-3.5 py-2 rounded-xl text-sm">
+                <span className="text-slate-500 text-xs">My Code:</span>
+                <strong className="text-slate-900 font-mono text-sm tracking-wider font-extrabold">{currentUser.referralCode}</strong>
+                <button 
+                  onClick={handleCopyCode}
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                  title="Copy code only"
+                >
+                  {copiedCode ? 'Copied!' : <><Copy className="w-3.5 h-3.5" /> Copy Code</>}
+                </button>
+              </div>
+
               <button 
-                onClick={handleCopyCode}
-                className="bg-amber-500 text-slate-950 hover:bg-amber-600 px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 shrink-0"
+                onClick={handleCopyLink}
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 shadow-xs transition-colors cursor-pointer"
+                title="Copy direct invite link with referral code attached"
               >
-                {copiedCode ? 'Copied!' : <><Copy className="w-3.5 h-3.5" /> Copy</>}
+                {copiedLink ? <><Check className="w-3.5 h-3.5" /> Link Copied!</> : <><Link2 className="w-3.5 h-3.5" /> Copy Direct Invite Link</>}
               </button>
             </div>
           </div>

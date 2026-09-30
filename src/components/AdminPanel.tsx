@@ -1015,6 +1015,7 @@ export const AdminPanel: React.FC = () => {
                 {filteredUsers.map((u) => {
                   const uInvestments = investments.filter(inv => inv.userId === u.id);
                   const activeCount = uInvestments.filter(i => i.status === 'active').length;
+                  const referralsCount = users.filter(usr => usr.referredByCode === u.referralCode).length;
 
                   return (
                     <tr key={u.id} className="hover:bg-slate-50/80">
@@ -1023,8 +1024,18 @@ export const AdminPanel: React.FC = () => {
                         <div className="text-[10px] text-slate-500 font-mono">{u.email}</div>
                         {u.phone && <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">📞 {u.phone}</div>}
                       </td>
-                      <td className="py-2.5 font-mono text-[11px] text-amber-600 font-bold">
-                        {u.referralCode}
+                      <td className="py-2.5 font-mono text-[11px]">
+                        <div className="text-amber-600 font-bold">{u.referralCode}</div>
+                        <div className="text-[10px] text-slate-500 font-sans mt-0.5">
+                          {u.referredByCode ? (
+                            <span>Sponsor: <span className="font-mono text-slate-700 font-semibold">{u.referredByCode}</span></span>
+                          ) : (
+                            <span className="text-slate-400">Direct / Root</span>
+                          )}
+                        </div>
+                        <div className="text-[9px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded inline-block mt-0.5 border border-emerald-200 font-sans font-semibold">
+                          👥 {referralsCount} downline{referralsCount === 1 ? '' : 's'}
+                        </div>
                       </td>
                       <td className="py-2.5 text-right font-bold font-mono text-slate-900">
                         ₦{u.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 1 })}
