@@ -913,7 +913,7 @@ export function AujotenPage({ onBackToPmInvest }: { onBackToPmInvest?: () => voi
                     <TrendingUp className="w-4 h-4 text-blue-400" /> Strategic Partnerships & Profit-Sharing
                   </h4>
                   <p className="text-xs text-slate-400 leading-relaxed pl-6">
-                    Structuring joint ventures with diaspora investors and domestic corporations with transparent escrow management and defined performance milestones.
+                    Structuring joint ventures with diaspora investors and domestic corporations with transparent reserve management and defined performance milestones.
                   </p>
                 </div>
               </div>
@@ -992,7 +992,7 @@ export function AujotenPage({ onBackToPmInvest }: { onBackToPmInvest?: () => voi
               </div>
               <h4 className="text-base font-bold text-white">Transparent Governance</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Audited statements, escrow fund segregation, clear legal contracts, and quarterly investor briefings.
+                Audited statements, reserve fund segregation, clear legal contracts, and quarterly investor briefings.
               </p>
             </div>
 
@@ -1083,7 +1083,7 @@ export function AujotenPage({ onBackToPmInvest }: { onBackToPmInvest?: () => voi
               </span>
               <h4 className="text-base font-bold text-white">Joint Ventures (JV)</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Project-specific co-funding with shared technical execution, designated escrow, and pre-defined revenue splits.
+                Project-specific co-funding with shared technical execution, designated reserve, and pre-defined revenue splits.
               </p>
             </div>
 

@@ -30,7 +30,8 @@ export const supabase = isSupabaseConfigured()
     "kycStatus" text not null default 'unverified',
     "kycDetails" jsonb,
     role text not null default 'user',
-    "createdAt" text not null
+    "createdAt" text not null,
+    "isDeactivated" boolean not null default false
   );
   alter table public.users disable row level security;
 

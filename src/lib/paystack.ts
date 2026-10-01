@@ -45,7 +45,7 @@ export const PAYSTACK_TEST_DETAILS = {
   mockVirtualAccount: {
     bank: 'Wema Bank (Paystack Reserved)',
     accountNumber: '7829103482',
-    accountName: 'PM INVEST / TREASURE ESCROW'
+    accountName: 'PM INVEST / TREASURE RESERVE'
   }
 };
 

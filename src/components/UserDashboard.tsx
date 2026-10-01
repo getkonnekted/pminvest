@@ -8,6 +8,7 @@ import {
   Users, 
   FileText, 
   ShieldCheck, 
+  ShieldAlert,
   AlertTriangle, 
   CheckCircle2, 
   Copy, 
@@ -129,9 +130,9 @@ export const UserDashboard: React.FC = () => {
     }
   ];
   
-  // Manual Escrow Deposit state
+  // Manual Reserve Deposit state
   const [depAmount, setDepAmount] = useState<string>('');
-  const [depMethod, setDepMethod] = useState<string>('Bank Transfer (Treasure Homes Escrow)');
+  const [depMethod, setDepMethod] = useState<string>('Bank Transfer (Treasure Homes Reserve)');
   const [depDetails, setDepDetails] = useState<string>('');
   
   // Real Receipt Upload states
@@ -189,7 +190,7 @@ export const UserDashboard: React.FC = () => {
     },
     {
       question: "Is my money safe?",
-      answer: `Yes. PM Invest is backed by real building projects and maintains a cash reserve of over ₦${settings.liquidityReserve.toLocaleString()} in bank escrow to ensure every payout is made on time.`
+      answer: `Yes. PM Invest is backed by real building projects and maintains a cash reserve of over ₦${settings.liquidityReserve.toLocaleString()} in bank reserve to ensure every payout is made on time.`
     }
   ];
 
@@ -344,6 +345,21 @@ export const UserDashboard: React.FC = () => {
             <span>{errorMsg}</span>
           </div>
           <button onClick={clearMessages} className="text-rose-600 hover:text-rose-800 text-xs font-mono px-2">Dismiss</button>
+        </div>
+      )}
+
+      {/* Deactivated Notice Banner */}
+      {currentUser.isDeactivated && (
+        <div className="mb-5 bg-rose-50 border-2 border-rose-300 text-rose-950 p-4 rounded-2xl flex items-start gap-3 text-xs shadow-sm animate-fadeIn">
+          <ShieldAlert className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h4 className="font-extrabold text-sm uppercase tracking-wider text-rose-900">
+              Account Deactivated by Administration
+            </h4>
+            <p className="text-rose-700 leading-relaxed font-medium">
+              Your account has been placed on administrative hold. New plan purchases, deposit credits, and withdrawal requests are temporarily paused. Existing capital and recorded payouts remain intact. Please contact compliance or platform administration to resolve this hold.
+            </p>
+          </div>
         </div>
       )}
 
@@ -769,7 +785,14 @@ export const UserDashboard: React.FC = () => {
             <p className="text-xs text-slate-600 mt-1 max-w-xl mx-auto">
               Start with as little as <strong>₦15,000</strong>. All plans run for <strong>4 weeks</strong>. You get paid cash every Friday straight into your wallet, and you can withdraw to your bank anytime.
             </p>
-            <div className="mt-4 inline-flex items-center gap-1.5 bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium">
+            <div className="mt-4 p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-slate-700 max-w-xl mx-auto text-left flex items-start gap-2.5 shadow-2xs">
+              <Building className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-slate-900 font-bold block uppercase tracking-wider text-[11px] text-amber-900 mb-0.5">Note on Plans</strong>
+                <span>Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.</span>
+              </div>
+            </div>
+            <div className="mt-3 inline-flex items-center gap-1.5 bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               <span>Backed by verified properties worldwide by <strong>Treasure Homes</strong></span>
             </div>
@@ -879,7 +902,7 @@ export const UserDashboard: React.FC = () => {
                         <span>Shortfall: <strong className="text-rose-600 font-mono">₦{(plan.cost - currentUser.walletBalance).toLocaleString()}</strong></span>
                         <span className="text-amber-700 font-semibold flex items-center gap-1">
                           <Building className="w-3 h-3 text-amber-600" />
-                          Treasure Escrow Deposit
+                          Treasure Reserve Deposit
                         </span>
                       </div>
                     </div>
@@ -900,10 +923,10 @@ export const UserDashboard: React.FC = () => {
               <div>
                 <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                   <ArrowDownLeft className="w-5 h-5 text-emerald-600" />
-                  Wallet Deposit & Funding
+                  How to Add Money
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Transfer funds to the verified corporate bank accounts below and submit your Proof of Payment (receipt). The compliance team audits transfers and approves deposits within 10 to 30min.
+                  Transfer from your bank app to either of our official accounts below. Enter the amount you sent and upload your receipt screenshot. Your wallet will be funded within 10 to 30 minutes.
                 </p>
               </div>
               <div className="flex items-center gap-1.5 self-start sm:self-auto bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold text-emerald-800">
@@ -913,11 +936,11 @@ export const UserDashboard: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {/* Treasure Homes Escrow Accounts */}
+              {/* Treasure Homes Reserve Accounts */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
                     <Building className="w-4 h-4 text-amber-500" />
-                    <span>TREASURE HOMES ESCROW DEPOSIT ACCOUNTS</span>
+                    <span>OFFICIAL BANK ACCOUNTS FOR PAYMENT</span>
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1017,7 +1040,7 @@ export const UserDashboard: React.FC = () => {
                       onChange={(e) => setDepMethod(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                     >
-                      <option>Bank Transfer (Treasure Homes Escrow)</option>
+                      <option>Bank Transfer (Treasure Homes Reserve)</option>
                       <option>USDT-TRC20 Stablecoin Account</option>
                       <option>Naira Cards (Instant Gateway)</option>
                     </select>
@@ -1077,7 +1100,7 @@ export const UserDashboard: React.FC = () => {
                     className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-sm shadow-emerald-600/10 cursor-pointer"
                     id="btn_submit_deposit"
                   >
-                    Submit Deposit proof
+                    I Have Sent The Money (Submit Receipt)
                   </button>
                 </form>
               </div>
@@ -1109,15 +1132,15 @@ export const UserDashboard: React.FC = () => {
               <div>
                 <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                   <ArrowUpRight className="w-5 h-5 text-rose-600" />
-                  Wallet Withdrawal
+                  Send Money to Your Bank
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Request payouts directly to your registered personal Nigerian bank account. Processed manually by finance admin within 1-24 hours.
+                  Enter how much you want to withdraw and choose your bank. Your money will arrive in your bank account within a few hours.
                 </p>
               </div>
               <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold text-slate-700">
                 <Clock className="w-3.5 h-3.5 text-slate-500" />
-                <span>MANUAL BANK SETTLEMENT</span>
+                <span>BANK WITHDRAWAL</span>
               </div>
             </div>
 
@@ -1191,10 +1214,10 @@ export const UserDashboard: React.FC = () => {
                 {settings.automatedPayouts ? (
                   <>
                     <Zap className="w-4 h-4 text-amber-300" />
-                    <span>Instant Bank Disbursal (₦{Number(withAmount || 0).toLocaleString()})</span>
+                    <span>Withdraw Cash to My Bank (₦{Number(withAmount || 0).toLocaleString()})</span>
                   </>
                 ) : (
-                  <span>Request Withdrawal</span>
+                  <span>Withdraw Cash to My Bank</span>
                 )}
               </button>
             </form>
@@ -1231,10 +1254,10 @@ export const UserDashboard: React.FC = () => {
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-center max-w-3xl mx-auto space-y-3">
             <h3 className="text-lg font-bold text-slate-900 tracking-wide uppercase flex items-center justify-center gap-2">
               <Users className="w-5 h-5 text-amber-500" />
-              Supercharged 7.5% Referral Commission Engine
+              Invite Friends, Earn Cash Every Friday
             </h3>
             <p className="text-xs text-slate-600 max-w-xl mx-auto">
-              Our unique system pays sponsors **7.5% of their referral's weekly payouts**. When your friends earn their weekly returns, you receive an automated 7.5% commission automatically!
+              Share your invite link with friends. Whenever they get paid their weekly profit, you automatically receive 7.5% cash sent straight to your wallet!
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
               <div className="bg-slate-50 inline-flex items-center gap-2 border border-slate-200 px-3.5 py-2 rounded-xl text-sm">
@@ -1261,26 +1284,26 @@ export const UserDashboard: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
-              <p className="text-xs text-slate-500 font-medium">Total Affiliates</p>
+              <p className="text-xs text-slate-500 font-medium">Friends Joined</p>
               <h3 className="text-3xl font-extrabold text-slate-900 mt-1">{referredUsers.length}</h3>
-              <p className="text-[10px] text-amber-600 font-medium mt-1">Directly signed up with your code</p>
+              <p className="text-[10px] text-amber-600 font-medium mt-1">Signed up with your link</p>
             </div>
 
             <div className="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
-              <p className="text-xs text-slate-500 font-medium">Affiliate Active Capital</p>
+              <p className="text-xs text-slate-500 font-medium">Friends' Active Money</p>
               <h3 className="text-3xl font-extrabold text-slate-900 mt-1">
                 ₦{investments
                   .filter(inv => referredUsers.some(ru => ru.id === inv.userId) && inv.status === 'active')
                   .reduce((sum, inv) => sum + inv.cost, 0)
                   .toLocaleString()}
               </h3>
-              <p className="text-[10px] text-slate-500 mt-1">Generating weekly yields</p>
+              <p className="text-[10px] text-slate-500 mt-1">Total working in property plans</p>
             </div>
 
             <div className="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
-              <p className="text-xs text-slate-500 font-medium">Commission Credited</p>
+              <p className="text-xs text-slate-500 font-medium">Total Referral Cash Earned</p>
               <h3 className="text-3xl font-extrabold text-amber-600 mt-1">₦{totalReferralBonus.toLocaleString()}</h3>
-              <p className="text-[10px] text-emerald-600 font-medium mt-1">From automated weekly 7.5% shares</p>
+              <p className="text-[10px] text-emerald-600 font-medium mt-1">Paid directly to your wallet</p>
             </div>
           </div>
 
@@ -1332,10 +1355,10 @@ export const UserDashboard: React.FC = () => {
           <div className="border-b border-slate-100 pb-3">
             <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-amber-500" />
-              Treasure Homes KYC Compliance Centre
+              Verify Your Identity
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              Verify your identity to lock in maximum withdrawal limits. Verified profiles receive fast-track manual clearance.
+              We verify every investor to protect your money and make sure your bank withdrawals are sent to the right person.
             </p>
           </div>
 
@@ -1411,16 +1434,16 @@ export const UserDashboard: React.FC = () => {
 
               <div className="bg-slate-50 p-5 rounded-xl border border-dashed border-slate-300 text-center space-y-2">
                 <UploadCloud className="w-7 h-7 text-amber-500 mx-auto" />
-                <p className="text-xs text-slate-800 font-semibold">Front Photo Upload</p>
-                <p className="text-[10px] text-slate-400">File attachment is auto-generated for security compliance reviews.</p>
+                <p className="text-xs text-slate-800 font-semibold">Upload Photo of ID Document</p>
+                <p className="text-[10px] text-slate-400">Please attach a clear photo or screenshot of your ID card.</p>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-sm"
+                className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-sm cursor-pointer"
                 id="btn_submit_kyc"
               >
-                Submit Documents for Review
+                Submit My ID for Verification
               </button>
             </form>
           ) : currentUser.kycStatus === 'pending' ? (
@@ -1458,10 +1481,10 @@ export const UserDashboard: React.FC = () => {
           <div className="text-center space-y-2">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest flex items-center justify-center gap-2">
               <HelpCircle className="w-5 h-5 text-amber-500 shrink-0" />
-              <span>Investment & Platform FAQ</span>
+              <span>Frequently Asked Questions</span>
             </h3>
             <p className="text-xs text-slate-500 max-w-lg mx-auto">
-              Understand how account funding, weekly payout schedules, and secure withdrawal mechanisms operate.
+              Common questions about adding money, weekly Friday payouts, and bank withdrawals.
             </p>
           </div>
 

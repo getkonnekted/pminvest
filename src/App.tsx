@@ -273,6 +273,12 @@ function MainAppContent() {
                   <span className="text-[10px] text-slate-500">₦500k Plan → ₦1.16M Returns</span>
                 </div>
               </div>
+
+              {/* Note on Plans */}
+              <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-3.5 text-xs text-slate-300">
+                <span className="font-bold text-amber-400 block uppercase tracking-wider text-[11px] mb-1">Note on Plans</span>
+                <span>Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.</span>
+              </div>
             </div>
 
             {/* Brand benefits */}
@@ -850,7 +856,7 @@ function MainAppContent() {
           <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
             <div className="space-y-1">
               <span className="text-amber-400 font-bold text-sm block">100% REGULATED</span>
-              <p className="text-slate-300">Operating transparent escrow reserves under supervision of the Treasure Homes asset board.</p>
+              <p className="text-slate-300">Operating transparent cash reserves under supervision of the Treasure Homes asset board.</p>
             </div>
             <div className="space-y-1 border-t md:border-t-0 md:border-x border-slate-800 py-4 md:py-0">
               <span className="text-amber-400 font-bold text-sm block font-mono">₦{settings ? Math.floor(settings.liquidityReserve / 1000000) : '78'}M+ RESERVE BACKING</span>

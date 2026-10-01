@@ -118,17 +118,17 @@ export const LegalDisclosures: React.FC = () => {
         <div>
           <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">CASH RESERVE & SAFETY</h4>
           <p className="leading-relaxed mb-3 text-slate-300">
-            To guarantee your weekly payouts, PM Invest keeps a dedicated <strong>cash reserve</strong> of over ₦{settings.liquidityReserve.toLocaleString()} in bank escrow. This ensures every investor gets paid on time, every Friday.
+            To guarantee your weekly payouts, PM Invest keeps a dedicated <strong>cash reserve</strong> of over ₦{settings.liquidityReserve.toLocaleString()} in bank reserve. This ensures every investor gets paid on time, every Friday.
           </p>
           <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700 text-[11px] text-slate-300">
-            <span className="font-semibold text-amber-400">Active Cash Reserve:</span> Backed by physical properties and bank escrow accounts with current reserve balance of <strong className="text-white font-mono">₦{settings.liquidityReserve.toLocaleString()}</strong>.
+            <span className="font-semibold text-amber-400">Active Cash Reserve:</span> Backed by physical properties and bank reserve accounts with current reserve balance of <strong className="text-white font-mono">₦{settings.liquidityReserve.toLocaleString()}</strong>.
           </div>
         </div>
 
         <div>
           <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">NOTE ON PLANS</h4>
           <p className="leading-relaxed mb-3 text-slate-300">
-            Your profit comes from physical property developments and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.
+            Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.
           </p>
           <p className="text-[11px] text-slate-500 font-mono">
             © {new Date().getFullYear()} PM Invest Platforms under License of Treasure Homes Ltd. All rights reserved. Corporate office: Treasure Homes Building, Lagos, Nigeria.

@@ -236,6 +236,13 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
     return proofStr.replace(/\|\s*Image:\s*data:image\/[^;]+;base64,[^ \]]+/, '').trim();
   };
 
+  const hasClaimedActiveReward = transactions.some(
+    t => t.userId === currentUser?.id && (t.description?.includes('Active Investor') || t.description?.includes('Active Portfolio'))
+  );
+  const hasClaimedAutoRenew = transactions.some(
+    t => t.userId === currentUser?.id && (t.description?.includes('Auto-Renew') || t.description?.includes('Auto-Compounding'))
+  );
+
   return (
     <div className="space-y-6" id="daily_tasks_hub_container">
       {/* HEADER SECTION WITH REAL WAT RESET CLOCK */}
@@ -430,7 +437,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* QUEST 1: ACTIVE PORTFOLIO QUEST */}
+          {/* QUEST 1: ACTIVE INVESTOR QUEST */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
             <div>
               <div className="flex items-start justify-between gap-2 mb-3">
@@ -438,13 +445,13 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
                   ACTIVE INVESTOR
                 </span>
                 <span className="text-xs font-mono font-bold text-emerald-600">
-                  +₦300 Daily
+                  +₦300 One-Time
                 </span>
               </div>
 
               <h4 className="font-bold text-slate-900 text-sm">Active Investor Reward</h4>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                If you have an active property plan, click here to collect an extra ₦300 bonus every day.
+                If you have an active property plan, click here to collect your one-time ₦300 cash bonus.
               </p>
 
               {/* Status display */}
@@ -465,10 +472,10 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
             </div>
 
             <div className="pt-3 border-t border-slate-100">
-              {progress.completedTaskIds.includes('task_active_portfolio') ? (
+              {hasClaimedActiveReward || progress.completedTaskIds.includes('task_active_portfolio') ? (
                 <div className="flex items-center gap-1.5 text-emerald-700 font-bold text-xs">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Claimed Today (+₦300)</span>
+                  <span>Claimed (₦300 Credited)</span>
                 </div>
               ) : hasActivePlan ? (
                 <button
@@ -476,7 +483,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
                   id="btn_claim_active_portfolio"
                 >
-                  Claim Daily Bonus (+₦300)
+                  Claim One-Time Bonus (+₦300)
                 </button>
               ) : (
                 <button
@@ -490,7 +497,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
             </div>
           </div>
 
-          {/* QUEST 2: DAILY REINVESTMENT QUEST */}
+          {/* QUEST 2: AUTO-RENEW BONUS QUEST */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
             <div>
               <div className="flex items-start justify-between gap-2 mb-3">
@@ -498,13 +505,13 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
                   AUTO RENEW
                 </span>
                 <span className="text-xs font-mono font-bold text-emerald-600">
-                  +₦250 Daily
+                  +₦250 One-Time
                 </span>
               </div>
 
               <h4 className="font-bold text-slate-900 text-sm">Auto-Renew Bonus</h4>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Turn on auto-renew on any of your active plans to collect an extra ₦250 cash every day.
+                Turn on auto-renew on any of your active plans to collect an instant one-time ₦250 cash bonus.
               </p>
 
               {/* Status display */}
@@ -525,10 +532,10 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
             </div>
 
             <div className="pt-3 border-t border-slate-100">
-              {progress.completedTaskIds.includes('task_auto_reinvest') ? (
+              {hasClaimedAutoRenew || progress.completedTaskIds.includes('task_auto_reinvest') ? (
                 <div className="flex items-center gap-1.5 text-emerald-700 font-bold text-xs">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Claimed Today (+₦250)</span>
+                  <span>Claimed (₦250 Credited)</span>
                 </div>
               ) : hasAutoCompounding ? (
                 <button
@@ -536,7 +543,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 rounded-xl transition-all shadow-xs cursor-pointer active:scale-95"
                   id="btn_claim_auto_reinvest"
                 >
-                  Claim Auto-Renew Bonus (+₦250)
+                  Claim One-Time Bonus (+₦250)
                 </button>
               ) : hasActivePlan ? (
                 <button
@@ -644,11 +651,11 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
                 Post on WhatsApp &amp; Earn
               </h3>
               <span className="bg-amber-100 text-amber-900 text-xs font-mono font-bold px-2 py-0.5 rounded-full border border-amber-200">
-                ₦500 Per Post
+                ₦200 Per Post
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Share our flyer on your WhatsApp status or Telegram. Upload your screenshot proof to receive ₦500 cash.
+              Share our flyer on your WhatsApp status or Telegram. Upload your screenshot proof to receive ₦200 cash.
             </p>
           </div>
 
@@ -807,7 +814,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div>
                 <span className="text-[10px] font-mono font-bold text-amber-600 uppercase tracking-widest block">Treasure Homes Audit Desk</span>
-                <h3 className="text-base font-bold text-slate-900">Submit Advocacy Proof (₦500 Bounty)</h3>
+                <h3 className="text-base font-bold text-slate-900">Submit Advocacy Proof (₦200 Bounty)</h3>
               </div>
               <button 
                 onClick={() => {
@@ -830,7 +837,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">Sign In Required</h4>
                   <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                    You must be signed in to submit proof of work and have the ₦500 bounty credited to your investment wallet.
+                    You must be signed in to submit proof of work and have the ₦200 bounty credited to your investment wallet.
                   </p>
                 </div>
                 <button
@@ -959,7 +966,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
                 </div>
 
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900">
-                  Submissions are sent directly to the <strong>Admin Control Centre</strong> for manual compliance audit. Approved submissions credit <strong>₦500</strong> directly to your available balance.
+                  Submissions are sent directly to the <strong>Admin Control Centre</strong> for manual compliance audit. Approved submissions credit <strong>₦200</strong> directly to your available balance.
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-2">

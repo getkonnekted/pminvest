@@ -27,18 +27,23 @@ import {
   Award,
   CheckCircle2,
   Zap,
-  Edit3
+  Edit3,
+  UserPlus,
+  UserCheck,
+  UserX,
+  ShieldBan
 } from 'lucide-react';
 import { User, INVESTMENT_PLANS } from '../types';
 import { PmLogo } from './PmLogo';
 
 export const AdminPanel: React.FC = () => {
   const { 
+    currentUser,
     users, 
     investments, 
     transactions, 
     settings, 
-    dailyTasks,
+    dailyTasks, 
     taskSubmissions,
     virtualDate,
     approveDeposit, 
@@ -49,6 +54,8 @@ export const AdminPanel: React.FC = () => {
     updateSettings, 
     approveTaskSubmission,
     rejectTaskSubmission,
+    adminCreateUser,
+    adminToggleUserStatus,
     adminUpdateUser,
     switchUser,
     simulateWeek,
@@ -70,12 +77,79 @@ export const AdminPanel: React.FC = () => {
   // Admin User & Wallet Edit State
   const [selectedEditUser, setSelectedEditUser] = useState<User | null>(null);
   const [editUserName, setEditUserName] = useState('');
+  const [editUserEmail, setEditUserEmail] = useState('');
+  const [editUserPhone, setEditUserPhone] = useState('');
   const [editUserBalance, setEditUserBalance] = useState('');
   const [editUserRole, setEditUserRole] = useState<'user' | 'admin'>('user');
   const [editUserKyc, setEditUserKyc] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
   const [editUserPassword, setEditUserPassword] = useState('');
+  const [editUserIsDeactivated, setEditUserIsDeactivated] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [adminScreenshotPreview, setAdminScreenshotPreview] = useState<string | null>(null);
+
+  // Admin Create New User State
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [createUserName, setCreateUserName] = useState('');
+  const [createUserEmail, setCreateUserEmail] = useState('');
+  const [createUserPhone, setCreateUserPhone] = useState('');
+  const [createUserPassword, setCreateUserPassword] = useState('password123');
+  const [createUserBalance, setCreateUserBalance] = useState('0');
+  const [createUserRole, setCreateUserRole] = useState<'user' | 'admin'>('user');
+  const [createUserKyc, setCreateUserKyc] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('verified');
+  const [createUserIsDeactivated, setCreateUserIsDeactivated] = useState(false);
+  const [createUserSponsorCode, setCreateUserSponsorCode] = useState('');
+  const [createUserRefCode, setCreateUserRefCode] = useState('');
+  const [createUserError, setCreateUserError] = useState<string | null>(null);
+
+  // User Filter & In-App Deactivation Modal State
+  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'deactivated' | 'admin'>('all');
+  const [deactivateModalTarget, setDeactivateModalTarget] = useState<{ user: User; willDeactivate: boolean } | null>(null);
+
+  const handleCreateUserSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateUserError(null);
+    const parsedBal = parseFloat(createUserBalance);
+    const res = adminCreateUser({
+      name: createUserName,
+      email: createUserEmail,
+      phone: createUserPhone.trim() ? createUserPhone.trim() : undefined,
+      password: createUserPassword.trim() ? createUserPassword.trim() : 'password123',
+      walletBalance: !isNaN(parsedBal) ? parsedBal : 0,
+      role: createUserRole,
+      kycStatus: createUserKyc,
+      isDeactivated: createUserIsDeactivated,
+      referredByCode: createUserSponsorCode.trim() ? createUserSponsorCode.trim() : undefined,
+      referralCode: createUserRefCode.trim() ? createUserRefCode.trim() : undefined
+    });
+    if (res.success) {
+      setShowCreateUserModal(false);
+      setCreateUserName('');
+      setCreateUserEmail('');
+      setCreateUserPhone('');
+      setCreateUserPassword('password123');
+      setCreateUserBalance('0');
+      setCreateUserRole('user');
+      setCreateUserKyc('verified');
+      setCreateUserIsDeactivated(false);
+      setCreateUserSponsorCode('');
+      setCreateUserRefCode('');
+    } else {
+      setCreateUserError(res.message);
+    }
+  };
+
+  const handleOpenDeactivateModal = (targetUser: User) => {
+    setDeactivateModalTarget({
+      user: targetUser,
+      willDeactivate: !targetUser.isDeactivated
+    });
+  };
+
+  const handleConfirmToggleDeactivate = () => {
+    if (!deactivateModalTarget) return;
+    adminToggleUserStatus(deactivateModalTarget.user.id, deactivateModalTarget.willDeactivate);
+    setDeactivateModalTarget(null);
+  };
 
   const handleSaveUserEdit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +160,8 @@ export const AdminPanel: React.FC = () => {
       walletBalance: !isNaN(parsedBal) ? parsedBal : selectedEditUser.walletBalance,
       role: editUserRole,
       kycStatus: editUserKyc,
+      phone: editUserPhone.trim() ? editUserPhone.trim() : undefined,
+      isDeactivated: editUserIsDeactivated,
       password: editUserPassword.trim() ? editUserPassword.trim() : undefined
     });
     if (success) {
@@ -107,13 +183,27 @@ export const AdminPanel: React.FC = () => {
   const pendingTaskSubmissions = taskSubmissions.filter(s => s.status === 'pending');
 
   const totalRegisteredUsers = users.length;
+  const activeUsersCount = users.filter(u => !u.isDeactivated && u.role !== 'admin').length;
+  const deactivatedUsersCount = users.filter(u => !!u.isDeactivated).length;
+  const adminUsersCount = users.filter(u => u.role === 'admin').length;
+  const totalInvestorBalances = users.filter(u => u.role !== 'admin').reduce((sum, u) => sum + u.walletBalance, 0);
 
-  // Filter users by search
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(userSearch.toLowerCase()) || 
-    u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
-    u.referralCode.toLowerCase().includes(userSearch.toLowerCase())
-  );
+  // Filter users by search and status filter
+  const filteredUsers = users.filter(u => {
+    const q = userSearch.toLowerCase().trim();
+    const matchesSearch = !q || (
+      u.name.toLowerCase().includes(q) || 
+      u.email.toLowerCase().includes(q) ||
+      u.referralCode.toLowerCase().includes(q) ||
+      (u.phone && u.phone.includes(q))
+    );
+
+    if (!matchesSearch) return false;
+    if (userStatusFilter === 'active') return !u.isDeactivated;
+    if (userStatusFilter === 'deactivated') return !!u.isDeactivated;
+    if (userStatusFilter === 'admin') return u.role === 'admin';
+    return true;
+  });
 
   return (
     <div className="w-full text-slate-800 p-1" id="admin_panel_container">
@@ -129,14 +219,25 @@ export const AdminPanel: React.FC = () => {
           </div>
         </div>
 
-        {/* Live Simulator Quick Trigger */}
+        {/* Live Simulator Quick Trigger & Quick Account Creator */}
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setCreateUserError(null);
+              setShowCreateUserModal(true);
+            }}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-lg text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+            id="btn_admin_header_create_user"
+          >
+            <UserPlus className="w-3.5 h-3.5" /> Create Account
+          </button>
           <button
             onClick={() => {
               setPayoutConfirmationInput('');
               setShowPayoutModal(true);
             }}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-sm"
+            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
             id="btn_simulate_week_admin"
             title="Advance 1 week in the future, credit payouts & calculate referral bonuses!"
           >
@@ -147,7 +248,7 @@ export const AdminPanel: React.FC = () => {
               setResetConfirmationInput('');
               setShowResetModal(true);
             }}
-            className="bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold px-3 py-2 rounded-lg text-xs uppercase tracking-wider transition-colors"
+            className="bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold px-3 py-2 rounded-lg text-xs uppercase tracking-wider transition-colors cursor-pointer"
             id="btn_reset_platform"
           >
             Reset Database
@@ -260,13 +361,13 @@ export const AdminPanel: React.FC = () => {
           <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="space-y-1">
               <span className="text-[10px] text-slate-500 font-mono tracking-wider block uppercase font-medium">Security Compliance Level</span>
-              <h3 className="text-xl font-extrabold text-slate-900">TREASURE HOMES ESCROW LIQUIDITY GUARANTEE</h3>
+              <h3 className="text-xl font-extrabold text-slate-900">TREASURE HOMES LIQUIDITY RESERVE GUARANTEE</h3>
               <p className="text-xs text-slate-600">
                 Current Liquidity Reserve backing active yields is calculated synchronously against aggregate pending and completed payout volumes.
               </p>
             </div>
             <div className="bg-slate-50 border border-slate-200 px-6 py-4 rounded-2xl text-center shrink-0 w-full md:w-auto">
-              <span className="text-xs text-amber-600 font-bold block">ACTIVE ESCROW RESERVE</span>
+              <span className="text-xs text-amber-600 font-bold block">ACTIVE LIQUIDITY RESERVE</span>
               <span className="text-2xl font-extrabold text-slate-900 block mt-1 font-mono">₦{settings.liquidityReserve.toLocaleString()}</span>
               <span className={`inline-block mt-2 px-3 py-0.5 rounded text-[10px] font-mono font-bold ${
                 settings.riskAlertLevel === 'low' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
@@ -333,8 +434,8 @@ export const AdminPanel: React.FC = () => {
       {adminTab === 'deposits' && (
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2 flex items-center justify-between">
-            <span>Pending Escrow Deposits ({pendingDeposits.length})</span>
-            <span className="text-xs text-slate-500 font-mono">Require manual confirmation of escrow receipt</span>
+            <span>Pending Reserve Deposits ({pendingDeposits.length})</span>
+            <span className="text-xs text-slate-500 font-mono">Require manual confirmation of reserve receipt</span>
           </h3>
 
           {pendingDeposits.length === 0 ? (
@@ -541,7 +642,7 @@ export const AdminPanel: React.FC = () => {
             <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
               <div>
                 <p className="font-bold text-slate-900">Automated Deposit Approvals</p>
-                <p className="text-slate-500 text-[10px] mt-0.5">Skip manual escrow confirmation and credit payments instantly.</p>
+                <p className="text-slate-500 text-[10px] mt-0.5">Skip manual reserve confirmation and credit payments instantly.</p>
               </div>
               <button
                 onClick={() => updateSettings({ autoApproveDeposits: !settings.autoApproveDeposits })}
@@ -980,119 +1081,290 @@ export const AdminPanel: React.FC = () => {
 
       {/* USERS LIST TAB */}
       {adminTab === 'users' && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-3">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              Platform Registered Users ({filteredUsers.length})
-            </h3>
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
+          {/* Header & Quick Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-amber-500" />
+                <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider">
+                  Investor & Account Backend Controls
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Register new accounts, adjust balances, modify roles, or deactivate & reactivate account access.
+              </p>
+            </div>
 
-            {/* Search Input */}
-            <div className="relative w-full sm:w-64 text-xs">
-              <input
-                type="text"
-                placeholder="Search name, email, or code..."
-                value={userSearch}
-                onChange={(e) => setUserSearch(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1.5 pl-8 pr-3 text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-              />
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+            <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  setCreateUserError(null);
+                  setShowCreateUserModal(true);
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap active:scale-95"
+                id="btn_admin_open_create_user_modal"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Create New Account</span>
+              </button>
+
+              {/* Search Input */}
+              <div className="relative w-full sm:w-64 text-xs">
+                <input
+                  type="text"
+                  placeholder="Search name, email, phone, code..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-8 pr-3 text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3" />
+              </div>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-sans text-slate-600">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
-                  <th className="pb-2">Name & Email</th>
-                  <th className="pb-2">Ref Code</th>
-                  <th className="pb-2 text-right">Wallet Balance</th>
-                  <th className="pb-2 text-center">KYC Status</th>
-                  <th className="pb-2 text-center">Role</th>
-                  <th className="pb-2 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredUsers.map((u) => {
-                  const uInvestments = investments.filter(inv => inv.userId === u.id);
-                  const activeCount = uInvestments.filter(i => i.status === 'active').length;
-                  const referralsCount = users.filter(usr => usr.referredByCode === u.referralCode).length;
-
-                  return (
-                    <tr key={u.id} className="hover:bg-slate-50/80">
-                      <td className="py-2.5">
-                        <div className="font-semibold text-slate-900">{u.name}</div>
-                        <div className="text-[10px] text-slate-500 font-mono">{u.email}</div>
-                        {u.phone && <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">📞 {u.phone}</div>}
-                      </td>
-                      <td className="py-2.5 font-mono text-[11px]">
-                        <div className="text-amber-600 font-bold">{u.referralCode}</div>
-                        <div className="text-[10px] text-slate-500 font-sans mt-0.5">
-                          {u.referredByCode ? (
-                            <span>Sponsor: <span className="font-mono text-slate-700 font-semibold">{u.referredByCode}</span></span>
-                          ) : (
-                            <span className="text-slate-400">Direct / Root</span>
-                          )}
-                        </div>
-                        <div className="text-[9px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded inline-block mt-0.5 border border-emerald-200 font-sans font-semibold">
-                          👥 {referralsCount} downline{referralsCount === 1 ? '' : 's'}
-                        </div>
-                      </td>
-                      <td className="py-2.5 text-right font-bold font-mono text-slate-900">
-                        ₦{u.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 1 })}
-                      </td>
-                      <td className="py-2.5 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
-                          u.kycStatus === 'verified' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                          u.kycStatus === 'pending' ? 'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse' :
-                          'bg-slate-100 text-slate-500 border border-slate-200'
-                        }`}>
-                          {u.kycStatus.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="py-2.5 text-center font-bold capitalize font-mono text-[11px] text-slate-700">
-                        {u.role}
-                      </td>
-                      <td className="py-2.5 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => {
-                              setSelectedEditUser(u);
-                              setEditUserName(u.name);
-                              setEditUserBalance(String(u.walletBalance));
-                              setEditUserRole(u.role);
-                              setEditUserKyc(u.kycStatus);
-                              setEditUserPassword('');
-                              setShowEditUserModal(true);
-                            }}
-                            className="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
-                            id={`btn_edit_user_${u.id}`}
-                            title={`Edit account and wallet balance for ${u.name}`}
-                          >
-                            <Edit3 className="w-3 h-3 text-amber-600" /> Edit
-                          </button>
-                          <button
-                            onClick={() => switchUser(u.id)}
-                            className="bg-slate-50 hover:bg-amber-500 hover:text-slate-950 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
-                            id={`btn_switch_user_${u.id}`}
-                            title={`Switch session to ${u.name}`}
-                          >
-                            <Eye className="w-3 h-3" /> Login As
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          {/* Quick Backend Summary Metrics Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
+              <span className="text-[10px] font-mono font-bold text-slate-500 uppercase block">Total Accounts</span>
+              <span className="text-xl font-extrabold text-slate-900 font-mono mt-0.5 block">{users.length}</span>
+              <span className="text-[10px] text-slate-400">All registered profiles</span>
+            </div>
+            <div className="bg-emerald-50/50 border border-emerald-200/60 rounded-xl p-3.5">
+              <span className="text-[10px] font-mono font-bold text-emerald-700 uppercase block">Active Accounts</span>
+              <span className="text-xl font-extrabold text-emerald-700 font-mono mt-0.5 block">{activeUsersCount}</span>
+              <span className="text-[10px] text-emerald-600">Can deposit, invest & withdraw</span>
+            </div>
+            <div className="bg-rose-50/50 border border-rose-200/60 rounded-xl p-3.5">
+              <span className="text-[10px] font-mono font-bold text-rose-700 uppercase block">Deactivated Accounts</span>
+              <span className="text-xl font-extrabold text-rose-700 font-mono mt-0.5 block">{deactivatedUsersCount}</span>
+              <span className="text-[10px] text-rose-600">Locked / Access suspended</span>
+            </div>
+            <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-3.5">
+              <span className="text-[10px] font-mono font-bold text-amber-700 uppercase block">Total Member Wallets</span>
+              <span className="text-lg sm:text-xl font-extrabold text-slate-900 font-mono mt-0.5 block truncate">
+                ₦{totalInvestorBalances.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+              </span>
+              <span className="text-[10px] text-slate-500">Cumulative liquid balances</span>
+            </div>
           </div>
+
+          {/* Filter Segment Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-100 text-xs">
+            <button
+              type="button"
+              onClick={() => setUserStatusFilter('all')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
+                userStatusFilter === 'all'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              All Accounts ({users.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserStatusFilter('active')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                userStatusFilter === 'active'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              <CheckCircle2 className="w-3 h-3" />
+              <span>Active ({activeUsersCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserStatusFilter('deactivated')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                userStatusFilter === 'deactivated'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-rose-700 hover:bg-rose-50'
+              }`}
+            >
+              <ShieldBan className="w-3 h-3" />
+              <span>Deactivated ({deactivatedUsersCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserStatusFilter('admin')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                userStatusFilter === 'admin'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs'
+                  : 'text-slate-700 hover:bg-amber-50'
+              }`}
+            >
+              <span>Admins ({adminUsersCount})</span>
+            </button>
+          </div>
+
+          {filteredUsers.length === 0 ? (
+            <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              <Users className="w-8 h-8 text-slate-400 mx-auto mb-2 opacity-60" />
+              <p className="text-sm font-bold text-slate-700">No matching accounts found</p>
+              <p className="text-xs text-slate-400 mt-0.5">Try searching with a different keyword or change your filter.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setUserSearch('');
+                  setUserStatusFilter('all');
+                }}
+                className="mt-3 text-xs text-amber-600 font-bold hover:underline cursor-pointer"
+              >
+                Clear Search & Filters
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-sans text-slate-600">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
+                    <th className="pb-2.5">Name & Contact</th>
+                    <th className="pb-2.5">Ref Code / Sponsor</th>
+                    <th className="pb-2.5 text-right">Wallet Balance</th>
+                    <th className="pb-2.5 text-center">KYC Status</th>
+                    <th className="pb-2.5 text-center">Account Status</th>
+                    <th className="pb-2.5 text-center">Role</th>
+                    <th className="pb-2.5 text-center">Backend Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredUsers.map((u) => {
+                    const uInvestments = investments.filter(inv => inv.userId === u.id);
+                    const activeCount = uInvestments.filter(i => i.status === 'active').length;
+                    const referralsCount = users.filter(usr => usr.referredByCode === u.referralCode).length;
+
+                    return (
+                      <tr key={u.id} className={`hover:bg-slate-50/80 transition-colors ${u.isDeactivated ? 'bg-rose-50/30' : ''}`}>
+                        <td className="py-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`font-semibold ${u.isDeactivated ? 'text-slate-500 line-through' : 'text-slate-900'}`}>{u.name}</span>
+                            {u.id === currentUser?.id && (
+                              <span className="text-[9px] bg-slate-200 text-slate-700 px-1 py-0.2 rounded font-mono font-bold">YOU</span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-mono">{u.email}</div>
+                          {u.phone && <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">📞 {u.phone}</div>}
+                        </td>
+                        <td className="py-3 font-mono text-[11px]">
+                          <div className="text-amber-600 font-bold">{u.referralCode}</div>
+                          <div className="text-[10px] text-slate-500 font-sans mt-0.5">
+                            {u.referredByCode ? (
+                              <span>Sponsor: <span className="font-mono text-slate-700 font-semibold">{u.referredByCode}</span></span>
+                            ) : (
+                              <span className="text-slate-400">Direct / Root</span>
+                            )}
+                          </div>
+                          <div className="text-[9px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded inline-block mt-0.5 border border-emerald-200 font-sans font-semibold">
+                            👥 {referralsCount} downline{referralsCount === 1 ? '' : 's'} • {activeCount} active plan{activeCount === 1 ? '' : 's'}
+                          </div>
+                        </td>
+                        <td className="py-3 text-right font-bold font-mono text-slate-900">
+                          ₦{u.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 1 })}
+                        </td>
+                        <td className="py-3 text-center">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                            u.kycStatus === 'verified' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                            u.kycStatus === 'pending' ? 'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse' :
+                            'bg-slate-100 text-slate-500 border border-slate-200'
+                          }`}>
+                            {u.kycStatus.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="py-3 text-center">
+                          {u.isDeactivated ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-rose-100 text-rose-800 border border-rose-200 inline-flex items-center gap-1 shadow-2xs">
+                              <ShieldBan className="w-3 h-3 text-rose-600" />
+                              DEACTIVATED
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1 shadow-2xs">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              ACTIVE
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 text-center font-bold capitalize font-mono text-[11px] text-slate-700">
+                          {u.role}
+                        </td>
+                        <td className="py-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            <button
+                              onClick={() => {
+                                setSelectedEditUser(u);
+                                setEditUserName(u.name);
+                                setEditUserEmail(u.email);
+                                setEditUserPhone(u.phone || '');
+                                setEditUserBalance(String(u.walletBalance));
+                                setEditUserRole(u.role);
+                                setEditUserKyc(u.kycStatus);
+                                setEditUserIsDeactivated(!!u.isDeactivated);
+                                setEditUserPassword('');
+                                setShowEditUserModal(true);
+                              }}
+                              className="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                              id={`btn_edit_user_${u.id}`}
+                              title={`Edit account and wallet balance for ${u.name}`}
+                            >
+                              <Edit3 className="w-3 h-3 text-amber-600" /> Edit
+                            </button>
+
+                            {u.role !== 'admin' && (
+                              <button
+                                onClick={() => handleOpenDeactivateModal(u)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors flex items-center gap-1 cursor-pointer shadow-2xs ${
+                                  u.isDeactivated
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                                    : 'bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100'
+                                }`}
+                                id={`btn_toggle_deactivate_${u.id}`}
+                                title={u.isDeactivated ? 'Reactivate this user account' : 'Deactivate this user account'}
+                              >
+                                {u.isDeactivated ? (
+                                  <>
+                                    <UserCheck className="w-3 h-3 text-emerald-600" />
+                                    <span>Activate</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserX className="w-3 h-3 text-rose-600" />
+                                    <span>Deactivate</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => switchUser(u.id)}
+                              disabled={u.isDeactivated}
+                              className={`border px-2 py-1 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 ${
+                                u.isDeactivated
+                                  ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200'
+                                  : 'bg-slate-50 hover:bg-amber-500 hover:text-slate-950 text-slate-700 border border-slate-200 cursor-pointer'
+                              }`}
+                              id={`btn_switch_user_${u.id}`}
+                              title={u.isDeactivated ? 'Cannot login as a deactivated account' : `Switch session to ${u.name}`}
+                            >
+                              <Eye className="w-3 h-3" /> Login As
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
       {/* Admin User & Wallet Editor Modal */}
       {showEditUserModal && selectedEditUser && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-xl animate-scaleIn">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-xl animate-scaleIn max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
@@ -1115,15 +1387,27 @@ export const AdminPanel: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveUserEdit} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Full Legal Name</label>
-                <input
-                  type="text"
-                  value={editUserName}
-                  onChange={(e) => setEditUserName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-amber-500"
-                  required
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Full Legal Name</label>
+                  <input
+                    type="text"
+                    value={editUserName}
+                    onChange={(e) => setEditUserName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-amber-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={editUserPhone}
+                    onChange={(e) => setEditUserPhone(e.target.value)}
+                    placeholder="e.g. 08012345678"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
               </div>
 
               <div>
@@ -1170,7 +1454,23 @@ export const AdminPanel: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Account Status</label>
+                  <select
+                    value={editUserIsDeactivated ? 'deactivated' : 'active'}
+                    onChange={(e) => setEditUserIsDeactivated(e.target.value === 'deactivated')}
+                    disabled={selectedEditUser.role === 'admin'}
+                    className={`w-full border rounded-lg py-2 px-3 font-semibold focus:outline-none ${
+                      editUserIsDeactivated 
+                        ? 'bg-rose-50 text-rose-800 border-rose-300' 
+                        : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                    }`}
+                  >
+                    <option value="active">Active (Access allowed)</option>
+                    <option value="deactivated">Deactivated (Locked)</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1">KYC Status</label>
                   <select
@@ -1223,10 +1523,339 @@ export const AdminPanel: React.FC = () => {
                   className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
                   id="btn_save_user_edit"
                 >
-                  <Check className="w-4 h-4" /> Save User & Wallet Updates
+                  <Check className="w-4 h-4" /> Save User Updates
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Create User Modal */}
+      {showCreateUserModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-xl animate-scaleIn max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-950">Create New Account (Admin)</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Register a new member directly from the administration control desk.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateUserModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {createUserError && (
+              <div className="mb-4 bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs flex items-start gap-2 shadow-xs">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <span>{createUserError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateUserSubmit} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Full Legal Name *</label>
+                  <input
+                    type="text"
+                    value={createUserName}
+                    onChange={(e) => setCreateUserName(e.target.value)}
+                    placeholder="e.g. Chukwuma Obi"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Email Address *</label>
+                  <input
+                    type="email"
+                    value={createUserEmail}
+                    onChange={(e) => setCreateUserEmail(e.target.value)}
+                    placeholder="e.g. user@gmail.com"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Phone Number (Optional)</label>
+                  <input
+                    type="tel"
+                    value={createUserPhone}
+                    onChange={(e) => setCreateUserPhone(e.target.value)}
+                    placeholder="e.g. 08012345678"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-slate-700 font-semibold">Account Password *</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const randomPass = 'PM' + Math.floor(100000 + Math.random() * 900000);
+                        setCreateUserPassword(randomPass);
+                      }}
+                      className="text-[10px] text-amber-600 hover:text-amber-700 font-bold hover:underline cursor-pointer"
+                    >
+                      Generate Random
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={createUserPassword}
+                    onChange={(e) => setCreateUserPassword(e.target.value)}
+                    placeholder="e.g. password123"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono focus:outline-none focus:border-emerald-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-baseline mb-1">
+                  <label className="block text-slate-700 font-semibold">Initial Wallet Credit (₦)</label>
+                  <span className="text-[10px] text-slate-400">Credited to wallet immediately upon creation</span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 font-bold text-slate-400 text-sm">₦</span>
+                  <input
+                    type="number"
+                    step="any"
+                    value={createUserBalance}
+                    onChange={(e) => setCreateUserBalance(e.target.value)}
+                    placeholder="0"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-8 pr-3 text-slate-900 font-mono font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                {/* Quick adjustments */}
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  <span className="text-[10px] text-slate-400">Quick Credit:</span>
+                  {[15000, 45000, 115000, 270000, 500000].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setCreateUserBalance(String(amt))}
+                      className="text-[10px] bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 px-2 py-0.5 rounded font-mono font-semibold transition-colors cursor-pointer"
+                    >
+                      +₦{amt.toLocaleString()}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setCreateUserBalance('0')}
+                    className="text-[10px] bg-slate-100 hover:bg-rose-50 hover:text-rose-700 border border-slate-200 px-2 py-0.5 rounded font-mono font-semibold transition-colors cursor-pointer"
+                  >
+                    Set ₦0
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Account Role</label>
+                  <select
+                    value={createUserRole}
+                    onChange={(e) => setCreateUserRole(e.target.value as any)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500 font-semibold"
+                  >
+                    <option value="user">USER (Standard Investor)</option>
+                    <option value="admin">ADMIN (Administrative Access)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Account Status</label>
+                  <select
+                    value={createUserIsDeactivated ? 'deactivated' : 'active'}
+                    onChange={(e) => setCreateUserIsDeactivated(e.target.value === 'deactivated')}
+                    className={`w-full border rounded-lg py-2 px-3 font-semibold focus:outline-none ${
+                      createUserIsDeactivated 
+                        ? 'bg-rose-50 text-rose-800 border-rose-300' 
+                        : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                    }`}
+                  >
+                    <option value="active">Active (Access allowed)</option>
+                    <option value="deactivated">Deactivated (Locked)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">KYC Status</label>
+                  <select
+                    value={createUserKyc}
+                    onChange={(e) => setCreateUserKyc(e.target.value as any)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500 font-semibold"
+                  >
+                    <option value="verified">VERIFIED (Fast-track)</option>
+                    <option value="unverified">UNVERIFIED</option>
+                    <option value="pending">PENDING</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Sponsor Referral Code (Optional)</label>
+                  <input
+                    type="text"
+                    value={createUserSponsorCode}
+                    onChange={(e) => setCreateUserSponsorCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. TREASURE_ADMIN"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono uppercase focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">User's Own Referral Code (Optional)</label>
+                  <input
+                    type="text"
+                    value={createUserRefCode}
+                    onChange={(e) => setCreateUserRefCode(e.target.value.toUpperCase())}
+                    placeholder="Auto-generated if blank"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono uppercase focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateUserModal(false)}
+                  className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  id="btn_confirm_create_user"
+                >
+                  <UserPlus className="w-4 h-4" /> Create Account Now
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Deactivate / Reactivate Account Confirmation Modal */}
+      {deactivateModalTarget && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-scaleIn">
+            <div className="flex items-start gap-3.5">
+              <div className={`p-3 rounded-xl shrink-0 ${
+                deactivateModalTarget.willDeactivate 
+                  ? 'bg-rose-100 text-rose-600' 
+                  : 'bg-emerald-100 text-emerald-600'
+              }`}>
+                {deactivateModalTarget.willDeactivate ? (
+                  <ShieldBan className="w-6 h-6" />
+                ) : (
+                  <UserCheck className="w-6 h-6" />
+                )}
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-slate-950">
+                  {deactivateModalTarget.willDeactivate ? 'Deactivate User Account' : 'Reactivate User Account'}
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {deactivateModalTarget.willDeactivate
+                    ? `Are you sure you want to deactivate the account for "${deactivateModalTarget.user.name}"?`
+                    : `Restore active platform access for "${deactivateModalTarget.user.name}"?`}
+                </p>
+              </div>
+            </div>
+
+            {/* Target Account Info Card */}
+            <div className="my-4 bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs space-y-2 font-sans">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">User Name:</span>
+                <span className="font-bold text-slate-900">{deactivateModalTarget.user.name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Email Address:</span>
+                <span className="font-mono text-slate-800">{deactivateModalTarget.user.email}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Wallet Balance:</span>
+                <span className="font-mono font-bold text-emerald-600">
+                  ₦{deactivateModalTarget.user.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 1 })}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Referral Code:</span>
+                <span className="font-mono font-bold text-amber-600">{deactivateModalTarget.user.referralCode}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Current Status:</span>
+                <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded ${
+                  deactivateModalTarget.user.isDeactivated 
+                    ? 'bg-rose-100 text-rose-800 border border-rose-200' 
+                    : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                }`}>
+                  {deactivateModalTarget.user.isDeactivated ? 'DEACTIVATED' : 'ACTIVE'}
+                </span>
+              </div>
+            </div>
+
+            <div className={`p-3 rounded-xl text-xs mb-5 ${
+              deactivateModalTarget.willDeactivate
+                ? 'bg-rose-50 border border-rose-200 text-rose-800'
+                : 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+            }`}>
+              {deactivateModalTarget.willDeactivate ? (
+                <span>
+                  🔒 <strong>Effect:</strong> The investor will be locked out immediately and cannot sign in, make deposits, or request withdrawals. Their active plans and balance will remain safely recorded in the backend.
+                </span>
+              ) : (
+                <span>
+                  ✓ <strong>Effect:</strong> The investor will immediately regain full access to sign in, check their wallet, and continue earning weekly payouts.
+                </span>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setDeactivateModalTarget(null)}
+                className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 font-bold text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmToggleDeactivate}
+                className={`px-5 py-2 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer ${
+                  deactivateModalTarget.willDeactivate
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+                id="btn_confirm_modal_toggle_status"
+              >
+                {deactivateModalTarget.willDeactivate ? (
+                  <>
+                    <ShieldBan className="w-3.5 h-3.5" />
+                    <span>Confirm Deactivation</span>
+                  </>
+                ) : (
+                  <>
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>Confirm Activation</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

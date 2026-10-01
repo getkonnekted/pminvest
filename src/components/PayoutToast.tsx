@@ -179,7 +179,7 @@ export const PayoutToastItem: React.FC<PayoutToastItemProps> = ({
         <div className="mt-3.5 pt-2.5 border-t border-slate-800/80 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Treasure Homes Escrow Backed</span>
+            <span>Treasure Homes Reserve Backed</span>
           </div>
 
           <div className="flex items-center gap-2">

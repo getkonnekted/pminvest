@@ -64,7 +64,20 @@ interface StateContextType {
   claimGuestTrialEarnings: () => number;
   
   // Admin actions
-  adminUpdateUser: (userId: string, updates: { walletBalance?: number; role?: 'user' | 'admin'; kycStatus?: 'unverified' | 'pending' | 'verified'; name?: string; password?: string }) => boolean;
+  adminCreateUser: (userData: {
+    name: string;
+    email: string;
+    phone?: string;
+    password?: string;
+    walletBalance?: number;
+    role?: 'user' | 'admin';
+    referralCode?: string;
+    referredByCode?: string;
+    kycStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
+    isDeactivated?: boolean;
+  }) => { success: boolean; message: string; user?: User };
+  adminToggleUserStatus: (userId: string, isDeactivated: boolean) => { success: boolean; message: string };
+  adminUpdateUser: (userId: string, updates: { walletBalance?: number; role?: 'user' | 'admin'; kycStatus?: 'unverified' | 'pending' | 'verified' | 'rejected'; name?: string; password?: string; phone?: string; isDeactivated?: boolean }) => boolean;
   approveDeposit: (txId: string, adjustedAmount?: number) => void;
   rejectDeposit: (txId: string) => void;
   approveWithdrawal: (txId: string) => void;
@@ -122,22 +135,27 @@ const SEED_INVESTMENTS: UserInvestment[] = [];
 
 const SEED_TRANSACTIONS: Transaction[] = [];
 
-// Base liquidity reserve backing and automated daily growth rate
-export const BASE_LIQUIDITY_RESERVE = 78387045; // Base reserve backing (Treasure Homes Backed)
-export const DAILY_LIQUIDITY_GROWTH = 530234; // Daily accretion (+₦530,234 Naira per day)
-export const LIQUIDITY_ANCHOR_DATE = '2026-09-02T00:00:00.000Z'; // Reference baseline anchor
+// Base cash reserve backing and automated hourly accretion (+₦10,000 every hour)
+export const BASE_LIQUIDITY_RESERVE = 92066059.975; // Starting cash reserve backing (Treasure Homes Backed)
+export const HOURLY_LIQUIDITY_GROWTH = 10000; // Adds ₦10,000 to the reserve every hour
+export const DAILY_LIQUIDITY_GROWTH = 240000; // ₦10,000 x 24 hours = ₦240,000 daily
+export const LIQUIDITY_ANCHOR_DATE = '2026-10-01T03:00:00.000Z'; // Reference baseline anchor
 
-export function calculateDailyLiquidity(virtualDayOffset: number = 0): number {
+export function calculateHourlyLiquidity(virtualDayOffset: number = 0): number {
   const anchorTime = new Date(LIQUIDITY_ANCHOR_DATE).getTime();
   const now = Date.now();
-  const calendarDays = Math.max(0, Math.floor((now - anchorTime) / (1000 * 60 * 60 * 24)));
-  const totalDays = calendarDays + virtualDayOffset;
-  return BASE_LIQUIDITY_RESERVE + (totalDays * DAILY_LIQUIDITY_GROWTH);
+  const elapsedHours = Math.max(0, Math.floor((now - anchorTime) / (1000 * 60 * 60)));
+  const virtualHours = virtualDayOffset * 24;
+  const totalHours = elapsedHours + virtualHours;
+  return BASE_LIQUIDITY_RESERVE + (totalHours * HOURLY_LIQUIDITY_GROWTH);
 }
 
+export const calculateDailyLiquidity = calculateHourlyLiquidity;
+
 const DEFAULT_SETTINGS: SystemSettings = {
-  liquidityReserve: calculateDailyLiquidity(0), // Dynamic reserve backing (+₦530,234 daily)
+  liquidityReserve: calculateHourlyLiquidity(0), // Dynamic cash reserve (+₦10,000 added every hour)
   dailyLiquidityGrowth: DAILY_LIQUIDITY_GROWTH,
+  hourlyLiquidityGrowth: HOURLY_LIQUIDITY_GROWTH,
   riskAlertLevel: 'low',
   minWithdrawal: 5000,
   maxWithdrawal: 1000000,
@@ -433,8 +451,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .filter((t) => (t.type === 'payout' || t.type === 'referral_bonus') && t.status === 'completed')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Initial base liquidity reserve with daily growth (+₦530,234 Naira per day) + deposits - withdrawals - payouts
-    const dynamicBaseReserve = calculateDailyLiquidity(virtualDayOffset);
+    // Initial base cash reserve with hourly growth (+₦10,000 every hour) + deposits - withdrawals - payouts
+    const dynamicBaseReserve = calculateHourlyLiquidity(virtualDayOffset);
     const activeLiquidity = dynamicBaseReserve + totalDeposits - totalWithdrawals - totalPayouts;
     
     // Risk assessment
@@ -452,12 +470,14 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (
       settings.liquidityReserve !== activeLiquidity || 
       settings.riskAlertLevel !== risk || 
-      settings.dailyLiquidityGrowth !== DAILY_LIQUIDITY_GROWTH
+      settings.dailyLiquidityGrowth !== DAILY_LIQUIDITY_GROWTH ||
+      settings.hourlyLiquidityGrowth !== HOURLY_LIQUIDITY_GROWTH
     ) {
       setSettings(prev => ({
         ...prev,
         liquidityReserve: activeLiquidity,
         dailyLiquidityGrowth: DAILY_LIQUIDITY_GROWTH,
+        hourlyLiquidityGrowth: HOURLY_LIQUIDITY_GROWTH,
         riskAlertLevel: risk
       }));
     }
@@ -562,6 +582,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const user = users.find(u => u.email.toLowerCase() === normEmail);
     if (user) {
+      if (user.isDeactivated) {
+        setErrorMsg('This account has been deactivated. Please contact support or the administrator.');
+        return false;
+      }
       if (user.password && user.password !== password) {
         setErrorMsg('Incorrect password. Please verify and try again.');
         return false;
@@ -683,9 +707,146 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   };
 
+  const adminCreateUser = (userData: {
+    name: string;
+    email: string;
+    phone?: string;
+    password?: string;
+    walletBalance?: number;
+    role?: 'user' | 'admin';
+    referralCode?: string;
+    referredByCode?: string;
+    kycStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
+    isDeactivated?: boolean;
+  }): { success: boolean; message: string; user?: User } => {
+    clearMessages();
+    const trimmedName = userData.name.trim();
+    const trimmedEmail = userData.email.toLowerCase().trim();
+
+    if (!trimmedName) {
+      const msg = 'User full legal name is required.';
+      setErrorMsg(msg);
+      return { success: false, message: msg };
+    }
+
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      const msg = 'A valid email address is required.';
+      setErrorMsg(msg);
+      return { success: false, message: msg };
+    }
+
+    if (users.some(u => u.email.toLowerCase() === trimmedEmail)) {
+      const msg = `An account with email "${trimmedEmail}" already exists.`;
+      setErrorMsg(msg);
+      return { success: false, message: msg };
+    }
+
+    // Generate referral code if not provided
+    let refCode = userData.referralCode?.trim().toUpperCase();
+    if (!refCode) {
+      const prefix = trimmedName.split(' ')[0].replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 4) || 'PM';
+      refCode = `${prefix}${Math.floor(100 + Math.random() * 900)}`;
+    }
+
+    // Validate sponsor code if provided
+    const sponsorCode = userData.referredByCode?.trim().toUpperCase();
+    if (sponsorCode) {
+      const sponsorExists = users.some(u => u.referralCode === sponsorCode);
+      if (!sponsorExists && sponsorCode !== 'TREASURE_ADMIN') {
+        const msg = `Sponsor referral code "${sponsorCode}" was not found on the platform.`;
+        setErrorMsg(msg);
+        return { success: false, message: msg };
+      }
+    }
+
+    const initBalance = typeof userData.walletBalance === 'number' && !isNaN(userData.walletBalance)
+      ? Math.max(0, userData.walletBalance)
+      : 0;
+
+    const newUser: User = {
+      id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      name: trimmedName,
+      email: trimmedEmail,
+      phone: userData.phone?.trim() || undefined,
+      password: userData.password?.trim() || 'password123',
+      referralCode: refCode,
+      referredByCode: sponsorCode || undefined,
+      walletBalance: initBalance,
+      kycStatus: userData.kycStatus || 'unverified',
+      role: userData.role || 'user',
+      createdAt: new Date().toISOString(),
+      isDeactivated: userData.isDeactivated ?? false
+    };
+
+    setUsers(prev => [newUser, ...prev]);
+    syncUserToSupabase(newUser);
+
+    if (initBalance > 0) {
+      const initTx: Transaction = {
+        id: 'tx_init_' + Date.now(),
+        userId: newUser.id,
+        userName: newUser.name,
+        type: 'deposit',
+        amount: initBalance,
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+        description: `Admin Initial Account Credit: +₦${initBalance.toLocaleString()}`
+      };
+      setTransactions(prev => [initTx, ...prev]);
+      syncTransactionToSupabase(initTx);
+    }
+
+    const successMessage = `Account for "${trimmedName}" (${trimmedEmail}) was created successfully!`;
+    setSuccessMsg(successMessage);
+    return { success: true, message: successMessage, user: newUser };
+  };
+
+  const adminToggleUserStatus = (userId: string, isDeactivated: boolean): { success: boolean; message: string } => {
+    clearMessages();
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser) {
+      const msg = 'User not found.';
+      setErrorMsg(msg);
+      return { success: false, message: msg };
+    }
+
+    if (targetUser.role === 'admin' && isDeactivated) {
+      const msg = 'Cannot deactivate an administrator account.';
+      setErrorMsg(msg);
+      return { success: false, message: msg };
+    }
+
+    if (currentUser?.id === userId && isDeactivated) {
+      const msg = 'You cannot deactivate your own active session account.';
+      setErrorMsg(msg);
+      return { success: false, message: msg };
+    }
+
+    const updatedUser: User = {
+      ...targetUser,
+      isDeactivated
+    };
+
+    setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
+    syncUserToSupabase(updatedUser);
+
+    const actionText = isDeactivated ? 'deactivated' : 'reactivated';
+    const msg = `Account for ${targetUser.name} has been ${actionText}.`;
+    setSuccessMsg(msg);
+    return { success: true, message: msg };
+  };
+
   const adminUpdateUser = (
     userId: string, 
-    updates: { walletBalance?: number; role?: 'user' | 'admin'; kycStatus?: 'unverified' | 'pending' | 'verified'; name?: string; password?: string }
+    updates: { 
+      walletBalance?: number; 
+      role?: 'user' | 'admin'; 
+      kycStatus?: 'unverified' | 'pending' | 'verified' | 'rejected'; 
+      name?: string; 
+      password?: string;
+      phone?: string;
+      isDeactivated?: boolean;
+    }
   ): boolean => {
     clearMessages();
     const targetUser = users.find(u => u.id === userId);
@@ -705,7 +866,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       walletBalance: updates.walletBalance !== undefined && !isNaN(updates.walletBalance) ? updates.walletBalance : targetUser.walletBalance,
       role: updates.role !== undefined ? updates.role : targetUser.role,
       kycStatus: updates.kycStatus !== undefined ? updates.kycStatus : targetUser.kycStatus,
-      password: updates.password !== undefined && updates.password.trim() ? updates.password.trim() : targetUser.password
+      password: updates.password !== undefined && updates.password.trim() ? updates.password.trim() : targetUser.password,
+      phone: updates.phone !== undefined ? updates.phone.trim() : targetUser.phone,
+      isDeactivated: updates.isDeactivated !== undefined ? updates.isDeactivated : targetUser.isDeactivated
     };
 
     setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
@@ -742,6 +905,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     clearMessages();
     const user = users.find(u => u.id === userId);
     if (user) {
+      if (user.isDeactivated) {
+        setErrorMsg(`Cannot switch session to deactivated account "${user.name}". Please reactivate the account from Admin Panel.`);
+        return;
+      }
       setCurrentUser(user);
       setSuccessMsg(`Switched view to ${user.name} (${user.role.toUpperCase()})`);
     }
@@ -750,6 +917,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const submitDeposit = (amount: number, method: string, accountDetails: string, proofUrl?: string) => {
     clearMessages();
     if (!currentUser) return;
+
+    if (currentUser.isDeactivated) {
+      setErrorMsg('Your account has been deactivated. Deposit submissions are restricted.');
+      return;
+    }
 
     if (amount <= 0) {
       setErrorMsg('Deposit amount must be greater than zero.');
@@ -823,6 +995,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     clearMessages();
     if (!currentUser) return false;
 
+    if (currentUser.isDeactivated) {
+      setErrorMsg('Your account has been deactivated. Withdrawals cannot be processed.');
+      return false;
+    }
+
     if (settings.pauseWithdrawals) {
       setErrorMsg('Withdrawal Restored Limit: Withdrawals are currently paused by the administrator for regular system balance checks. Please check back later.');
       return false;
@@ -880,6 +1057,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const purchaseInvestment = (planId: string): boolean => {
     clearMessages();
     if (!currentUser) return false;
+
+    if (currentUser.isDeactivated) {
+      setErrorMsg('Your account has been deactivated. Plan purchases are restricted.');
+      return false;
+    }
 
     if (settings.pauseInvestments) {
       setErrorMsg('Investment Notice: Initiating new investment plans is currently paused by the administrator. Existing plans will continue to yield returns as normal.');
@@ -1374,7 +1556,12 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (taskId === 'task_active_portfolio') {
       const hasActive = investments.some(i => i.userId === currentUser.id && i.status === 'active');
       if (!hasActive) {
-        setErrorMsg('Active Investment Required! You must hold at least one active investment plan to claim daily portfolio yields.');
+        setErrorMsg('Active Investment Required! You must hold at least one active investment plan to claim your Active Investor Reward.');
+        return false;
+      }
+      const hasClaimedActiveRewardBefore = transactions.some(t => t.userId === currentUser.id && (t.description?.includes('Active Investor') || t.description?.includes('Active Portfolio')));
+      if (hasClaimedActiveRewardBefore) {
+        setErrorMsg('You have already claimed your one-time ₦300 Active Investor Reward.');
         return false;
       }
     }
@@ -1383,6 +1570,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const hasAutoCompounding = investments.some(i => i.userId === currentUser.id && i.status === 'active' && i.autoReinvest === true);
       if (!hasAutoCompounding) {
         setErrorMsg('Auto-Compounding Required! Enable Auto-Compounding on at least one of your active investment plans to claim this bonus.');
+        return false;
+      }
+      const hasClaimedReinvestBefore = transactions.some(t => t.userId === currentUser.id && (t.description?.includes('Auto-Renew') || t.description?.includes('Auto-Compounding')));
+      if (hasClaimedReinvestBefore) {
+        setErrorMsg('You have already claimed your one-time ₦250 Auto-Renew Bonus.');
         return false;
       }
     }
@@ -1994,6 +2186,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       submitTaskProof,
       claimStreakBonus,
       claimGuestTrialEarnings,
+      adminCreateUser,
+      adminToggleUserStatus,
       adminUpdateUser,
       approveDeposit,
       rejectDeposit,

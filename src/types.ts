@@ -15,6 +15,7 @@ export interface User {
   };
   role: 'user' | 'admin';
   createdAt: string;
+  isDeactivated?: boolean;
 }
 
 export interface InvestmentPlan {
@@ -134,6 +135,7 @@ export interface PayoutToastData {
 export interface SystemSettings {
   liquidityReserve: number;
   dailyLiquidityGrowth: number;
+  hourlyLiquidityGrowth?: number;
   riskAlertLevel: 'low' | 'medium' | 'high';
   minWithdrawal: number;
   maxWithdrawal: number;
