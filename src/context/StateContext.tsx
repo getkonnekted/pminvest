@@ -129,18 +129,6 @@ const getSeedUsers = (): User[] => [
     kycStatus: 'verified',
     role: 'admin',
     createdAt: new Date().toISOString()
-  },
-  {
-    id: 'usr_demo_investor',
-    name: 'Jude Eze (Demo Investor)',
-    email: 'demo_investor@pminvest.org.ng',
-    password: 'investor123',
-    referralCode: 'DEMO_INVESTOR',
-    referredByCode: 'TREASURE_ADMIN',
-    walletBalance: 250000,
-    kycStatus: 'verified',
-    role: 'user',
-    createdAt: new Date().toISOString()
   }
 ];
 
@@ -224,20 +212,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       parsed.push(defaultSeed[0]);
     }
 
-    // Dynamically inject demo user if missing or outdated in old localStorage
-    const demoIndex = parsed.findIndex((u: any) => u.id === 'usr_demo_investor');
-    if (demoIndex === -1) {
-      const demoUser = defaultSeed.find(u => u.id === 'usr_demo_investor');
-      if (demoUser) parsed.push(demoUser);
-    } else {
-      const demoUser = defaultSeed.find(u => u.id === 'usr_demo_investor');
-      if (demoUser) {
-        parsed[demoIndex].email = demoUser.email;
-        parsed[demoIndex].password = demoUser.password;
-      }
-    }
-
-    return parsed;
+    // Clean out any stale demo user from production storage
+    return parsed.filter((u: any) => u.id !== 'usr_demo_investor');
   });
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -397,20 +373,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               loadedUsers.push(defaultSeed[0]);
             }
 
-            // Dynamically inject demo user if missing or outdated in remote database
-            const demoIndex = loadedUsers.findIndex((u: any) => u.id === 'usr_demo_investor');
-            if (demoIndex === -1) {
-              const demoUser = defaultSeed.find(u => u.id === 'usr_demo_investor');
-              if (demoUser) loadedUsers.push(demoUser);
-            } else {
-              const demoUser = defaultSeed.find(u => u.id === 'usr_demo_investor');
-              if (demoUser) {
-                loadedUsers[demoIndex].email = demoUser.email;
-                loadedUsers[demoIndex].password = demoUser.password;
-              }
-            }
+            // Clean out any stale demo user from remote database sync
+            const sanitizedUsers = loadedUsers.filter((u: any) => u.id !== 'usr_demo_investor');
 
-            setUsers(loadedUsers);
+            setUsers(sanitizedUsers);
             setInvestments(dbData.investments);
             setTransactions(dbData.transactions);
             if (dbData.settings) {
@@ -1174,11 +1140,6 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (settings.pauseWithdrawals) {
       setErrorMsg('Withdrawal Restored Limit: Withdrawals are currently paused by the administrator for regular system balance checks. Please check back later.');
-      return false;
-    }
-
-    if (currentUser.id === 'usr_demo_investor') {
-      setErrorMsg('Demo Account Protection: Withdrawals are restricted on the shared demo account. Please register a personal account to test custom withdrawal submissions.');
       return false;
     }
 

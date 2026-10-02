@@ -38,7 +38,6 @@ import {
 import { User, INVESTMENT_PLANS } from '../types';
 import { PmLogo } from './PmLogo';
 import { LiveReserveCounter } from './LiveReserveCounter';
-import { FULL_SUPABASE_SQL } from '../data/supabaseSql';
 
 export const AdminPanel: React.FC = () => {
   const { 
@@ -72,8 +71,7 @@ export const AdminPanel: React.FC = () => {
     clearMessages
   } = useAppState();
 
-  const [adminTab, setAdminTab] = useState<'analytics' | 'deposits' | 'withdrawals' | 'tasks' | 'users' | 'kyc' | 'settings' | 'supabase'>('analytics');
-  const [sqlCopied, setSqlCopied] = useState(false);
+  const [adminTab, setAdminTab] = useState<'analytics' | 'deposits' | 'withdrawals' | 'tasks' | 'users' | 'kyc' | 'settings'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetConfirmationInput, setResetConfirmationInput] = useState('');
@@ -381,18 +379,6 @@ export const AdminPanel: React.FC = () => {
           id="tab_admin_settings"
         >
           Controls
-        </button>
-        <button
-          onClick={() => { setAdminTab('supabase'); clearMessages(); }}
-          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            adminTab === 'supabase'
-              ? 'bg-slate-100 text-slate-900 border-t-2 border-emerald-500'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_admin_supabase"
-        >
-          <Database className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Supabase SQL</span>
         </button>
       </div>
 
@@ -922,68 +908,6 @@ export const AdminPanel: React.FC = () => {
         </div>
       )}
 
-      {/* SUPABASE SQL SUB-TAB */}
-      {adminTab === 'supabase' && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5 max-w-4xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <Database className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-tight">
-                  Production Supabase & PostgreSQL SQL Schema
-                </h3>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Compliments everything built: users, investments, transactions, settings, task submissions, double-entry wallet audit ledger, triggers & atomic stored procedures.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(FULL_SUPABASE_SQL);
-                setSqlCopied(true);
-                setTimeout(() => setSqlCopied(false), 2500);
-              }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer ${
-                sqlCopied 
-                  ? 'bg-emerald-600 text-white' 
-                  : 'bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700'
-              }`}
-            >
-              {sqlCopied ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-                  <span>SQL Copied to Clipboard!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4 text-amber-400" />
-                  <span>Copy SQL Script</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-900 flex items-start gap-2.5">
-            <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold block">How to run in Supabase:</span>
-              <span>Open your Supabase Project → Go to the <strong>SQL Editor</strong> in the left sidebar → Paste this script → Click <strong>RUN</strong>. This provisions all tables, indexes, triggers, and the double-entry wallet audit ledger.</span>
-            </div>
-          </div>
-
-          <div className="relative rounded-xl overflow-hidden border border-slate-800 bg-[#0f172a]">
-            <div className="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400 font-mono">
-              <span>supabase_schema.sql</span>
-              <span>PostgreSQL 15+ / Supabase</span>
-            </div>
-            <pre className="p-4 text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-[500px] leading-relaxed whitespace-pre selection:bg-emerald-800 selection:text-white">
-              {FULL_SUPABASE_SQL}
-            </pre>
-          </div>
-        </div>
-      )}
 
       {/* DAILY TASKS MANAGEMENT SUB-TAB */}
       {adminTab === 'tasks' && (
