@@ -16,6 +16,8 @@ export interface User {
   role: 'user' | 'admin';
   createdAt: string;
   isDeactivated?: boolean;
+  isMarketingAccount?: boolean;
+  marketingAllocatedBalance?: number;
 }
 
 export interface InvestmentPlan {
@@ -43,6 +45,7 @@ export interface UserInvestment {
   lastPayoutDate?: string;
   nextPayoutDate?: string;
   autoReinvest?: boolean;
+  isMarketing?: boolean;
 }
 
 export interface Transaction {
@@ -59,6 +62,7 @@ export interface Transaction {
   gatewayChannel?: string;
   createdAt: string;
   description: string;
+  isMarketing?: boolean;
 }
 
 export interface DailyTask {
@@ -132,6 +136,19 @@ export interface PayoutToastData {
   sourceUserName?: string;
 }
 
+export interface LiveActivityItem {
+  id: string;
+  type: 'purchase' | 'payout' | 'deposit' | 'reserve' | 'kyc';
+  title: string;
+  message: string;
+  amount?: number;
+  timeAgo: string;
+  location?: string;
+  iconType: 'investment' | 'payout' | 'deposit' | 'reserve' | 'verified';
+  avatarInitials?: string;
+  timestamp: number;
+}
+
 export interface SystemSettings {
   liquidityReserve: number;
   dailyLiquidityGrowth: number;
@@ -152,6 +169,7 @@ export interface SystemSettings {
   freeStarterWithdrawalLimit: number; // e.g. 3000 naira max for users without active plans
   rewardedAdBonusMultiplier: number; // e.g. 2 for 2x yield
   estimatedAdRevenueTotal: number; // in NGN or USD
+  enableLiveActivityToasts?: boolean; // Live purchase & activity social proof alerts
 }
 
 export const INVESTMENT_PLANS: InvestmentPlan[] = [

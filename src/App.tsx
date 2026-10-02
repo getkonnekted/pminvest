@@ -37,6 +37,8 @@ import {
 } from 'lucide-react';
 import { INVESTMENT_PLANS } from './types';
 import { PayoutToastContainer } from './components/PayoutToast';
+import { LiveActivityToast } from './components/LiveActivityToast';
+import { LiveReserveCounter } from './components/LiveReserveCounter';
 
 function MainAppContent() {
   const { 
@@ -226,10 +228,19 @@ function MainAppContent() {
           toasts={payoutToasts}
           onDismiss={dismissPayoutToast}
         />
-        {/* Affiliation Header bar */}
-        <div className="bg-[#0f172a] px-4 py-2.5 text-center text-xs text-slate-300 border-b border-slate-800 flex items-center justify-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-          <span>PM Invest is a certified wealth program operating under <strong className="text-white">TREASURE HOMES LTD</strong></span>
+        <LiveActivityToast />
+
+        {/* Affiliation & Live Accreting Reserve Header bar */}
+        <div className="bg-[#0f172a] px-4 py-2.5 text-center text-xs text-slate-300 border-b border-slate-800 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            <span>PM Invest is certified under <strong className="text-white">TREASURE HOMES LTD</strong></span>
+          </div>
+          <span className="hidden sm:inline text-slate-600">•</span>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span className="text-amber-400 font-medium">Bank Reserve Backing:</span>
+            <LiveReserveCounter precision={0} showLivePulse={true} showRateBadge={false} className="text-white font-bold" />
+          </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-grow">
@@ -890,6 +901,7 @@ function MainAppContent() {
           }
         }}
       />
+      <LiveActivityToast />
       <div>
         <BrandingHeader />
         

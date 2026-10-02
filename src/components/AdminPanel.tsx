@@ -31,10 +31,14 @@ import {
   UserPlus,
   UserCheck,
   UserX,
-  ShieldBan
+  ShieldBan,
+  Database,
+  Copy
 } from 'lucide-react';
 import { User, INVESTMENT_PLANS } from '../types';
 import { PmLogo } from './PmLogo';
+import { LiveReserveCounter } from './LiveReserveCounter';
+import { FULL_SUPABASE_SQL } from '../data/supabaseSql';
 
 export const AdminPanel: React.FC = () => {
   const { 
@@ -57,6 +61,8 @@ export const AdminPanel: React.FC = () => {
     adminCreateUser,
     adminToggleUserStatus,
     adminUpdateUser,
+    adminTopUpMarketingWallet,
+    adminToggleMarketingStatus,
     switchUser,
     simulateWeek,
     simulateNextDay,
@@ -66,7 +72,8 @@ export const AdminPanel: React.FC = () => {
     clearMessages
   } = useAppState();
 
-  const [adminTab, setAdminTab] = useState<'analytics' | 'deposits' | 'withdrawals' | 'tasks' | 'users' | 'kyc' | 'settings'>('analytics');
+  const [adminTab, setAdminTab] = useState<'analytics' | 'deposits' | 'withdrawals' | 'tasks' | 'users' | 'kyc' | 'settings' | 'supabase'>('analytics');
+  const [sqlCopied, setSqlCopied] = useState(false);
   const [userSearch, setUserSearch] = useState('');
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetConfirmationInput, setResetConfirmationInput] = useState('');
@@ -84,6 +91,7 @@ export const AdminPanel: React.FC = () => {
   const [editUserKyc, setEditUserKyc] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
   const [editUserPassword, setEditUserPassword] = useState('');
   const [editUserIsDeactivated, setEditUserIsDeactivated] = useState(false);
+  const [editUserIsMarketing, setEditUserIsMarketing] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [adminScreenshotPreview, setAdminScreenshotPreview] = useState<string | null>(null);
 
@@ -97,12 +105,19 @@ export const AdminPanel: React.FC = () => {
   const [createUserRole, setCreateUserRole] = useState<'user' | 'admin'>('user');
   const [createUserKyc, setCreateUserKyc] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('verified');
   const [createUserIsDeactivated, setCreateUserIsDeactivated] = useState(false);
+  const [createUserIsMarketing, setCreateUserIsMarketing] = useState(false);
   const [createUserSponsorCode, setCreateUserSponsorCode] = useState('');
   const [createUserRefCode, setCreateUserRefCode] = useState('');
   const [createUserError, setCreateUserError] = useState<string | null>(null);
 
+  // Marketing Canvassing Quick Top-Up Modal State
+  const [showMarketingTopUpModal, setShowMarketingTopUpModal] = useState(false);
+  const [marketingTopUpUser, setMarketingTopUpUser] = useState<User | null>(null);
+  const [marketingTopUpAmount, setMarketingTopUpAmount] = useState('115000');
+  const [marketingTopUpNotes, setMarketingTopUpNotes] = useState('Marketing Canvassing Allocation');
+
   // User Filter & In-App Deactivation Modal State
-  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'deactivated' | 'admin'>('all');
+  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'real' | 'marketing' | 'active' | 'deactivated' | 'admin'>('all');
   const [deactivateModalTarget, setDeactivateModalTarget] = useState<{ user: User; willDeactivate: boolean } | null>(null);
 
   const handleCreateUserSubmit = (e: React.FormEvent) => {
@@ -118,6 +133,7 @@ export const AdminPanel: React.FC = () => {
       role: createUserRole,
       kycStatus: createUserKyc,
       isDeactivated: createUserIsDeactivated,
+      isMarketingAccount: createUserIsMarketing,
       referredByCode: createUserSponsorCode.trim() ? createUserSponsorCode.trim() : undefined,
       referralCode: createUserRefCode.trim() ? createUserRefCode.trim() : undefined
     });
@@ -131,6 +147,7 @@ export const AdminPanel: React.FC = () => {
       setCreateUserRole('user');
       setCreateUserKyc('verified');
       setCreateUserIsDeactivated(false);
+      setCreateUserIsMarketing(false);
       setCreateUserSponsorCode('');
       setCreateUserRefCode('');
     } else {
@@ -162,6 +179,7 @@ export const AdminPanel: React.FC = () => {
       kycStatus: editUserKyc,
       phone: editUserPhone.trim() ? editUserPhone.trim() : undefined,
       isDeactivated: editUserIsDeactivated,
+      isMarketingAccount: editUserIsMarketing,
       password: editUserPassword.trim() ? editUserPassword.trim() : undefined
     });
     if (success) {
@@ -172,9 +190,15 @@ export const AdminPanel: React.FC = () => {
 
   // Stats
   const activeInvestments = investments.filter(i => i.status === 'active');
+  const realActiveInvestments = activeInvestments.filter(i => !i.isMarketing);
+  const marketingActiveInvestments = activeInvestments.filter(i => !!i.isMarketing);
+
+  const realActiveCapital = realActiveInvestments.reduce((sum, i) => sum + i.cost, 0);
+  const marketingActiveCapital = marketingActiveInvestments.reduce((sum, i) => sum + i.cost, 0);
   const totalActiveCapital = activeInvestments.reduce((sum, i) => sum + i.cost, 0);
+
   const totalAccumulatedPayouts = transactions
-    .filter(t => (t.type === 'payout' || t.type === 'referral_bonus') && t.status === 'completed')
+    .filter(t => (t.type === 'payout' || t.type === 'referral_bonus') && t.status === 'completed' && !t.isMarketing)
     .reduce((sum, t) => sum + t.amount, 0);
 
   const pendingDeposits = transactions.filter(t => t.type === 'deposit' && t.status === 'pending');
@@ -183,10 +207,14 @@ export const AdminPanel: React.FC = () => {
   const pendingTaskSubmissions = taskSubmissions.filter(s => s.status === 'pending');
 
   const totalRegisteredUsers = users.length;
+  const marketingUsersCount = users.filter(u => !!u.isMarketingAccount).length;
+  const realUsersCount = users.filter(u => !u.isMarketingAccount && u.role !== 'admin').length;
   const activeUsersCount = users.filter(u => !u.isDeactivated && u.role !== 'admin').length;
   const deactivatedUsersCount = users.filter(u => !!u.isDeactivated).length;
   const adminUsersCount = users.filter(u => u.role === 'admin').length;
   const totalInvestorBalances = users.filter(u => u.role !== 'admin').reduce((sum, u) => sum + u.walletBalance, 0);
+  const realInvestorBalances = users.filter(u => !u.isMarketingAccount && u.role !== 'admin').reduce((sum, u) => sum + u.walletBalance, 0);
+  const marketingBalances = users.filter(u => !!u.isMarketingAccount).reduce((sum, u) => sum + u.walletBalance, 0);
 
   // Filter users by search and status filter
   const filteredUsers = users.filter(u => {
@@ -199,6 +227,8 @@ export const AdminPanel: React.FC = () => {
     );
 
     if (!matchesSearch) return false;
+    if (userStatusFilter === 'real') return !u.isMarketingAccount && u.role !== 'admin';
+    if (userStatusFilter === 'marketing') return !!u.isMarketingAccount;
     if (userStatusFilter === 'active') return !u.isDeactivated;
     if (userStatusFilter === 'deactivated') return !!u.isDeactivated;
     if (userStatusFilter === 'admin') return u.role === 'admin';
@@ -352,6 +382,18 @@ export const AdminPanel: React.FC = () => {
         >
           Controls
         </button>
+        <button
+          onClick={() => { setAdminTab('supabase'); clearMessages(); }}
+          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
+            adminTab === 'supabase'
+              ? 'bg-slate-100 text-slate-900 border-t-2 border-emerald-500'
+              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+          }`}
+          id="tab_admin_supabase"
+        >
+          <Database className="w-3.5 h-3.5 text-emerald-500" />
+          <span>Supabase SQL</span>
+        </button>
       </div>
 
       {/* ANALYTICS SUB-TAB */}
@@ -363,12 +405,14 @@ export const AdminPanel: React.FC = () => {
               <span className="text-[10px] text-slate-500 font-mono tracking-wider block uppercase font-medium">Security Compliance Level</span>
               <h3 className="text-xl font-extrabold text-slate-900">TREASURE HOMES LIQUIDITY RESERVE GUARANTEE</h3>
               <p className="text-xs text-slate-600">
-                Current Liquidity Reserve backing active yields is calculated synchronously against aggregate pending and completed payout volumes.
+                Current Liquidity Reserve automatically accrues ₦10,000 every hour continuously in real-time, backed by physical properties and bank reserve accounts.
               </p>
             </div>
             <div className="bg-slate-50 border border-slate-200 px-6 py-4 rounded-2xl text-center shrink-0 w-full md:w-auto">
               <span className="text-xs text-amber-600 font-bold block">ACTIVE LIQUIDITY RESERVE</span>
-              <span className="text-2xl font-extrabold text-slate-900 block mt-1 font-mono">₦{settings.liquidityReserve.toLocaleString()}</span>
+              <div className="mt-1 flex justify-center">
+                <LiveReserveCounter precision={0} showRateBadge={false} showLivePulse={true} size="xl" className="text-slate-900 font-extrabold" />
+              </div>
               <span className={`inline-block mt-2 px-3 py-0.5 rounded text-[10px] font-mono font-bold ${
                 settings.riskAlertLevel === 'low' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                 settings.riskAlertLevel === 'medium' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
@@ -381,16 +425,30 @@ export const AdminPanel: React.FC = () => {
 
           {/* Grid Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-              <span className="text-xs text-slate-500 font-medium block font-mono">Total Capital Under Mgmt</span>
+            <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 font-medium block font-mono">Total Capital Under Mgmt</span>
+                <span className="text-[9px] bg-slate-100 text-slate-600 font-bold px-1.5 py-0.5 rounded font-mono">Platform Volume</span>
+              </div>
               <h3 className="text-2xl font-extrabold text-slate-900 mt-1">₦{totalActiveCapital.toLocaleString()}</h3>
-              <p className="text-[10px] text-amber-600 font-semibold mt-1">{activeInvestments.length} Active Investments</p>
+              <div className="pt-1.5 border-t border-slate-100 text-[10px] space-y-0.5">
+                <div className="flex justify-between text-emerald-700 font-semibold">
+                  <span>Real Organic Capital:</span>
+                  <span className="font-mono">₦{realActiveCapital.toLocaleString()}</span>
+                </div>
+                {marketingActiveCapital > 0 && (
+                  <div className="flex justify-between text-indigo-600 font-medium">
+                    <span>Marketing Canvassing Vol:</span>
+                    <span className="font-mono">₦{marketingActiveCapital.toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
               <span className="text-xs text-slate-500 font-medium block font-mono">Accumulated Payout Yields</span>
               <h3 className="text-2xl font-extrabold text-amber-600 mt-1">₦{totalAccumulatedPayouts.toLocaleString()}</h3>
-              <p className="text-[10px] text-slate-500 mt-1">Includes payout & ref bonuses</p>
+              <p className="text-[10px] text-slate-500 mt-1">Real payouts & ref bonuses</p>
             </div>
 
             <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
@@ -399,10 +457,19 @@ export const AdminPanel: React.FC = () => {
               <p className="text-[10px] text-slate-500 mt-1">{pendingDeposits.length} deposits | {pendingWithdrawals.length} withdrawals</p>
             </div>
 
-            <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-              <span className="text-xs text-slate-500 font-medium block font-mono">Registered Investors</span>
+            <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm space-y-1">
+              <span className="text-xs text-slate-500 font-medium block font-mono">Platform Accounts</span>
               <h3 className="text-2xl font-extrabold text-slate-900 mt-1">{totalRegisteredUsers}</h3>
-              <p className="text-[10px] text-emerald-600 font-semibold mt-1">{users.filter(u => u.kycStatus === 'verified').length} verified identities</p>
+              <div className="pt-1.5 border-t border-slate-100 text-[10px] space-y-0.5">
+                <div className="flex justify-between text-slate-600">
+                  <span>Real Investors:</span>
+                  <span className="font-bold text-slate-900">{realUsersCount}</span>
+                </div>
+                <div className="flex justify-between text-indigo-600 font-semibold">
+                  <span>Marketing Canvassers:</span>
+                  <span className="font-bold">{marketingUsersCount}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -547,7 +614,7 @@ export const AdminPanel: React.FC = () => {
                 return (
                   <div key={tx.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-xs">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-slate-900 text-sm">₦{tx.amount.toLocaleString()}</span>
                         <span className="text-[10px] font-mono text-slate-500 font-medium">by {tx.userName}</span>
                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded font-mono ${
@@ -555,6 +622,11 @@ export const AdminPanel: React.FC = () => {
                         }`}>
                           {isKycVerified ? 'KYC VERIFIED' : 'KYC UNVERIFIED'}
                         </span>
+                        {(user?.isMarketingAccount || tx.isMarketing) && (
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded font-mono bg-purple-100 text-purple-800 border border-purple-300 animate-pulse">
+                            DEMO WITHDRAWAL — DO NOT WIRE REAL FUNDS
+                          </span>
+                        )}
                       </div>
                       <p className="text-slate-600">Receiving account: <strong className="text-slate-900 font-mono font-medium">{tx.accountDetails}</strong></p>
                       <p className="text-slate-400 text-[10px] font-mono">ID: {tx.id} | Requested: {new Date(tx.createdAt).toLocaleString()}</p>
@@ -698,6 +770,26 @@ export const AdminPanel: React.FC = () => {
               </button>
             </div>
 
+            {/* Live Purchase & Activity Pop-ups Toggle */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+              <div>
+                <p className="font-bold text-slate-900">Live Purchase & Activity Pop-ups</p>
+                <p className="text-slate-500 text-[10px] mt-0.5">Show real-time and subtle simulated investor purchase & payout pop-ups (social proof toasts) to boost conversion.</p>
+              </div>
+              <button
+                onClick={() => updateSettings({ enableLiveActivityToasts: settings.enableLiveActivityToasts === false ? true : false })}
+                className={`w-12 h-6.5 rounded-full p-1 transition-colors relative cursor-pointer ${
+                  settings.enableLiveActivityToasts !== false ? 'bg-amber-500' : 'bg-slate-200'
+                }`}
+                type="button"
+                id="btn_toggle_live_activity"
+              >
+                <div className={`bg-white w-4.5 h-4.5 rounded-full shadow-md transition-transform ${
+                  settings.enableLiveActivityToasts !== false ? 'translate-x-5.5' : 'translate-x-0'
+                }`} />
+              </button>
+            </div>
+
             {/* Minimum / Maximum Withdrawal sliders */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
@@ -826,6 +918,69 @@ export const AdminPanel: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUPABASE SQL SUB-TAB */}
+      {adminTab === 'supabase' && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5 max-w-4xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Database className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-tight">
+                  Production Supabase & PostgreSQL SQL Schema
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Compliments everything built: users, investments, transactions, settings, task submissions, double-entry wallet audit ledger, triggers & atomic stored procedures.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(FULL_SUPABASE_SQL);
+                setSqlCopied(true);
+                setTimeout(() => setSqlCopied(false), 2500);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer ${
+                sqlCopied 
+                  ? 'bg-emerald-600 text-white' 
+                  : 'bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-700'
+              }`}
+            >
+              {sqlCopied ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+                  <span>SQL Copied to Clipboard!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 text-amber-400" />
+                  <span>Copy SQL Script</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-900 flex items-start gap-2.5">
+            <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold block">How to run in Supabase:</span>
+              <span>Open your Supabase Project → Go to the <strong>SQL Editor</strong> in the left sidebar → Paste this script → Click <strong>RUN</strong>. This provisions all tables, indexes, triggers, and the double-entry wallet audit ledger.</span>
+            </div>
+          </div>
+
+          <div className="relative rounded-xl overflow-hidden border border-slate-800 bg-[#0f172a]">
+            <div className="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400 font-mono">
+              <span>supabase_schema.sql</span>
+              <span>PostgreSQL 15+ / Supabase</span>
+            </div>
+            <pre className="p-4 text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-[500px] leading-relaxed whitespace-pre selection:bg-emerald-800 selection:text-white">
+              {FULL_SUPABASE_SQL}
+            </pre>
           </div>
         </div>
       )}
@@ -1165,11 +1320,35 @@ export const AdminPanel: React.FC = () => {
             </button>
             <button
               type="button"
+              onClick={() => setUserStatusFilter('real')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                userStatusFilter === 'real'
+                  ? 'bg-emerald-700 text-white shadow-xs'
+                  : 'text-emerald-800 hover:bg-emerald-50'
+              }`}
+            >
+              <Users className="w-3 h-3" />
+              <span>Real Investors ({realUsersCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserStatusFilter('marketing')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                userStatusFilter === 'marketing'
+                  ? 'bg-purple-700 text-white shadow-xs'
+                  : 'text-purple-700 hover:bg-purple-50'
+              }`}
+            >
+              <Zap className="w-3 h-3 text-purple-400" />
+              <span>Marketing Team ({marketingUsersCount})</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setUserStatusFilter('active')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                 userStatusFilter === 'active'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-emerald-700 hover:bg-emerald-50'
+                  ? 'bg-slate-800 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
               <CheckCircle2 className="w-3 h-3" />
@@ -1239,14 +1418,25 @@ export const AdminPanel: React.FC = () => {
                     return (
                       <tr key={u.id} className={`hover:bg-slate-50/80 transition-colors ${u.isDeactivated ? 'bg-rose-50/30' : ''}`}>
                         <td className="py-3">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className={`font-semibold ${u.isDeactivated ? 'text-slate-500 line-through' : 'text-slate-900'}`}>{u.name}</span>
                             {u.id === currentUser?.id && (
                               <span className="text-[9px] bg-slate-200 text-slate-700 px-1 py-0.2 rounded font-mono font-bold">YOU</span>
                             )}
+                            {u.isMarketingAccount && (
+                              <span className="text-[9px] bg-purple-100 text-purple-800 border border-purple-200 px-1.5 py-0.2 rounded font-mono font-bold flex items-center gap-0.5 shadow-2xs">
+                                <Zap className="w-2.5 h-2.5 text-purple-600" />
+                                <span>MARKETER</span>
+                              </span>
+                            )}
                           </div>
                           <div className="text-[10px] text-slate-500 font-mono">{u.email}</div>
                           {u.phone && <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">📞 {u.phone}</div>}
+                          {u.isMarketingAccount && (u.marketingAllocatedBalance || 0) > 0 && (
+                            <div className="text-[9px] text-purple-700 font-mono mt-0.5">
+                              Allocated Demo: ₦{(u.marketingAllocatedBalance || 0).toLocaleString()}
+                            </div>
+                          )}
                         </td>
                         <td className="py-3 font-mono text-[11px]">
                           <div className="text-amber-600 font-bold">{u.referralCode}</div>
@@ -1263,6 +1453,9 @@ export const AdminPanel: React.FC = () => {
                         </td>
                         <td className="py-3 text-right font-bold font-mono text-slate-900">
                           ₦{u.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 1 })}
+                          {u.isMarketingAccount && (
+                            <span className="text-[9px] text-purple-600 block font-normal">Promo Funds</span>
+                          )}
                         </td>
                         <td className="py-3 text-center">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
@@ -1286,8 +1479,12 @@ export const AdminPanel: React.FC = () => {
                             </span>
                           )}
                         </td>
-                        <td className="py-3 text-center font-bold capitalize font-mono text-[11px] text-slate-700">
-                          {u.role}
+                        <td className="py-3 text-center font-bold capitalize font-mono text-[11px]">
+                          {u.isMarketingAccount ? (
+                            <span className="text-purple-700 font-extrabold">Marketer</span>
+                          ) : (
+                            <span className="text-slate-700">{u.role}</span>
+                          )}
                         </td>
                         <td className="py-3 text-center">
                           <div className="flex items-center justify-center gap-1.5 flex-wrap">
@@ -1301,6 +1498,7 @@ export const AdminPanel: React.FC = () => {
                                 setEditUserRole(u.role);
                                 setEditUserKyc(u.kycStatus);
                                 setEditUserIsDeactivated(!!u.isDeactivated);
+                                setEditUserIsMarketing(!!u.isMarketingAccount);
                                 setEditUserPassword('');
                                 setShowEditUserModal(true);
                               }}
@@ -1310,6 +1508,35 @@ export const AdminPanel: React.FC = () => {
                             >
                               <Edit3 className="w-3 h-3 text-amber-600" /> Edit
                             </button>
+
+                            {u.isMarketingAccount && (
+                              <button
+                                onClick={() => {
+                                  setMarketingTopUpUser(u);
+                                  setMarketingTopUpAmount('115000');
+                                  setShowMarketingTopUpModal(true);
+                                }}
+                                className="bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 px-2 py-1 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                                title="Top up canvassing wallet with promotional funds"
+                              >
+                                <Zap className="w-3 h-3 text-purple-700" />
+                                <span>Top Up Demo</span>
+                              </button>
+                            )}
+
+                            {u.role !== 'admin' && (
+                              <button
+                                onClick={() => adminToggleMarketingStatus(u.id)}
+                                className={`px-2 py-1 rounded-lg text-[10px] font-semibold border transition-colors cursor-pointer ${
+                                  u.isMarketingAccount 
+                                    ? 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-300' 
+                                    : 'bg-purple-50/60 hover:bg-purple-100 text-purple-700 border-purple-200'
+                                }`}
+                                title={u.isMarketingAccount ? 'Revert to regular investor account' : 'Designate as marketing sales canvasser'}
+                              >
+                                {u.isMarketingAccount ? 'Make Investor' : 'Set Marketer'}
+                              </button>
+                            )}
 
                             {u.role !== 'admin' && (
                               <button
@@ -1508,6 +1735,23 @@ export const AdminPanel: React.FC = () => {
                   placeholder="Enter new password to reset for this user"
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono focus:outline-none focus:border-amber-500"
                 />
+              </div>
+
+              {/* Marketing Account Checkbox in Edit */}
+              <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  id="chk_edit_marketing_account"
+                  checked={editUserIsMarketing}
+                  onChange={(e) => setEditUserIsMarketing(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer"
+                />
+                <label htmlFor="chk_edit_marketing_account" className="cursor-pointer">
+                  <span className="font-bold text-purple-950 block">Designate as Marketing & Sales Canvasser</span>
+                  <span className="text-[11px] text-purple-800">
+                    Isolates this account's transactions and wallet from real organic investor liabilities.
+                  </span>
+                </label>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
@@ -1728,6 +1972,23 @@ export const AdminPanel: React.FC = () => {
                 </div>
               </div>
 
+              {/* Marketing Account Checkbox */}
+              <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  id="chk_create_marketing_account"
+                  checked={createUserIsMarketing}
+                  onChange={(e) => setCreateUserIsMarketing(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer"
+                />
+                <label htmlFor="chk_create_marketing_account" className="cursor-pointer">
+                  <span className="font-bold text-purple-950 block">Designate as Marketing & Sales Canvasser</span>
+                  <span className="text-[11px] text-purple-800">
+                    Isolates this account's funds from real organic investor liabilities. Initial credit will be tagged as promotional marketing allocation.
+                  </span>
+                </label>
+              </div>
+
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
@@ -1742,6 +2003,118 @@ export const AdminPanel: React.FC = () => {
                   id="btn_confirm_create_user"
                 >
                   <UserPlus className="w-4 h-4" /> Create Account Now
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Marketing Canvassing Top-Up Modal */}
+      {showMarketingTopUpModal && marketingTopUpUser && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-xl animate-scaleIn">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-purple-100 rounded-lg text-purple-700">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-950">Top Up Marketer Wallet</h3>
+                  <p className="text-[11px] text-purple-700 font-medium">
+                    Allocating canvassing funds for {marketingTopUpUser.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMarketingTopUpModal(false);
+                  setMarketingTopUpUser(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-xs text-purple-900 mb-4 space-y-1">
+              <div className="flex justify-between">
+                <span>Current Balance:</span>
+                <span className="font-bold font-mono">₦{marketingTopUpUser.walletBalance.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Account Type:</span>
+                <span className="font-bold uppercase text-purple-800">Marketing Sales Canvasser</span>
+              </div>
+              <p className="text-[10px] text-purple-700 pt-1 border-t border-purple-200">
+                This top-up is logged as a promotional canvassing allocation and will not dilute your real investor bank liabilities.
+              </p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const amt = parseFloat(marketingTopUpAmount);
+                if (isNaN(amt) || amt <= 0) return;
+                adminTopUpMarketingWallet(marketingTopUpUser.id, amt, marketingTopUpNotes);
+                setShowMarketingTopUpModal(false);
+                setMarketingTopUpUser(null);
+              }}
+              className="space-y-4 text-xs"
+            >
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">Top-Up Amount (₦)</label>
+                <input
+                  type="number"
+                  value={marketingTopUpAmount}
+                  onChange={(e) => setMarketingTopUpAmount(e.target.value)}
+                  placeholder="e.g. 115000"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono font-bold text-sm focus:outline-none focus:border-purple-500"
+                  required
+                />
+                {/* Pre-fill Plan Costs */}
+                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                  {[15000, 45000, 115000, 270000, 500000].map(amt => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setMarketingTopUpAmount(String(amt))}
+                      className="text-[10px] bg-slate-100 hover:bg-purple-50 hover:text-purple-700 border border-slate-200 px-2 py-0.5 rounded font-mono font-semibold cursor-pointer"
+                    >
+                      ₦{amt.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">Canvassing Campaign Notes</label>
+                <input
+                  type="text"
+                  value={marketingTopUpNotes}
+                  onChange={(e) => setMarketingTopUpNotes(e.target.value)}
+                  placeholder="e.g. Field Sales Canvassing - Lagos Island"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMarketingTopUpModal(false);
+                    setMarketingTopUpUser(null);
+                  }}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-xl transition-colors shadow-sm cursor-pointer"
+                >
+                  Confirm Top-Up
                 </button>
               </div>
             </form>

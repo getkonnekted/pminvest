@@ -64,7 +64,8 @@ export const UserDashboard: React.FC = () => {
     processSingleInvestmentPayout,
     successMsg,
     errorMsg,
-    clearMessages
+    clearMessages,
+    formatLiquidityReserve
   } = useAppState();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'tasks' | 'finance' | 'referrals' | 'kyc'>('overview');
@@ -190,7 +191,7 @@ export const UserDashboard: React.FC = () => {
     },
     {
       question: "Is my money safe?",
-      answer: `Yes. PM Invest is backed by real building projects and maintains a cash reserve of over ₦${settings.liquidityReserve.toLocaleString()} in bank reserve to ensure every payout is made on time.`
+      answer: `Yes. PM Invest is backed by real building projects and maintains a dedicated cash reserve of over ₦${formatLiquidityReserve(0)} in bank reserve to ensure every payout is made on time.`
     }
   ];
 

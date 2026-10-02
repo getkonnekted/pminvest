@@ -11,6 +11,7 @@ import { useAppState } from '../context/StateContext';
 import { PmLogo } from './PmLogo';
 import { WHATSAPP_COMMUNITY_URL, TELEGRAM_COMMUNITY_URL } from './CommunityBanner';
 import { WhatsAppGoldIcon, TelegramGoldIcon } from './CommunityIcons';
+import { LiveReserveCounter } from './LiveReserveCounter';
 
 export const BrandingHeader: React.FC = () => {
   const { currentUser, logout } = useAppState();
@@ -118,10 +119,14 @@ export const LegalDisclosures: React.FC = () => {
         <div>
           <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">CASH RESERVE & SAFETY</h4>
           <p className="leading-relaxed mb-3 text-slate-300">
-            To guarantee your weekly payouts, PM Invest keeps a dedicated <strong>cash reserve</strong> of over ₦{settings.liquidityReserve.toLocaleString()} in bank reserve. This ensures every investor gets paid on time, every Friday.
+            To guarantee your weekly payouts, PM Invest keeps a dedicated <strong>cash reserve</strong> of over <LiveReserveCounter precision={0} showLivePulse={true} className="text-amber-400 font-bold" /> in bank reserve. This ensures every investor gets paid on time, every Friday.
           </p>
           <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700 text-[11px] text-slate-300">
-            <span className="font-semibold text-amber-400">Active Cash Reserve:</span> Backed by physical properties and bank reserve accounts with current reserve balance of <strong className="text-white font-mono">₦{settings.liquidityReserve.toLocaleString()}</strong>.
+            <span className="font-semibold text-amber-400 block mb-1">Active Cash Reserve:</span>
+            <span>Backed by physical properties and bank reserve accounts with current reserve balance of </span>
+            <span className="text-white font-mono font-bold block mt-1">
+              <LiveReserveCounter precision={0} showLivePulse={true} showRateBadge={false} size="md" />
+            </span>
           </div>
         </div>
 

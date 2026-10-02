@@ -105,6 +105,33 @@ export const supabase = isSupabaseConfigured()
     value text not null
   );
   alter table public.system_state disable row level security;
+
+  -- 7. WALLET PERSISTENCE + INITIAL CREDIT AUDIT (PRODUCTION AUDIT LEDGER)
+  create table if not exists public.wallets (
+    id uuid primary key default gen_random_uuid(),
+    user_id text not null unique,
+    balance numeric(18,2) not null default 0 check (balance >= 0),
+    currency text not null default 'NGN',
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+  );
+
+  create table if not exists public.wallet_transactions (
+    id uuid primary key default gen_random_uuid(),
+    wallet_id uuid not null references public.wallets(id) on delete restrict,
+    user_id text not null,
+    transaction_type text not null check (transaction_type in ('initial_credit', 'credit', 'debit')),
+    amount numeric(18,2) not null check (amount > 0),
+    balance_before numeric(18,2) not null,
+    balance_after numeric(18,2) not null,
+    description text,
+    reference text not null unique,
+    performed_by text,
+    created_at timestamptz not null default now()
+  );
+
+  create index if not exists idx_wallet_transactions_user on public.wallet_transactions(user_id, created_at desc);
+  create index if not exists idx_wallet_transactions_wallet on public.wallet_transactions(wallet_id, created_at desc);
  */
 
 export interface SupabaseFetchResult {
@@ -202,4 +229,48 @@ export const syncWeekToSupabase = async (week: number) => {
   if (!supabase) return;
   const { error } = await supabase.from('system_state').upsert({ key: 'current_week', value: String(week) });
   if (error) console.error('Error syncing system state current_week:', error);
+};
+
+export const recordWalletAuditToSupabase = async (audit: {
+  userId: string;
+  transactionType: 'initial_credit' | 'credit' | 'debit' | 'marketing_allocation';
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  description: string;
+  reference: string;
+  performedBy?: string;
+}) => {
+  if (!supabase) return;
+  try {
+    // 1. Ensure wallet row exists
+    await supabase.from('wallets').upsert({
+      user_id: audit.userId,
+      balance: audit.balanceAfter,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+
+    // 2. Fetch wallet id
+    const { data: walletData } = await supabase
+      .from('wallets')
+      .select('id')
+      .eq('user_id', audit.userId)
+      .single();
+
+    if (walletData?.id) {
+      await supabase.from('wallet_transactions').insert({
+        wallet_id: walletData.id,
+        user_id: audit.userId,
+        transaction_type: audit.transactionType,
+        amount: audit.amount,
+        balance_before: audit.balanceBefore,
+        balance_after: audit.balanceAfter,
+        description: audit.description,
+        reference: audit.reference,
+        performed_by: audit.performedBy || null
+      });
+    }
+  } catch (err) {
+    console.warn('Wallet audit log notice:', err);
+  }
 };

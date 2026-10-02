@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS, DailyTask, TaskSubmission, UserDailyProgress, PayoutToastData } from '../types';
+import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS, DailyTask, TaskSubmission, UserDailyProgress, PayoutToastData, LiveActivityItem } from '../types';
 import { DEFAULT_DAILY_TASKS } from '../data/dailyTasks';
 import { playPayoutChime } from '../lib/sound';
 import { getWatDateString, getWatYesterdayString } from '../lib/watTime';
@@ -14,7 +14,8 @@ import {
   syncWeekToSupabase,
   syncMultipleUsersToSupabase,
   syncMultipleInvestmentsToSupabase,
-  syncMultipleTransactionsToSupabase
+  syncMultipleTransactionsToSupabase,
+  recordWalletAuditToSupabase
 } from '../lib/supabase';
 
 interface StateContextType {
@@ -75,9 +76,12 @@ interface StateContextType {
     referredByCode?: string;
     kycStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
     isDeactivated?: boolean;
+    isMarketingAccount?: boolean;
   }) => { success: boolean; message: string; user?: User };
   adminToggleUserStatus: (userId: string, isDeactivated: boolean) => { success: boolean; message: string };
-  adminUpdateUser: (userId: string, updates: { walletBalance?: number; role?: 'user' | 'admin'; kycStatus?: 'unverified' | 'pending' | 'verified' | 'rejected'; name?: string; password?: string; phone?: string; isDeactivated?: boolean }) => boolean;
+  adminUpdateUser: (userId: string, updates: { walletBalance?: number; role?: 'user' | 'admin'; kycStatus?: 'unverified' | 'pending' | 'verified' | 'rejected'; name?: string; password?: string; phone?: string; isDeactivated?: boolean; isMarketingAccount?: boolean }) => boolean;
+  adminTopUpMarketingWallet: (userId: string, amount: number, notes?: string) => boolean;
+  adminToggleMarketingStatus: (userId: string) => boolean;
   approveDeposit: (txId: string, adjustedAmount?: number) => void;
   rejectDeposit: (txId: string) => void;
   approveWithdrawal: (txId: string) => void;
@@ -93,6 +97,15 @@ interface StateContextType {
   dismissPayoutToast: (id: string) => void;
   triggerPayoutToast: (toast: Omit<PayoutToastData, 'id' | 'timestamp'>) => void;
   processSingleInvestmentPayout: (invId: string) => boolean;
+
+  // Live Continuously Compounding Reserve
+  liveLiquidityReserve: number;
+  formatLiquidityReserve: (precision?: number) => string;
+
+  // Live Activity Popups & Social Proof
+  activeLiveActivity: LiveActivityItem | null;
+  dismissLiveActivity: () => void;
+  triggerLiveActivity: (activity: Omit<LiveActivityItem, 'id' | 'timestamp'>) => void;
 
   // Simulator
   simulateWeek: () => void;
@@ -150,10 +163,30 @@ export function calculateHourlyLiquidity(virtualDayOffset: number = 0): number {
   return BASE_LIQUIDITY_RESERVE + (totalHours * HOURLY_LIQUIDITY_GROWTH);
 }
 
-export const calculateDailyLiquidity = calculateHourlyLiquidity;
+export function calculateContinuousLiquidity(virtualDayOffset: number = 0, nowTime?: number): number {
+  const anchorTime = new Date(LIQUIDITY_ANCHOR_DATE).getTime();
+  const now = nowTime ?? Date.now();
+  const elapsedMs = Math.max(0, now - anchorTime);
+  const virtualMs = virtualDayOffset * 24 * 60 * 60 * 1000;
+  const totalMs = elapsedMs + virtualMs;
+  // ₦10,000 spread continuously across each hour (3,600,000 ms)
+  const accrued = (totalMs * HOURLY_LIQUIDITY_GROWTH) / (3600 * 1000);
+  return BASE_LIQUIDITY_RESERVE + accrued;
+}
+
+export function formatReserveNumber(num: number, decimals: number = 0): string {
+  if (decimals <= 0) {
+    return Math.floor(num).toLocaleString('en-US');
+  }
+  const parts = num.toFixed(decimals).split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
+}
+
+export const calculateDailyLiquidity = calculateContinuousLiquidity;
 
 const DEFAULT_SETTINGS: SystemSettings = {
-  liquidityReserve: calculateHourlyLiquidity(0), // Dynamic cash reserve (+₦10,000 added every hour)
+  liquidityReserve: calculateContinuousLiquidity(0), // Dynamic cash reserve (+₦10,000 spread continuously every hour)
   dailyLiquidityGrowth: DAILY_LIQUIDITY_GROWTH,
   hourlyLiquidityGrowth: HOURLY_LIQUIDITY_GROWTH,
   riskAlertLevel: 'low',
@@ -171,7 +204,8 @@ const DEFAULT_SETTINGS: SystemSettings = {
   dailyTaskStreakBonus: 1500, // ₦1,500 bonus for 7-day streak
   freeStarterWithdrawalLimit: 3000, // ₦3,000 max free starter cashout
   rewardedAdBonusMultiplier: 2, // 2x yield booster on video ad view
-  estimatedAdRevenueTotal: 284500 // Simulated external advertiser revenue pool
+  estimatedAdRevenueTotal: 284500, // Simulated external advertiser revenue pool
+  enableLiveActivityToasts: true // Real-time purchase and investor activity toasts
 };
 
 export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -287,6 +321,38 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
     setPayoutToasts(prev => [newToast, ...prev]);
     playPayoutChime();
+  };
+
+  // High-Resolution Live Continuous Liquidity Reserve
+  const [liveLiquidityReserve, setLiveLiquidityReserve] = useState<number>(() => calculateContinuousLiquidity(virtualDayOffset));
+
+  useEffect(() => {
+    // High-resolution real-time ticker: updates every 80ms so the digits continuously increment before user eyes!
+    const timer = setInterval(() => {
+      setLiveLiquidityReserve(calculateContinuousLiquidity(virtualDayOffset));
+    }, 80);
+    return () => clearInterval(timer);
+  }, [virtualDayOffset]);
+
+  const formatLiquidityReserve = (precision: number = 0): string => {
+    return formatReserveNumber(liveLiquidityReserve, precision);
+  };
+
+  // Live Activity Popups & Social Proof Toasts
+  const [activeLiveActivity, setActiveLiveActivity] = useState<LiveActivityItem | null>(null);
+
+  const dismissLiveActivity = () => {
+    setActiveLiveActivity(null);
+  };
+
+  const triggerLiveActivity = (activityData: Omit<LiveActivityItem, 'id' | 'timestamp'>) => {
+    if (settings.enableLiveActivityToasts === false) return;
+    const item: LiveActivityItem = {
+      ...activityData,
+      id: 'act_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      timestamp: Date.now()
+    };
+    setActiveLiveActivity(item);
   };
 
   // Supabase states
@@ -718,6 +784,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     referredByCode?: string;
     kycStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
     isDeactivated?: boolean;
+    isMarketingAccount?: boolean;
   }): { success: boolean; message: string; user?: User } => {
     clearMessages();
     const trimmedName = userData.name.trim();
@@ -775,13 +842,16 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       kycStatus: userData.kycStatus || 'unverified',
       role: userData.role || 'user',
       createdAt: new Date().toISOString(),
-      isDeactivated: userData.isDeactivated ?? false
+      isDeactivated: userData.isDeactivated ?? false,
+      isMarketingAccount: userData.isMarketingAccount ?? false,
+      marketingAllocatedBalance: userData.isMarketingAccount ? initBalance : 0
     };
 
     setUsers(prev => [newUser, ...prev]);
     syncUserToSupabase(newUser);
 
     if (initBalance > 0) {
+      const isMkt = userData.isMarketingAccount === true;
       const initTx: Transaction = {
         id: 'tx_init_' + Date.now(),
         userId: newUser.id,
@@ -790,13 +860,28 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         amount: initBalance,
         status: 'completed',
         createdAt: new Date().toISOString(),
-        description: `Admin Initial Account Credit: +₦${initBalance.toLocaleString()}`
+        description: isMkt 
+          ? `Admin Marketing Canvassing Allocation: +₦${initBalance.toLocaleString()}`
+          : `Admin Initial Account Credit: +₦${initBalance.toLocaleString()}`,
+        isMarketing: isMkt
       };
       setTransactions(prev => [initTx, ...prev]);
       syncTransactionToSupabase(initTx);
+      recordWalletAuditToSupabase({
+        userId: newUser.id,
+        transactionType: isMkt ? 'marketing_allocation' : 'initial_credit',
+        amount: initBalance,
+        balanceBefore: 0,
+        balanceAfter: initBalance,
+        description: initTx.description,
+        reference: initTx.id,
+        performedBy: currentUser?.id || 'admin'
+      });
     }
 
-    const successMessage = `Account for "${trimmedName}" (${trimmedEmail}) was created successfully!`;
+    const successMessage = userData.isMarketingAccount
+      ? `Marketing Canvasser account for "${trimmedName}" (${trimmedEmail}) created with ₦${initBalance.toLocaleString()} canvas allocation!`
+      : `Account for "${trimmedName}" (${trimmedEmail}) was created successfully!`;
     setSuccessMsg(successMessage);
     return { success: true, message: successMessage, user: newUser };
   };
@@ -836,6 +921,87 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return { success: true, message: msg };
   };
 
+  const adminToggleMarketingStatus = (userId: string): boolean => {
+    clearMessages();
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser) {
+      setErrorMsg('User not found.');
+      return false;
+    }
+    const newStatus = !targetUser.isMarketingAccount;
+    const updatedUser: User = {
+      ...targetUser,
+      isMarketingAccount: newStatus
+    };
+    setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser(updatedUser);
+    }
+    syncUserToSupabase(updatedUser);
+    setSuccessMsg(`${targetUser.name} is now designated as ${newStatus ? 'a MARKETING / SALES CANVASSER' : 'a REGULAR REAL INVESTOR'}.`);
+    return true;
+  };
+
+  const adminTopUpMarketingWallet = (userId: string, amount: number, notes?: string): boolean => {
+    clearMessages();
+    if (!amount || amount <= 0) {
+      setErrorMsg('Please specify a positive top-up amount.');
+      return false;
+    }
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser) {
+      setErrorMsg('Marketing account not found.');
+      return false;
+    }
+
+    const newBalance = targetUser.walletBalance + amount;
+    const newMktAlloc = (targetUser.marketingAllocatedBalance || 0) + amount;
+
+    const updatedUser: User = {
+      ...targetUser,
+      walletBalance: newBalance,
+      isMarketingAccount: true,
+      marketingAllocatedBalance: newMktAlloc
+    };
+
+    setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser(updatedUser);
+    }
+    syncUserToSupabase(updatedUser);
+
+    const txId = 'tx_mkt_' + Date.now();
+    const mktTx: Transaction = {
+      id: txId,
+      userId: targetUser.id,
+      userName: targetUser.name,
+      type: 'deposit',
+      amount,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      description: notes?.trim() 
+        ? `Marketing Canvassing Top-up: +₦${amount.toLocaleString()} (${notes.trim()})`
+        : `Marketing Canvassing Top-up: +₦${amount.toLocaleString()}`,
+      isMarketing: true
+    };
+    setTransactions(prev => [mktTx, ...prev]);
+    syncTransactionToSupabase(mktTx);
+
+    recordWalletAuditToSupabase({
+      userId: targetUser.id,
+      transactionType: 'marketing_allocation',
+      amount,
+      balanceBefore: targetUser.walletBalance,
+      balanceAfter: newBalance,
+      description: mktTx.description,
+      reference: txId,
+      performedBy: currentUser?.id || 'admin'
+    });
+
+    setSuccessMsg(`Successfully topped up ₦${amount.toLocaleString()} into ${targetUser.name}'s marketing wallet. Ready for client canvassing.`);
+    return true;
+  };
+
   const adminUpdateUser = (
     userId: string, 
     updates: { 
@@ -846,6 +1012,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       password?: string;
       phone?: string;
       isDeactivated?: boolean;
+      isMarketingAccount?: boolean;
     }
   ): boolean => {
     clearMessages();
@@ -868,7 +1035,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       kycStatus: updates.kycStatus !== undefined ? updates.kycStatus : targetUser.kycStatus,
       password: updates.password !== undefined && updates.password.trim() ? updates.password.trim() : targetUser.password,
       phone: updates.phone !== undefined ? updates.phone.trim() : targetUser.phone,
-      isDeactivated: updates.isDeactivated !== undefined ? updates.isDeactivated : targetUser.isDeactivated
+      isDeactivated: updates.isDeactivated !== undefined ? updates.isDeactivated : targetUser.isDeactivated,
+      isMarketingAccount: updates.isMarketingAccount !== undefined ? updates.isMarketingAccount : targetUser.isMarketingAccount
     };
 
     setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
@@ -878,6 +1046,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     syncUserToSupabase(updatedUser);
 
     if (balanceDiff !== 0) {
+      const isMkt = updatedUser.isMarketingAccount === true;
       const auditTx: Transaction = {
         id: 'tx_adj_' + Date.now(),
         userId: targetUser.id,
@@ -886,7 +1055,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         amount: Math.abs(balanceDiff),
         status: 'completed',
         createdAt: new Date().toISOString(),
-        description: `Admin Wallet Balance Adjustment: ${balanceDiff > 0 ? '+' : '-'}₦${Math.abs(balanceDiff).toLocaleString()} (New Balance: ₦${updatedUser.walletBalance.toLocaleString()})`
+        description: isMkt
+          ? `Admin Marketing Balance Adjustment: ${balanceDiff > 0 ? '+' : '-'}₦${Math.abs(balanceDiff).toLocaleString()} (New Balance: ₦${updatedUser.walletBalance.toLocaleString()})`
+          : `Admin Wallet Balance Adjustment: ${balanceDiff > 0 ? '+' : '-'}₦${Math.abs(balanceDiff).toLocaleString()} (New Balance: ₦${updatedUser.walletBalance.toLocaleString()})`,
+        isMarketing: isMkt
       };
       setTransactions(prev => [auditTx, ...prev]);
       syncTransactionToSupabase(auditTx);
@@ -1084,6 +1256,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCurrentUser(updatedUser);
     setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
 
+    const isMkt = currentUser.isMarketingAccount === true;
+
     // Create Investment record
     const invId = 'inv_' + Date.now();
     const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -1101,7 +1275,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       status: 'active',
       createdAt: new Date().toISOString(),
       nextPayoutDate: nextPayout,
-      autoReinvest: false
+      autoReinvest: false,
+      isMarketing: isMkt
     };
 
     // Log internally
@@ -1113,12 +1288,27 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       amount: plan.cost,
       status: 'completed',
       createdAt: new Date().toISOString(),
-      description: `Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`
+      description: isMkt 
+        ? `[Marketing Demo] Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`
+        : `Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`,
+      isMarketing: isMkt
     };
 
     setInvestments(prev => [newInv, ...prev]);
     setTransactions(prev => [logTx, ...prev]);
     setSuccessMsg(`Congratulations! You have successfully acquired ${plan.name}. First weekly payout due in 7 days.`);
+
+    triggerLiveActivity({
+      type: 'purchase',
+      title: `${currentUser.name}`,
+      message: `Just activated ${plan.name} (₦${plan.cost.toLocaleString()})`,
+      amount: plan.cost,
+      timeAgo: 'Just now',
+      location: 'Verified Investor',
+      iconType: 'investment',
+      avatarInitials: currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    });
+
     return true;
   };
 
@@ -1173,6 +1363,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     // 2. Log the investment purchase transaction
+    const isMkt = currentUser.isMarketingAccount === true;
     const invTxId = 'tx_inv_' + (Date.now() + 1);
     const invTx: Transaction = {
       id: invTxId,
@@ -1182,7 +1373,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       amount: plan.cost,
       status: 'completed',
       createdAt: new Date().toISOString(),
-      description: `Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`
+      description: isMkt 
+        ? `[Marketing Demo] Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`
+        : `Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`,
+      isMarketing: isMkt
     };
     newTransactionsList.push(invTx);
 
@@ -1205,11 +1399,24 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       status: 'active',
       createdAt: new Date().toISOString(),
       nextPayoutDate: nextPayout,
-      autoReinvest: false
+      autoReinvest: false,
+      isMarketing: isMkt
     };
 
     setInvestments(prev => [newInv, ...prev]);
     setSuccessMsg(`🎉 Success! ₦${requiredTopUp.toLocaleString()} funded and ${plan.name} activated successfully.`);
+
+    triggerLiveActivity({
+      type: 'purchase',
+      title: `${currentUser.name}`,
+      message: `Funded & activated ${plan.name} (₦${plan.cost.toLocaleString()})`,
+      amount: plan.cost,
+      timeAgo: 'Just now',
+      location: 'Verified Investor',
+      iconType: 'investment',
+      avatarInitials: currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    });
+
     return true;
   };
 
@@ -1398,6 +1605,17 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else {
       setSuccessMsg(`Approved deposit of ₦${finalAmount.toLocaleString()} for ${tx.userName}.`);
     }
+
+    triggerLiveActivity({
+      type: 'deposit',
+      title: `${tx.userName}`,
+      message: `Deposit of ₦${finalAmount.toLocaleString()} verified & credited to wallet`,
+      amount: finalAmount,
+      timeAgo: 'Just now',
+      location: 'Treasure Homes Vault',
+      iconType: 'deposit',
+      avatarInitials: tx.userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    });
   };
 
   const rejectDeposit = (txId: string) => {
@@ -1421,6 +1639,17 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } : t));
 
     setSuccessMsg(`Approved and marked withdrawal of ₦${tx.amount.toLocaleString()} as disbursed to ${tx.accountDetails} for ${tx.userName}.`);
+
+    triggerLiveActivity({
+      type: 'payout',
+      title: `${tx.userName}`,
+      message: `Withdrew ₦${tx.amount.toLocaleString()} to ${tx.accountDetails || 'Bank'}`,
+      amount: tx.amount,
+      timeAgo: 'Just now',
+      location: 'Bank Transfer Cleared',
+      iconType: 'payout',
+      avatarInitials: tx.userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    });
   };
 
   const rejectWithdrawal = (txId: string) => {
@@ -1446,6 +1675,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const reviewKyc = (userId: string, approve: boolean) => {
     clearMessages();
+    const target = users.find(u => u.id === userId);
     setUsers(prev => prev.map(u => {
       if (u.id === userId) {
         const updated: User = {
@@ -1459,6 +1689,18 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       return u;
     }));
+
+    if (approve && target) {
+      triggerLiveActivity({
+        type: 'kyc',
+        title: `${target.name}`,
+        message: `KYC Identity Verified • Priority Investor Status`,
+        timeAgo: 'Just now',
+        location: 'Nigeria',
+        iconType: 'verified',
+        avatarInitials: target.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+      });
+    }
 
     setSuccessMsg(`KYC verification ${approve ? 'APPROVED' : 'REJECTED'} for selected user.`);
   };
@@ -2189,6 +2431,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adminCreateUser,
       adminToggleUserStatus,
       adminUpdateUser,
+      adminTopUpMarketingWallet,
+      adminToggleMarketingStatus,
       approveDeposit,
       rejectDeposit,
       approveWithdrawal,
@@ -2202,6 +2446,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       dismissPayoutToast,
       triggerPayoutToast,
       processSingleInvestmentPayout,
+      liveLiquidityReserve,
+      formatLiquidityReserve,
+      activeLiveActivity,
+      dismissLiveActivity,
+      triggerLiveActivity,
       simulateWeek,
       simulateNextDay,
       resetAll,
