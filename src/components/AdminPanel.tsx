@@ -68,7 +68,12 @@ export const AdminPanel: React.FC = () => {
     resetAll,
     successMsg,
     errorMsg,
-    clearMessages
+    clearMessages,
+    supabaseStatus,
+    lastSyncedAt,
+    getSupabaseConfig,
+    saveSupabaseCredentials,
+    refreshFromSupabase
   } = useAppState();
 
   const [adminTab, setAdminTab] = useState<'analytics' | 'deposits' | 'withdrawals' | 'tasks' | 'users' | 'kyc' | 'settings'>('analytics');
@@ -78,6 +83,12 @@ export const AdminPanel: React.FC = () => {
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [payoutConfirmationInput, setPayoutConfirmationInput] = useState('');
   const [depositAdjustedAmounts, setDepositAdjustedAmounts] = useState<Record<string, string>>({});
+
+  // Supabase Database Connection Modal State
+  const [showDbConfigModal, setShowDbConfigModal] = useState(false);
+  const [dbUrlInput, setDbUrlInput] = useState(() => getSupabaseConfig().url);
+  const [dbKeyInput, setDbKeyInput] = useState(() => getSupabaseConfig().key);
+  const [dbSaveNotice, setDbSaveNotice] = useState<string | null>(null);
 
   // Admin User & Wallet Edit State
   const [selectedEditUser, setSelectedEditUser] = useState<User | null>(null);
@@ -901,6 +912,62 @@ export const AdminPanel: React.FC = () => {
                     ₦{(settings.estimatedAdRevenueTotal || 284500).toLocaleString()}
                   </div>
                   <p className="text-[10px] text-emerald-800">100% sponsor-funded ad income covering free task yields.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Cloud Database & Live Realtime Sync Status Card */}
+            <div className="pt-4 border-t border-slate-200 space-y-3">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Database className="w-4 h-4 text-emerald-600" /> Database & Live Cloud Synchronization
+              </h4>
+
+              <div className="bg-slate-900 text-white p-4 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-xs uppercase tracking-wider text-slate-200">Supabase Connection:</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 ${
+                      supabaseStatus === 'connected'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : supabaseStatus === 'loading'
+                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse'
+                        : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${supabaseStatus === 'connected' ? 'bg-emerald-400 animate-ping' : 'bg-slate-400'}`} />
+                      {supabaseStatus === 'connected' ? 'LIVE REALTIME CONNECTED' : supabaseStatus === 'loading' ? 'CONNECTING...' : 'LOCAL STORAGE MODE'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300">
+                    {supabaseStatus === 'connected'
+                      ? `Multi-device live syncing active via WebSockets. All deposits, withdrawals, and registrations update across all screens in real time. Last sync: ${lastSyncedAt || 'Just now'}.`
+                      : 'The app is currently running in local storage fallback mode. Connect your Supabase project below to sync all investors, plans, and payouts live across all devices.'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {supabaseStatus === 'connected' && (
+                    <button
+                      type="button"
+                      onClick={() => refreshFromSupabase()}
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+                      title="Force a refresh from Supabase"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-emerald-400" /> Sync Now
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cfg = getSupabaseConfig();
+                      setDbUrlInput(cfg.url);
+                      setDbKeyInput(cfg.key);
+                      setDbSaveNotice(null);
+                      setShowDbConfigModal(true);
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    {supabaseStatus === 'connected' ? 'Manage Connection' : 'Connect Supabase'}
+                  </button>
                 </div>
               </div>
             </div>
@@ -2305,6 +2372,98 @@ export const AdminPanel: React.FC = () => {
               alt="Proof Full Resolution" 
               className="max-h-[85vh] w-auto max-w-full rounded-xl object-contain mx-auto" 
             />
+          </div>
+        </div>
+      )}
+
+      {/* Supabase Connection Configuration Modal */}
+      {showDbConfigModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-scaleIn">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-950">Supabase Cloud Database Connection</h3>
+                  <p className="text-[11px] text-slate-500">Live multi-device database and realtime sync</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDbConfigModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 mb-4 space-y-1">
+              <p className="font-semibold text-slate-800">Where to find these in Supabase:</p>
+              <p>Go to your <strong>Supabase Dashboard → Project Settings → API</strong>.</p>
+              <p>Copy your <strong>Project URL</strong> and <strong>Project API Anon/Public Key</strong>.</p>
+            </div>
+
+            {dbSaveNotice && (
+              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{dbSaveNotice}</span>
+              </div>
+            )}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveSupabaseCredentials(dbUrlInput, dbKeyInput);
+                setDbSaveNotice('Credentials saved! Testing live connection...');
+                setTimeout(async () => {
+                  await refreshFromSupabase();
+                  setShowDbConfigModal(false);
+                }, 1000);
+              }}
+              className="space-y-4 text-xs"
+            >
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">Project URL</label>
+                <input
+                  type="url"
+                  value={dbUrlInput}
+                  onChange={(e) => setDbUrlInput(e.target.value)}
+                  placeholder="https://xyzcompany.supabase.co"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono focus:outline-none focus:border-emerald-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">Anon / Public API Key</label>
+                <textarea
+                  rows={3}
+                  value={dbKeyInput}
+                  onChange={(e) => setDbKeyInput(e.target.value)}
+                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono text-[11px] focus:outline-none focus:border-emerald-500"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDbConfigModal(false)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl transition-colors shadow-sm cursor-pointer"
+                >
+                  Save & Connect Live
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

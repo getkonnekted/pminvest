@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS, DailyTask, TaskSubmission, UserDailyProgress, PayoutToastData, LiveActivityItem } from '../types';
 import { DEFAULT_DAILY_TASKS } from '../data/dailyTasks';
 import { playPayoutChime } from '../lib/sound';
@@ -15,7 +15,10 @@ import {
   syncMultipleUsersToSupabase,
   syncMultipleInvestmentsToSupabase,
   syncMultipleTransactionsToSupabase,
-  recordWalletAuditToSupabase
+  recordWalletAuditToSupabase,
+  subscribeToSupabaseRealtime,
+  getSupabaseConfig,
+  saveSupabaseCredentials
 } from '../lib/supabase';
 
 interface StateContextType {
@@ -29,6 +32,10 @@ interface StateContextType {
   successMsg: string | null;
   supabaseStatus: 'idle' | 'loading' | 'connected' | 'error' | 'not_configured';
   isDbLoaded: boolean;
+  lastSyncedAt: string | null;
+  getSupabaseConfig: () => { url: string; key: string; isConfigured: boolean; isFromEnv: boolean };
+  saveSupabaseCredentials: (url: string, key: string) => boolean;
+  refreshFromSupabase: () => Promise<void>;
   
   // Daily Tasks state & helpers
   dailyTasks: DailyTask[];
@@ -334,9 +341,60 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Supabase states
   const [supabaseStatus, setSupabaseStatus] = useState<'idle' | 'loading' | 'connected' | 'error' | 'not_configured'>('idle');
   const [isDbLoaded, setIsDbLoaded] = useState<boolean>(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const isRemoteSyncingRef = useRef(false);
 
-  // Initialize and Fetch from Supabase
+  // Live Refresh from Supabase (Realtime + Heartbeat)
+  const refreshFromSupabase = useCallback(async () => {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const dbData = await fetchAllSupabaseData();
+      if (!dbData) return;
+
+      isRemoteSyncingRef.current = true;
+      setSupabaseStatus('connected');
+      setLastSyncedAt(new Date().toLocaleTimeString());
+
+      if (dbData.users && dbData.users.length > 0) {
+        const sanitizedUsers = dbData.users.filter((u: any) => u.id !== 'usr_demo_investor');
+        setUsers(sanitizedUsers);
+
+        // Keep active logged-in user in sync with updated balance, KYC status, etc.
+        setCurrentUser(prevUser => {
+          if (!prevUser) return null;
+          const freshUser = sanitizedUsers.find(u => u.id === prevUser.id);
+          return freshUser ? { ...prevUser, ...freshUser } : prevUser;
+        });
+      }
+
+      if (dbData.investments) {
+        setInvestments(dbData.investments);
+      }
+
+      if (dbData.transactions) {
+        setTransactions(dbData.transactions);
+      }
+
+      if (dbData.settings) {
+        setSettings(prev => ({ ...prev, ...dbData.settings }));
+      }
+
+      if (dbData.currentWeek !== null) {
+        setCurrentWeek(dbData.currentWeek);
+      }
+
+      setTimeout(() => {
+        isRemoteSyncingRef.current = false;
+      }, 500);
+    } catch (err) {
+      console.warn('Live sync refresh notice:', err);
+    }
+  }, []);
+
+  // Initialize and Fetch from Supabase with Live Realtime Subscriptions
   useEffect(() => {
+    let unsubscribeRealtime = () => {};
+
     const initSupabase = async () => {
       if (!isSupabaseConfigured()) {
         setSupabaseStatus('not_configured');
@@ -350,22 +408,19 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         if (dbData) {
           setSupabaseStatus('connected');
+          setLastSyncedAt(new Date().toLocaleTimeString());
           
           if (dbData.users.length === 0) {
-            console.log('Seeding Supabase with default admin...');
-            // Seed base users
+            console.log('Seeding Supabase with initial admin...');
             const defaultSeed = getSeedUsers();
             await syncMultipleUsersToSupabase(defaultSeed);
             setUsers(defaultSeed);
-            // Sync default settings and current week
             await syncSettingsToSupabase(settings);
             await syncWeekToSupabase(currentWeek);
           } else {
-            // Load state from remote DB
             const loadedUsers = [...dbData.users];
             const defaultSeed = getSeedUsers();
 
-            // Dynamically update existing seeded admin in case user updated VITE_ADMIN_EMAIL
             const adminIndex = loadedUsers.findIndex((u: any) => u.id === 'usr_admin' || u.role === 'admin');
             if (adminIndex > -1) {
               loadedUsers[adminIndex].email = ADMIN_EMAIL.toLowerCase().trim();
@@ -373,7 +428,6 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               loadedUsers.push(defaultSeed[0]);
             }
 
-            // Clean out any stale demo user from remote database sync
             const sanitizedUsers = loadedUsers.filter((u: any) => u.id !== 'usr_demo_investor');
 
             setUsers(sanitizedUsers);
@@ -386,7 +440,6 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               setCurrentWeek(dbData.currentWeek);
             }
 
-            // Refresh currentUser reference
             const savedUser = localStorage.getItem('pm_prod_current_user_v1');
             if (savedUser) {
               try {
@@ -394,14 +447,18 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 const freshUser = loadedUsers.find(u => u.id === parsed.id);
                 if (freshUser) {
                   setCurrentUser(freshUser);
-                } else {
-                  setCurrentUser(null);
                 }
               } catch (e) {
-                setCurrentUser(null);
+                // Ignore parse errors
               }
             }
           }
+
+          // 1. Establish Live Supabase Realtime WebSocket Connection
+          unsubscribeRealtime = subscribeToSupabaseRealtime((table) => {
+            console.log(`[Supabase Live Event] Realtime push on ${table}`);
+            refreshFromSupabase();
+          });
         } else {
           setSupabaseStatus('error');
         }
@@ -413,12 +470,23 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     initSupabase();
-  }, []);
 
-  // Sync to local storage and Supabase
+    // 2. Background Heartbeat Poll every 12 seconds for guaranteed consistency
+    const pollInterval = setInterval(() => {
+      refreshFromSupabase();
+    }, 12000);
+
+    return () => {
+      unsubscribeRealtime();
+      clearInterval(pollInterval);
+    };
+  }, [refreshFromSupabase]);
+
+  // Sync to local storage and Supabase (guarded against echo loops)
   useEffect(() => {
     localStorage.setItem('pm_prod_users_v1', JSON.stringify(users));
     if (isDbLoaded && isSupabaseConfigured() && users.length > 0) {
+      if (isRemoteSyncingRef.current) return;
       syncMultipleUsersToSupabase(users);
     }
   }, [users, isDbLoaded]);
@@ -426,6 +494,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('pm_prod_current_user_v1', JSON.stringify(currentUser));
     if (isDbLoaded && isSupabaseConfigured() && currentUser) {
+      if (isRemoteSyncingRef.current) return;
       syncUserToSupabase(currentUser);
     }
   }, [currentUser, isDbLoaded]);
@@ -433,6 +502,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('pm_prod_investments_v1', JSON.stringify(investments));
     if (isDbLoaded && isSupabaseConfigured()) {
+      if (isRemoteSyncingRef.current) return;
       syncMultipleInvestmentsToSupabase(investments);
     }
   }, [investments, isDbLoaded]);
@@ -440,6 +510,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('pm_prod_transactions_v1', JSON.stringify(transactions));
     if (isDbLoaded && isSupabaseConfigured()) {
+      if (isRemoteSyncingRef.current) return;
       syncMultipleTransactionsToSupabase(transactions);
     }
   }, [transactions, isDbLoaded]);
@@ -447,6 +518,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('pm_prod_settings_v1', JSON.stringify(settings));
     if (isDbLoaded && isSupabaseConfigured()) {
+      if (isRemoteSyncingRef.current) return;
       syncSettingsToSupabase(settings);
     }
   }, [settings, isDbLoaded]);
@@ -454,6 +526,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('pm_prod_current_week_v1', String(currentWeek));
     if (isDbLoaded && isSupabaseConfigured()) {
+      if (isRemoteSyncingRef.current) return;
       syncWeekToSupabase(currentWeek);
     }
   }, [currentWeek, isDbLoaded]);
@@ -2363,6 +2436,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       successMsg,
       supabaseStatus,
       isDbLoaded,
+      lastSyncedAt,
+      getSupabaseConfig,
+      saveSupabaseCredentials,
+      refreshFromSupabase,
       dailyTasks,
       taskSubmissions,
       userDailyProgress,
