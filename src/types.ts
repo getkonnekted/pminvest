@@ -18,6 +18,7 @@ export interface User {
   isDeactivated?: boolean;
   isMarketingAccount?: boolean;
   marketingAllocatedBalance?: number;
+  isTimerLocked?: boolean;
 }
 
 export interface InvestmentPlan {
@@ -46,6 +47,7 @@ export interface UserInvestment {
   nextPayoutDate?: string;
   autoReinvest?: boolean;
   isMarketing?: boolean;
+  isTimerLocked?: boolean;
 }
 
 export interface Transaction {

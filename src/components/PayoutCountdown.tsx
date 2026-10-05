@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Zap } from 'lucide-react';
+import { Clock, Zap, ShieldCheck } from 'lucide-react';
 
 interface PayoutCountdownProps {
   targetDate?: string;
   fallbackDays?: number;
   className?: string;
   compact?: boolean;
+  isLocked?: boolean;
 }
 
 export const PayoutCountdown: React.FC<PayoutCountdownProps> = ({ 
   targetDate, 
   fallbackDays = 7, 
   className = "",
-  compact = false 
+  compact = false,
+  isLocked = false
 }) => {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
@@ -23,6 +25,8 @@ export const PayoutCountdown: React.FC<PayoutCountdownProps> = ({
   }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isDue: false });
 
   useEffect(() => {
+    if (isLocked) return;
+
     const calculateTime = () => {
       let targetTime: number;
       if (targetDate) {
@@ -49,7 +53,24 @@ export const PayoutCountdown: React.FC<PayoutCountdownProps> = ({
     calculateTime();
     const interval = setInterval(calculateTime, 1000);
     return () => clearInterval(interval);
-  }, [targetDate, fallbackDays]);
+  }, [targetDate, fallbackDays, isLocked]);
+
+  if (isLocked) {
+    if (compact) {
+      return (
+        <span className={`inline-flex items-center gap-1 font-mono text-emerald-700 font-bold text-[11px] ${className}`}>
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+          <span>Cycle Active • Collateralized</span>
+        </span>
+      );
+    }
+    return (
+      <div className={`inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-900 border border-emerald-300 font-mono text-[11px] font-bold px-2.5 py-1.5 rounded-xl shadow-xs ${className}`}>
+        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+        <span className="font-sans font-bold">Cycle Active • Fully Collateralized</span>
+      </div>
+    );
+  }
 
   if (timeLeft.isDue) {
     return (

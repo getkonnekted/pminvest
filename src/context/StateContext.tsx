@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS, DailyTask, TaskSubmission, UserDailyProgress, PayoutToastData, LiveActivityItem } from '../types';
 import { DEFAULT_DAILY_TASKS } from '../data/dailyTasks';
 import { playPayoutChime } from '../lib/sound';
-import { getWatDateString, getWatYesterdayString } from '../lib/watTime';
+import { getWatDate, getWatDateString, getWatYesterdayString } from '../lib/watTime';
 import { 
   isSupabaseConfigured, 
   supabase, 
@@ -15,10 +15,14 @@ import {
   syncMultipleUsersToSupabase,
   syncMultipleInvestmentsToSupabase,
   syncMultipleTransactionsToSupabase,
+  syncTaskSubmissionToSupabase,
+  syncMultipleTaskSubmissionsToSupabase,
+  syncUserDailyProgressToSupabase,
   recordWalletAuditToSupabase,
   subscribeToSupabaseRealtime,
   getSupabaseConfig,
-  saveSupabaseCredentials
+  saveSupabaseCredentials,
+  getSupabaseClient
 } from '../lib/supabase';
 
 interface StateContextType {
@@ -49,7 +53,7 @@ interface StateContextType {
   
   // Auth actions
   register: (name: string, email: string, referredByCode?: string, password?: string, phone?: string) => boolean;
-  login: (email: string, password?: string) => boolean;
+  login: (email: string, password?: string) => Promise<boolean> | boolean;
   requestPasswordReset: (email: string) => { success: boolean; code?: string; message: string };
   confirmPasswordReset: (email: string, code: string, newPassword: string) => boolean;
   logout: () => void;
@@ -89,6 +93,9 @@ interface StateContextType {
   adminUpdateUser: (userId: string, updates: { walletBalance?: number; role?: 'user' | 'admin'; kycStatus?: 'unverified' | 'pending' | 'verified' | 'rejected'; name?: string; password?: string; phone?: string; isDeactivated?: boolean; isMarketingAccount?: boolean }) => boolean;
   adminTopUpMarketingWallet: (userId: string, amount: number, notes?: string) => boolean;
   adminToggleMarketingStatus: (userId: string) => boolean;
+  adminDeleteUser: (userId: string) => Promise<{ success: boolean; message: string }>;
+  adminFastYieldMarketer: (marketerId: string) => boolean;
+  adminToggleTimerLock: (userId: string) => boolean;
   approveDeposit: (txId: string, adjustedAmount?: number) => void;
   rejectDeposit: (txId: string) => void;
   approveWithdrawal: (txId: string) => void;
@@ -114,6 +121,9 @@ interface StateContextType {
   dismissLiveActivity: () => void;
   triggerLiveActivity: (activity: Omit<LiveActivityItem, 'id' | 'timestamp'>) => void;
 
+  // Friday Payout Detection
+  isPayoutDay: boolean;
+
   // Simulator
   simulateWeek: () => void;
   simulateNextDay: () => void;
@@ -123,21 +133,44 @@ interface StateContextType {
 
 const StateContext = createContext<StateContextType | undefined>(undefined);
 
-export const ADMIN_EMAIL = (import.meta as any).env.VITE_ADMIN_EMAIL || 'admin@treasurehomes.com';
-const ADMIN_PASSWORD = (import.meta as any).env.VITE_ADMIN_PASSWORD || 'admin123';
+export const getEnvAdminEmail = (): string => {
+  return (
+    (import.meta as any).env?.VITE_ADMIN_EMAIL ||
+    (import.meta as any).env?.ADMIN_EMAIL ||
+    ''
+  ).toLowerCase().trim();
+};
 
-const getSeedUsers = (): User[] => [
-  {
-    id: 'usr_admin',
-    name: 'Treasure Homes Admin',
-    email: ADMIN_EMAIL.toLowerCase().trim(),
-    referralCode: 'TREASURE_ADMIN',
-    walletBalance: 0,
-    kycStatus: 'verified',
-    role: 'admin',
-    createdAt: new Date().toISOString()
+export const getEnvAdminPassword = (): string => {
+  return (
+    (import.meta as any).env?.VITE_ADMIN_PASSWORD ||
+    (import.meta as any).env?.ADMIN_PASSWORD ||
+    ''
+  );
+};
+
+export const ADMIN_EMAIL = getEnvAdminEmail();
+
+// Initial users: Empty unless configured via Vercel env, ensuring Supabase and Vercel manage users completely
+const getSeedUsers = (): User[] => {
+  const envEmail = getEnvAdminEmail();
+  if (envEmail) {
+    return [
+      {
+        id: 'usr_admin',
+        name: 'Administrator',
+        email: envEmail,
+        phone: '+2348000000000',
+        referralCode: 'ADMIN_PROD',
+        walletBalance: 0,
+        kycStatus: 'verified',
+        role: 'admin',
+        createdAt: new Date().toISOString()
+      }
+    ];
   }
-];
+  return [];
+};
 
 const SEED_INVESTMENTS: UserInvestment[] = [];
 
@@ -207,20 +240,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem('pm_prod_users_v1');
     const parsed = saved ? JSON.parse(saved) : null;
-    const defaultSeed = getSeedUsers();
-    
-    if (!parsed) return defaultSeed;
-
-    // Dynamically update existing seeded admin in case user updated VITE_ADMIN_EMAIL
-    const adminIndex = parsed.findIndex((u: any) => u.id === 'usr_admin' || u.role === 'admin');
-    if (adminIndex > -1) {
-      parsed[adminIndex].email = ADMIN_EMAIL.toLowerCase().trim();
-    } else {
-      parsed.push(defaultSeed[0]);
+    if (parsed && Array.isArray(parsed)) {
+      return parsed.filter((u: any) => u.id !== 'usr_demo_investor');
     }
-
-    // Clean out any stale demo user from production storage
-    return parsed.filter((u: any) => u.id !== 'usr_demo_investor');
+    return getSeedUsers();
   });
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -383,6 +406,14 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setCurrentWeek(dbData.currentWeek);
       }
 
+      if (dbData.taskSubmissions) {
+        setTaskSubmissions(dbData.taskSubmissions);
+      }
+
+      if (dbData.userDailyProgress && Object.keys(dbData.userDailyProgress).length > 0) {
+        setUserDailyProgress(prev => ({ ...prev, ...dbData.userDailyProgress }));
+      }
+
       setTimeout(() => {
         isRemoteSyncingRef.current = false;
       }, 500);
@@ -411,25 +442,15 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           setLastSyncedAt(new Date().toLocaleTimeString());
           
           if (dbData.users.length === 0) {
-            console.log('Seeding Supabase with initial admin...');
             const defaultSeed = getSeedUsers();
-            await syncMultipleUsersToSupabase(defaultSeed);
-            setUsers(defaultSeed);
+            if (defaultSeed.length > 0) {
+              await syncMultipleUsersToSupabase(defaultSeed);
+              setUsers(defaultSeed);
+            }
             await syncSettingsToSupabase(settings);
             await syncWeekToSupabase(currentWeek);
           } else {
-            const loadedUsers = [...dbData.users];
-            const defaultSeed = getSeedUsers();
-
-            const adminIndex = loadedUsers.findIndex((u: any) => u.id === 'usr_admin' || u.role === 'admin');
-            if (adminIndex > -1) {
-              loadedUsers[adminIndex].email = ADMIN_EMAIL.toLowerCase().trim();
-            } else {
-              loadedUsers.push(defaultSeed[0]);
-            }
-
-            const sanitizedUsers = loadedUsers.filter((u: any) => u.id !== 'usr_demo_investor');
-
+            const sanitizedUsers = dbData.users.filter((u: any) => u.id !== 'usr_demo_investor');
             setUsers(sanitizedUsers);
             setInvestments(dbData.investments);
             setTransactions(dbData.transactions);
@@ -439,12 +460,18 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (dbData.currentWeek !== null) {
               setCurrentWeek(dbData.currentWeek);
             }
+            if (dbData.taskSubmissions) {
+              setTaskSubmissions(dbData.taskSubmissions);
+            }
+            if (dbData.userDailyProgress && Object.keys(dbData.userDailyProgress).length > 0) {
+              setUserDailyProgress(prev => ({ ...prev, ...dbData.userDailyProgress }));
+            }
 
             const savedUser = localStorage.getItem('pm_prod_current_user_v1');
             if (savedUser) {
               try {
                 const parsed = JSON.parse(savedUser);
-                const freshUser = loadedUsers.find(u => u.id === parsed.id);
+                const freshUser = sanitizedUsers.find(u => u.id === parsed.id);
                 if (freshUser) {
                   setCurrentUser(freshUser);
                 }
@@ -533,11 +560,21 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     localStorage.setItem('pm_prod_task_submissions_v1', JSON.stringify(taskSubmissions));
-  }, [taskSubmissions]);
+    if (isDbLoaded && isSupabaseConfigured() && taskSubmissions.length > 0) {
+      if (isRemoteSyncingRef.current) return;
+      syncMultipleTaskSubmissionsToSupabase(taskSubmissions);
+    }
+  }, [taskSubmissions, isDbLoaded]);
 
   useEffect(() => {
     localStorage.setItem('pm_prod_daily_progress_v1', JSON.stringify(userDailyProgress));
-  }, [userDailyProgress]);
+    if (isDbLoaded && isSupabaseConfigured()) {
+      if (isRemoteSyncingRef.current) return;
+      if (currentUser && userDailyProgress[currentUser.id]) {
+        syncUserDailyProgressToSupabase(userDailyProgress[currentUser.id]);
+      }
+    }
+  }, [userDailyProgress, currentUser, isDbLoaded]);
 
   useEffect(() => {
     localStorage.setItem('pm_prod_virtual_day_v1', String(virtualDayOffset));
@@ -547,13 +584,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Recalculate liquidity and risk alert level based on stats and automated daily growth (+₦530,234 Naira/day)
   useEffect(() => {
     const totalDeposits = transactions
-      .filter(t => t.type === 'deposit' && t.status === 'completed')
+      .filter(t => t.type === 'deposit' && t.status === 'completed' && !t.isMarketing)
       .reduce((sum, t) => sum + t.amount, 0);
     const totalWithdrawals = transactions
-      .filter(t => t.type === 'withdrawal' && t.status === 'completed')
+      .filter(t => t.type === 'withdrawal' && t.status === 'completed' && !t.isMarketing)
       .reduce((sum, t) => sum + t.amount, 0);
     const totalPayouts = transactions
-      .filter((t) => (t.type === 'payout' || t.type === 'referral_bonus') && t.status === 'completed')
+      .filter((t) => (t.type === 'payout' || t.type === 'referral_bonus') && t.status === 'completed' && !t.isMarketing)
       .reduce((sum, t) => sum + t.amount, 0);
 
     // Initial base cash reserve with hourly growth (+₦10,000 every hour) + deposits - withdrawals - payouts
@@ -664,7 +701,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   };
 
-  const login = (email: string, password?: string): boolean => {
+  const login = async (email: string, password?: string): Promise<boolean> => {
     clearMessages();
     const normEmail = email.toLowerCase().trim();
 
@@ -672,20 +709,80 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setErrorMsg('Please enter your email address to sign in.');
       return false;
     }
-    
-    // If admin email, verify password
-    if (normEmail === ADMIN_EMAIL.toLowerCase().trim()) {
-      if (!password) {
-        setErrorMsg('Administrator password is required.');
-        return false;
-      }
-      if (password !== ADMIN_PASSWORD) {
+
+    if (!password) {
+      setErrorMsg('Please enter your account password.');
+      return false;
+    }
+
+    const envAdminEmail = getEnvAdminEmail();
+    const envAdminPassword = getEnvAdminPassword();
+
+    // 1. Managed via Vercel Environment Variables (VITE_ADMIN_EMAIL / ADMIN_EMAIL)
+    if (envAdminEmail && normEmail === envAdminEmail) {
+      if (envAdminPassword && password !== envAdminPassword) {
         setErrorMsg('Incorrect administrator password.');
         return false;
       }
+
+      const existingUser = users.find(u => u.email.toLowerCase() === normEmail);
+      if (existingUser) {
+        if (existingUser.isDeactivated) {
+          setErrorMsg('This administrator account has been deactivated.');
+          return false;
+        }
+        if (existingUser.role !== 'admin') {
+          existingUser.role = 'admin';
+        }
+        setCurrentUser(existingUser);
+        setSuccessMsg(`Welcome back, ${existingUser.name}!`);
+        return true;
+      }
+
+      // Auto-create dynamically from Vercel env configuration
+      const newAdmin: User = {
+        id: 'usr_admin',
+        name: 'Administrator',
+        email: normEmail,
+        phone: '+2348000000000',
+        password: password,
+        referralCode: 'ADMIN_PROD',
+        walletBalance: 0,
+        kycStatus: 'verified',
+        role: 'admin',
+        createdAt: new Date().toISOString()
+      };
+      setUsers(prev => [newAdmin, ...prev.filter(u => u.email.toLowerCase() !== normEmail)]);
+      syncUserToSupabase(newAdmin);
+      setCurrentUser(newAdmin);
+      setSuccessMsg('Logged in successfully as Administrator.');
+      return true;
     }
 
-    const user = users.find(u => u.email.toLowerCase() === normEmail);
+    // 2. Managed via Supabase Database (or local state synced from Supabase)
+    let user = users.find(u => u.email.toLowerCase() === normEmail);
+
+    // If user not in local memory, query Supabase database directly in real-time
+    if (!user && isSupabaseConfigured()) {
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          const { data, error } = await client
+            .from('users')
+            .select('*')
+            .eq('email', normEmail)
+            .maybeSingle();
+
+          if (!error && data) {
+            user = data as User;
+            setUsers(prev => [...prev.filter(u => u.id !== (data as any).id), data as User]);
+          }
+        } catch (err) {
+          console.warn('Real-time Supabase user fetch error:', err);
+        }
+      }
+    }
+
     if (user) {
       if (user.isDeactivated) {
         setErrorMsg('This account has been deactivated. Please contact support or the administrator.');
@@ -700,25 +797,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return true;
     }
 
-    // Fallback: If it's the admin but they aren't seeded in the current state list yet
-    if (normEmail === ADMIN_EMAIL.toLowerCase().trim()) {
-      const newAdmin: User = {
-        id: 'usr_admin',
-        name: 'Treasure Homes Admin',
-        email: normEmail,
-        referralCode: 'TREASURE_ADMIN',
-        walletBalance: 0,
-        kycStatus: 'verified',
-        role: 'admin',
-        createdAt: new Date().toISOString()
-      };
-      setUsers(prev => [newAdmin, ...prev.filter(u => u.id !== 'usr_admin')]);
-      setCurrentUser(newAdmin);
-      setSuccessMsg('Logged in successfully as Treasure Homes Admin.');
-      return true;
-    }
-
-    setErrorMsg('No account found with this email address. Please register a new account.');
+    setErrorMsg('No account found with this email address. Please register a new account or configure in Supabase.');
     return false;
   };
 
@@ -732,7 +811,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return { success: false, message: 'Please enter your registered email address.' };
     }
 
-    const user = users.find(u => u.email.toLowerCase() === normEmail) || (normEmail === ADMIN_EMAIL.toLowerCase().trim() ? { email: ADMIN_EMAIL, name: 'Treasure Homes Admin' } : null);
+    const envAdmin = getEnvAdminEmail();
+    const user = users.find(u => u.email.toLowerCase() === normEmail) || (envAdmin && normEmail === envAdmin ? { email: envAdmin, name: 'Administrator' } : null);
 
     if (!user) {
       setErrorMsg(`No account found matching email "${normEmail}".`);
@@ -978,6 +1058,162 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     syncUserToSupabase(updatedUser);
     setSuccessMsg(`${targetUser.name} is now designated as ${newStatus ? 'a MARKETING / SALES CANVASSER' : 'a REGULAR REAL INVESTOR'}.`);
+    return true;
+  };
+
+  const adminDeleteUser = async (userId: string): Promise<{ success: boolean; message: string }> => {
+    clearMessages();
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser) {
+      const msg = 'User account not found.';
+      setErrorMsg(msg);
+      return { success: false, message: msg };
+    }
+
+    if (targetUser.role === 'admin' || targetUser.id === currentUser?.id) {
+      const msg = 'Super Administrator account cannot be deleted.';
+      setErrorMsg(msg);
+      return { success: false, message: msg };
+    }
+
+    // 1. Remove from local React state
+    setUsers(prev => prev.filter(u => u.id !== userId));
+    setInvestments(prev => prev.filter(inv => inv.userId !== userId));
+    setTransactions(prev => prev.filter(t => t.userId !== userId));
+    setTaskSubmissions(prev => prev.filter(sub => sub.userId !== userId));
+    setUserDailyProgress(prev => {
+      const next = { ...prev };
+      delete next[userId];
+      return next;
+    });
+
+    // 2. Remove from Supabase if connected
+    const client = getSupabaseClient();
+    if (client) {
+      try {
+        await Promise.allSettled([
+          client.from('transactions').delete().eq('userId', userId),
+          client.from('investments').delete().eq('userId', userId),
+          client.from('task_submissions').delete().eq('userId', userId),
+          client.from('wallet_transactions').delete().eq('user_id', userId),
+          client.from('wallets').delete().eq('user_id', userId),
+          client.from('user_daily_progress').delete().eq('user_id', userId),
+          client.from('users').delete().eq('id', userId)
+        ]);
+      } catch (err) {
+        console.warn('Supabase delete record notice:', err);
+      }
+    }
+
+    const successMessage = `Account for ${targetUser.name} (${targetUser.email}) and all associated records permanently deleted.`;
+    setSuccessMsg(successMessage);
+    return { success: true, message: successMessage };
+  };
+
+  const adminFastYieldMarketer = (marketerId: string): boolean => {
+    clearMessages();
+    const targetUser = users.find(u => u.id === marketerId);
+    if (!targetUser) {
+      setErrorMsg('Marketer account not found.');
+      return false;
+    }
+
+    // Find active investment to determine weekly payout amount, or default to Plan 2 (₦17,250) or Plan 1 (₦5,750)
+    const activeInv = investments.find(inv => inv.userId === marketerId && inv.status === 'active');
+    const yieldAmount = activeInv ? activeInv.weeklyPayout : 17250;
+    const planName = activeInv ? activeInv.planName : 'Plan 2 (Urban Terrace)';
+
+    const newBalance = targetUser.walletBalance + yieldAmount;
+    const updatedUser: User = {
+      ...targetUser,
+      walletBalance: newBalance
+    };
+
+    setUsers(prev => prev.map(u => u.id === marketerId ? updatedUser : u));
+    if (currentUser && currentUser.id === marketerId) {
+      setCurrentUser(updatedUser);
+    }
+    syncUserToSupabase(updatedUser);
+
+    const txId = 'tx_fast_yield_' + Date.now();
+    const payoutTx: Transaction = {
+      id: txId,
+      userId: targetUser.id,
+      userName: targetUser.name,
+      type: 'payout',
+      amount: yieldAmount,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      description: `Verified Friday Cash Return: ${planName} (+₦${yieldAmount.toLocaleString()})`,
+      isMarketing: true
+    };
+
+    setTransactions(prev => [payoutTx, ...prev]);
+    syncTransactionToSupabase(payoutTx);
+
+    // If there is an active investment, advance weeksPaid
+    if (activeInv) {
+      const nextWeeksPaid = activeInv.weeksPaid + 1;
+      const updatedInv: UserInvestment = {
+        ...activeInv,
+        weeksPaid: nextWeeksPaid,
+        status: nextWeeksPaid >= activeInv.totalWeeks ? 'completed' : 'active',
+        lastPayoutDate: new Date().toISOString()
+      };
+      setInvestments(prev => prev.map(inv => inv.id === activeInv.id ? updatedInv : inv));
+      syncInvestmentToSupabase(updatedInv);
+    }
+
+    recordWalletAuditToSupabase({
+      userId: targetUser.id,
+      transactionType: 'credit',
+      amount: yieldAmount,
+      balanceBefore: targetUser.walletBalance,
+      balanceAfter: newBalance,
+      description: payoutTx.description,
+      reference: txId,
+      performedBy: currentUser?.id || 'admin'
+    });
+
+    playPayoutChime();
+    setSuccessMsg(`⚡ Fast Yield Credited! Added ₦${yieldAmount.toLocaleString()} to ${targetUser.name}'s wallet with official payout receipt.`);
+    return true;
+  };
+
+  const adminToggleTimerLock = (userId: string): boolean => {
+    clearMessages();
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser) {
+      setErrorMsg('User not found.');
+      return false;
+    }
+
+    const newLockedState = !targetUser.isTimerLocked;
+    const updatedUser: User = {
+      ...targetUser,
+      isTimerLocked: newLockedState
+    };
+
+    setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser(updatedUser);
+    }
+    syncUserToSupabase(updatedUser);
+
+    // Update active investments for this user
+    setInvestments(prev => prev.map(inv => {
+      if (inv.userId === userId) {
+        const updatedInv = { ...inv, isTimerLocked: newLockedState };
+        syncInvestmentToSupabase(updatedInv);
+        return updatedInv;
+      }
+      return inv;
+    }));
+
+    setSuccessMsg(newLockedState
+      ? `🔒 Presentation Timer Locked for ${targetUser.name}. Cycle countdown displays "Cycle Active • Fully Collateralized".`
+      : `🔓 Presentation Timer Unlocked for ${targetUser.name}. Normal countdown restored.`
+    );
     return true;
   };
 
@@ -1286,11 +1522,16 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     // Deduct balance cleanly
-    const updatedUser = { ...currentUser, walletBalance: currentUser.walletBalance - plan.cost };
+    const isMkt = currentUser.isMarketingAccount === true;
+    const updatedUser: User = { 
+      ...currentUser, 
+      walletBalance: currentUser.walletBalance - plan.cost,
+      marketingAllocatedBalance: isMkt && currentUser.marketingAllocatedBalance 
+        ? Math.max(0, currentUser.marketingAllocatedBalance - plan.cost)
+        : currentUser.marketingAllocatedBalance
+    };
     setCurrentUser(updatedUser);
     setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-
-    const isMkt = currentUser.isMarketingAccount === true;
 
     // Create Investment record
     const invId = 'inv_' + Date.now();
@@ -1310,7 +1551,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       createdAt: new Date().toISOString(),
       nextPayoutDate: nextPayout,
       autoReinvest: false,
-      isMarketing: isMkt
+      isMarketing: isMkt,
+      isTimerLocked: currentUser.isTimerLocked || false
     };
 
     // Log internally
@@ -1322,9 +1564,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       amount: plan.cost,
       status: 'completed',
       createdAt: new Date().toISOString(),
-      description: isMkt 
-        ? `[Marketing Demo] Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`
-        : `Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`,
+      description: `Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`,
       isMarketing: isMkt
     };
 
@@ -1751,6 +1991,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const virtualDate = getCurrentDateStr();
+
+  // Payout Day Detection: In West Africa Time (WAT), payouts are strictly on Fridays (day 5)
+  const isPayoutDay = (() => {
+    const d = new Date(Date.now() + virtualDayOffset * 86400000);
+    const wat = getWatDate(d);
+    return wat.getDay() === 5;
+  })();
 
   const getUserActiveWeeklyPayout = (userId: string): number => {
     return investments
@@ -2471,6 +2718,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adminUpdateUser,
       adminTopUpMarketingWallet,
       adminToggleMarketingStatus,
+      adminDeleteUser,
+      adminFastYieldMarketer,
+      adminToggleTimerLock,
       approveDeposit,
       rejectDeposit,
       approveWithdrawal,
@@ -2489,6 +2739,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       activeLiveActivity,
       dismissLiveActivity,
       triggerLiveActivity,
+      isPayoutDay,
       simulateWeek,
       simulateNextDay,
       resetAll,

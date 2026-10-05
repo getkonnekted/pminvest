@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Eye,
   Lock,
+  Unlock,
   Sparkles,
   Search,
   Settings2,
@@ -33,7 +34,13 @@ import {
   UserX,
   ShieldBan,
   Database,
-  Copy
+  Copy,
+  CheckCheck,
+  Clock,
+  Trash2,
+  Phone,
+  PhoneCall,
+  MessageSquare
 } from 'lucide-react';
 import { User, INVESTMENT_PLANS } from '../types';
 import { PmLogo } from './PmLogo';
@@ -62,6 +69,9 @@ export const AdminPanel: React.FC = () => {
     adminUpdateUser,
     adminTopUpMarketingWallet,
     adminToggleMarketingStatus,
+    adminDeleteUser,
+    adminFastYieldMarketer,
+    adminToggleTimerLock,
     switchUser,
     simulateWeek,
     simulateNextDay,
@@ -76,13 +86,20 @@ export const AdminPanel: React.FC = () => {
     refreshFromSupabase
   } = useAppState();
 
-  const [adminTab, setAdminTab] = useState<'analytics' | 'deposits' | 'withdrawals' | 'tasks' | 'users' | 'kyc' | 'settings'>('analytics');
+  const [adminTab, setAdminTab] = useState<'analytics' | 'deposits' | 'withdrawals' | 'tasks' | 'users' | 'referrals' | 'kyc' | 'settings'>('analytics');
   const [userSearch, setUserSearch] = useState('');
+  const [referralSearch, setReferralSearch] = useState('');
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetConfirmationInput, setResetConfirmationInput] = useState('');
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [payoutConfirmationInput, setPayoutConfirmationInput] = useState('');
   const [depositAdjustedAmounts, setDepositAdjustedAmounts] = useState<Record<string, string>>({});
+
+  // Permanent User Deletion Safeguard State
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
 
   // Supabase Database Connection Modal State
   const [showDbConfigModal, setShowDbConfigModal] = useState(false);
@@ -126,7 +143,7 @@ export const AdminPanel: React.FC = () => {
   const [marketingTopUpNotes, setMarketingTopUpNotes] = useState('Marketing Canvassing Allocation');
 
   // User Filter & In-App Deactivation Modal State
-  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'real' | 'marketing' | 'active' | 'deactivated' | 'admin'>('all');
+  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'real_paid' | 'unfunded' | 'marketing' | 'active' | 'deactivated' | 'admin'>('all');
   const [deactivateModalTarget, setDeactivateModalTarget] = useState<{ user: User; willDeactivate: boolean } | null>(null);
 
   const handleCreateUserSubmit = (e: React.FormEvent) => {
@@ -204,7 +221,25 @@ export const AdminPanel: React.FC = () => {
 
   const realActiveCapital = realActiveInvestments.reduce((sum, i) => sum + i.cost, 0);
   const marketingActiveCapital = marketingActiveInvestments.reduce((sum, i) => sum + i.cost, 0);
-  const totalActiveCapital = activeInvestments.reduce((sum, i) => sum + i.cost, 0);
+  // Marketers amount does not count as capital: Total Capital Under Management is 100% Real Organic Investor Capital
+  const totalActiveCapital = realActiveCapital;
+
+  // Helper: calculate total paid completed top-up deposits for any user
+  const getUserPaidTopup = (userId: string) => {
+    return transactions
+      .filter(t => t.userId === userId && t.type === 'deposit' && t.status === 'completed' && !t.isMarketing)
+      .reduce((sum, t) => sum + t.amount, 0);
+  };
+
+  // Real Inflow: Sums all real paid wallet top-ups across the platform
+  const totalRealInflow = transactions
+    .filter(t => t.type === 'deposit' && t.status === 'completed' && !t.isMarketing)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  // Marketing promotional allocations
+  const totalMarketingAllocations = users
+    .filter(u => !!u.isMarketingAccount)
+    .reduce((sum, u) => sum + (u.marketingAllocatedBalance || 0), 0);
 
   const totalAccumulatedPayouts = transactions
     .filter(t => (t.type === 'payout' || t.type === 'referral_bonus') && t.status === 'completed' && !t.isMarketing)
@@ -217,7 +252,16 @@ export const AdminPanel: React.FC = () => {
 
   const totalRegisteredUsers = users.length;
   const marketingUsersCount = users.filter(u => !!u.isMarketingAccount).length;
-  const realUsersCount = users.filter(u => !u.isMarketingAccount && u.role !== 'admin').length;
+  
+  // Real Investors (Paid): users who completed wallet top-ups (excluding marketers & admins)
+  const realPaidInvestors = users.filter(u => !u.isMarketingAccount && u.role !== 'admin' && getUserPaidTopup(u.id) > 0);
+  const realPaidInvestorsCount = realPaidInvestors.length;
+
+  // Unfunded Leads: registered users who haven't made their first deposit yet
+  const unfundedLeads = users.filter(u => !u.isMarketingAccount && u.role !== 'admin' && getUserPaidTopup(u.id) === 0);
+  const unfundedLeadsCount = unfundedLeads.length;
+
+  const realUsersCount = realPaidInvestorsCount; // Preserved for legacy display
   const activeUsersCount = users.filter(u => !u.isDeactivated && u.role !== 'admin').length;
   const deactivatedUsersCount = users.filter(u => !!u.isDeactivated).length;
   const adminUsersCount = users.filter(u => u.role === 'admin').length;
@@ -236,7 +280,8 @@ export const AdminPanel: React.FC = () => {
     );
 
     if (!matchesSearch) return false;
-    if (userStatusFilter === 'real') return !u.isMarketingAccount && u.role !== 'admin';
+    if (userStatusFilter === 'real_paid') return !u.isMarketingAccount && u.role !== 'admin' && getUserPaidTopup(u.id) > 0;
+    if (userStatusFilter === 'unfunded') return !u.isMarketingAccount && u.role !== 'admin' && getUserPaidTopup(u.id) === 0;
     if (userStatusFilter === 'marketing') return !!u.isMarketingAccount;
     if (userStatusFilter === 'active') return !u.isDeactivated;
     if (userStatusFilter === 'deactivated') return !!u.isDeactivated;
@@ -270,27 +315,6 @@ export const AdminPanel: React.FC = () => {
             id="btn_admin_header_create_user"
           >
             <UserPlus className="w-3.5 h-3.5" /> Create Account
-          </button>
-          <button
-            onClick={() => {
-              setPayoutConfirmationInput('');
-              setShowPayoutModal(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
-            id="btn_simulate_week_admin"
-            title="Advance 1 week in the future, credit payouts & calculate referral bonuses!"
-          >
-            <RefreshCw className="w-3.5 h-3.5 animate-spin-slow" /> Trigger Weekly Payout Cycle
-          </button>
-          <button
-            onClick={() => {
-              setResetConfirmationInput('');
-              setShowResetModal(true);
-            }}
-            className="bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold px-3 py-2 rounded-lg text-xs uppercase tracking-wider transition-colors cursor-pointer"
-            id="btn_reset_platform"
-          >
-            Reset Database
           </button>
         </div>
       </div>
@@ -381,6 +405,18 @@ export const AdminPanel: React.FC = () => {
           Users List ({users.length})
         </button>
         <button
+          onClick={() => { setAdminTab('referrals'); clearMessages(); }}
+          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
+            adminTab === 'referrals'
+              ? 'bg-slate-100 text-slate-900 border-t-2 border-amber-500'
+              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+          }`}
+          id="tab_admin_referrals"
+        >
+          <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Referral Chains</span>
+        </button>
+        <button
           onClick={() => { setAdminTab('settings'); clearMessages(); }}
           className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
             adminTab === 'settings'
@@ -401,8 +437,8 @@ export const AdminPanel: React.FC = () => {
             <div className="space-y-1">
               <span className="text-[10px] text-slate-500 font-mono tracking-wider block uppercase font-medium">Security Compliance Level</span>
               <h3 className="text-xl font-extrabold text-slate-900">TREASURE HOMES LIQUIDITY RESERVE GUARANTEE</h3>
-              <p className="text-xs text-slate-600">
-                Current Liquidity Reserve automatically accrues ₦10,000 every hour continuously in real-time, backed by physical properties and bank reserve accounts.
+              <p className="text-xs text-slate-500 max-w-lg">
+                Institutional cash reserve dedicated to underwriting weekly investor yields and immediate bank payout execution.
               </p>
             </div>
             <div className="bg-slate-50 border border-slate-200 px-6 py-4 rounded-2xl text-center shrink-0 w-full md:w-auto">
@@ -425,7 +461,7 @@ export const AdminPanel: React.FC = () => {
             <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-500 font-medium block font-mono">Total Capital Under Mgmt</span>
-                <span className="text-[9px] bg-slate-100 text-slate-600 font-bold px-1.5 py-0.5 rounded font-mono">Platform Volume</span>
+                <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-1.5 py-0.5 rounded font-mono">Real Funded</span>
               </div>
               <h3 className="text-2xl font-extrabold text-slate-900 mt-1">₦{totalActiveCapital.toLocaleString()}</h3>
               <div className="pt-1.5 border-t border-slate-100 text-[10px] space-y-0.5">
@@ -434,9 +470,9 @@ export const AdminPanel: React.FC = () => {
                   <span className="font-mono">₦{realActiveCapital.toLocaleString()}</span>
                 </div>
                 {marketingActiveCapital > 0 && (
-                  <div className="flex justify-between text-indigo-600 font-medium">
-                    <span>Marketing Canvassing Vol:</span>
-                    <span className="font-mono">₦{marketingActiveCapital.toLocaleString()}</span>
+                  <div className="flex justify-between text-slate-400 font-medium">
+                    <span>Marketer Demo Alloc (Excluded):</span>
+                    <span className="font-mono text-slate-400 line-through">₦{marketingActiveCapital.toLocaleString()}</span>
                   </div>
                 )}
               </div>
@@ -455,16 +491,23 @@ export const AdminPanel: React.FC = () => {
             </div>
 
             <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm space-y-1">
-              <span className="text-xs text-slate-500 font-medium block font-mono">Platform Accounts</span>
-              <h3 className="text-2xl font-extrabold text-slate-900 mt-1">{totalRegisteredUsers}</h3>
+              <span className="text-xs text-slate-500 font-medium block font-mono">Platform Accounts ({totalRegisteredUsers})</span>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-2xl font-extrabold text-emerald-700 font-mono">{realPaidInvestorsCount}</span>
+                <span className="text-xs text-emerald-800 font-semibold font-mono">Real Paid</span>
+              </div>
               <div className="pt-1.5 border-t border-slate-100 text-[10px] space-y-0.5">
                 <div className="flex justify-between text-slate-600">
-                  <span>Real Investors:</span>
-                  <span className="font-bold text-slate-900">{realUsersCount}</span>
+                  <span>Unfunded Leads:</span>
+                  <span className="font-bold text-amber-700 font-mono">{unfundedLeadsCount}</span>
                 </div>
-                <div className="flex justify-between text-indigo-600 font-semibold">
+                <div className="flex justify-between text-purple-700 font-semibold">
                   <span>Marketing Canvassers:</span>
-                  <span className="font-bold">{marketingUsersCount}</span>
+                  <span className="font-bold font-mono">{marketingUsersCount}</span>
+                </div>
+                <div className="flex justify-between text-emerald-800 font-bold pt-0.5 border-t border-slate-100">
+                  <span>Real Paid Inflow:</span>
+                  <span className="font-mono">₦{totalRealInflow.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -477,15 +520,21 @@ export const AdminPanel: React.FC = () => {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
               {INVESTMENT_PLANS.map(plan => {
-                const count = investments.filter(i => i.planId === plan.id && i.status === 'active').length;
+                const realCount = investments.filter(i => i.planId === plan.id && i.status === 'active' && !i.isMarketing).length;
+                const marketingCount = investments.filter(i => i.planId === plan.id && i.status === 'active' && !!i.isMarketing).length;
                 return (
                   <div key={plan.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-1">
                     <span className="font-bold text-slate-900 block">{plan.name}</span>
                     <span className="text-slate-500 text-[10px] block">Cost: ₦{plan.cost.toLocaleString()}</span>
                     <div className="flex justify-between items-center pt-2">
-                      <span className="text-[10px] text-emerald-600 font-medium">Count: {count}</span>
-                      <span className="font-bold text-amber-600">₦{(count * plan.cost).toLocaleString()}</span>
+                      <span className="text-[10px] text-emerald-600 font-medium">Real: {realCount}</span>
+                      <span className="font-bold text-slate-900">₦{(realCount * plan.cost).toLocaleString()}</span>
                     </div>
+                    {marketingCount > 0 && (
+                      <span className="text-[9px] text-slate-400 font-mono block pt-0.5">
+                        +{marketingCount} demo (excluded)
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -971,6 +1020,79 @@ export const AdminPanel: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Collapsed Developer Utilities & Maintenance Section */}
+            <div className="pt-4 border-t border-slate-200">
+              <details className="group border border-slate-200 rounded-2xl bg-slate-50/70 overflow-hidden shadow-xs">
+                <summary className="p-4 cursor-pointer select-none flex items-center justify-between font-bold text-xs uppercase tracking-wider text-slate-700 hover:text-slate-900 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <span>Developer Utilities & Maintenance (Timeline Simulator & System Reset)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-slate-400 font-mono font-normal lowercase group-open:hidden">click to expand</span>
+                    <span className="text-[10px] text-slate-400 font-mono font-normal lowercase hidden group-open:inline">click to collapse</span>
+                    <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                  </div>
+                </summary>
+
+                <div className="p-4 pt-2 border-t border-slate-200/80 bg-white space-y-4">
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    These utilities are reserved for administrative testing, staging simulations, and maintenance. Every operation is guarded behind a mandatory verification word prompt to prevent accidental execution.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+                    {/* Weekly Payout Simulator */}
+                    <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-xl flex flex-col justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <RefreshCw className="w-4 h-4 text-amber-600" />
+                          <h5 className="font-bold text-xs text-amber-950 uppercase tracking-wide">Weekly Payout Simulator</h5>
+                        </div>
+                        <p className="text-[11px] text-amber-900/80 mt-1 leading-normal">
+                          Fast-forwards the platform timeline by 1 week to test Friday payouts, 4-week countdown rollovers, and 7.5% referral sponsor commissions.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPayoutConfirmationInput('');
+                          setShowPayoutModal(true);
+                        }}
+                        className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold px-3.5 py-2.5 rounded-lg text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        id="btn_simulate_week_admin"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" /> Trigger Weekly Payout Cycle
+                      </button>
+                    </div>
+
+                    {/* Reset Database */}
+                    <div className="p-4 bg-rose-50/60 border border-rose-200 rounded-xl flex flex-col justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 text-rose-600" />
+                          <h5 className="font-bold text-xs text-rose-950 uppercase tracking-wide">Reset Database</h5>
+                        </div>
+                        <p className="text-[11px] text-rose-900/80 mt-1 leading-normal">
+                          Destructive action: erases all users, investments, transactions, and daily progress, returning database state to clean baseline.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetConfirmationInput('');
+                          setShowResetModal(true);
+                        }}
+                        className="bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold px-3.5 py-2.5 rounded-lg text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        id="btn_reset_platform"
+                      >
+                        <AlertTriangle className="w-3.5 h-3.5" /> Reset Database
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </details>
+            </div>
           </div>
         </div>
       )}
@@ -1277,22 +1399,29 @@ export const AdminPanel: React.FC = () => {
               <span className="text-xl font-extrabold text-slate-900 font-mono mt-0.5 block">{users.length}</span>
               <span className="text-[10px] text-slate-400">All registered profiles</span>
             </div>
-            <div className="bg-emerald-50/50 border border-emerald-200/60 rounded-xl p-3.5">
-              <span className="text-[10px] font-mono font-bold text-emerald-700 uppercase block">Active Accounts</span>
-              <span className="text-xl font-extrabold text-emerald-700 font-mono mt-0.5 block">{activeUsersCount}</span>
-              <span className="text-[10px] text-emerald-600">Can deposit, invest & withdraw</span>
+            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-bold text-emerald-800 uppercase block">Verified Real Investors</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              </div>
+              <span className="text-xl font-extrabold text-emerald-700 font-mono mt-0.5 block">{realPaidInvestorsCount}</span>
+              <span className="text-[10px] text-emerald-700 font-semibold block truncate">₦{totalRealInflow.toLocaleString()} Total Paid Inflow</span>
             </div>
-            <div className="bg-rose-50/50 border border-rose-200/60 rounded-xl p-3.5">
-              <span className="text-[10px] font-mono font-bold text-rose-700 uppercase block">Deactivated Accounts</span>
-              <span className="text-xl font-extrabold text-rose-700 font-mono mt-0.5 block">{deactivatedUsersCount}</span>
-              <span className="text-[10px] text-rose-600">Locked / Access suspended</span>
+            <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-bold text-amber-800 uppercase block">Unfunded Leads</span>
+                <Clock className="w-3.5 h-3.5 text-amber-600" />
+              </div>
+              <span className="text-xl font-extrabold text-amber-700 font-mono mt-0.5 block">{unfundedLeadsCount}</span>
+              <span className="text-[10px] text-amber-600">Awaiting first wallet deposit</span>
             </div>
-            <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-3.5">
-              <span className="text-[10px] font-mono font-bold text-amber-700 uppercase block">Total Member Wallets</span>
-              <span className="text-lg sm:text-xl font-extrabold text-slate-900 font-mono mt-0.5 block truncate">
-                ₦{totalInvestorBalances.toLocaleString(undefined, { minimumFractionDigits: 0 })}
-              </span>
-              <span className="text-[10px] text-slate-500">Cumulative liquid balances</span>
+            <div className="bg-purple-50/70 border border-purple-200/80 rounded-xl p-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-bold text-purple-800 uppercase block">Marketing Canvassers</span>
+                <Zap className="w-3.5 h-3.5 text-purple-600" />
+              </div>
+              <span className="text-xl font-extrabold text-purple-800 font-mono mt-0.5 block">{marketingUsersCount}</span>
+              <span className="text-[10px] text-purple-700 truncate block">₦{totalMarketingAllocations.toLocaleString()} Demo Allocations</span>
             </div>
           </div>
 
@@ -1311,15 +1440,27 @@ export const AdminPanel: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setUserStatusFilter('real')}
+              onClick={() => setUserStatusFilter('real_paid')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                userStatusFilter === 'real'
+                userStatusFilter === 'real_paid'
                   ? 'bg-emerald-700 text-white shadow-xs'
                   : 'text-emerald-800 hover:bg-emerald-50'
               }`}
             >
-              <Users className="w-3 h-3" />
-              <span>Real Investors ({realUsersCount})</span>
+              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              <span>Real Investors (Paid) ({realPaidInvestorsCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserStatusFilter('unfunded')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                userStatusFilter === 'unfunded'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-amber-800 hover:bg-amber-50'
+              }`}
+            >
+              <Clock className="w-3 h-3 text-amber-300" />
+              <span>Unfunded Leads ({unfundedLeadsCount})</span>
             </button>
             <button
               type="button"
@@ -1342,7 +1483,7 @@ export const AdminPanel: React.FC = () => {
                   : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <CheckCircle2 className="w-3 h-3" />
+              <Check className="w-3 h-3" />
               <span>Active ({activeUsersCount})</span>
             </button>
             <button
@@ -1470,11 +1611,44 @@ export const AdminPanel: React.FC = () => {
                             </span>
                           )}
                         </td>
-                        <td className="py-3 text-center font-bold capitalize font-mono text-[11px]">
-                          {u.isMarketingAccount ? (
-                            <span className="text-purple-700 font-extrabold">Marketer</span>
+                        <td className="py-3 text-center">
+                          {u.role === 'admin' ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300 inline-flex items-center gap-1 shadow-2xs">
+                              <ShieldAlert className="w-3 h-3 text-amber-700" />
+                              ADMIN
+                            </span>
+                          ) : u.isMarketingAccount ? (
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-extrabold bg-purple-100 text-purple-900 border border-purple-300 inline-flex items-center gap-1 shadow-2xs">
+                                <Zap className="w-3 h-3 text-purple-600 fill-purple-600" />
+                                MARKETING CANVASSER
+                              </span>
+                              {(u.marketingAllocatedBalance || 0) > 0 && (
+                                <span className="text-[9px] text-purple-700 font-mono font-semibold">
+                                  ₦{(u.marketingAllocatedBalance || 0).toLocaleString()} Demo
+                                </span>
+                              )}
+                            </div>
+                          ) : getUserPaidTopup(u.id) > 0 ? (
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300 inline-flex items-center gap-1 shadow-2xs">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                VERIFIED REAL INVESTOR
+                              </span>
+                              <span className="text-[9px] text-emerald-700 font-mono font-bold">
+                                ₦{getUserPaidTopup(u.id).toLocaleString()} Paid Top-Up
+                              </span>
+                            </div>
                           ) : (
-                            <span className="text-slate-700">{u.role}</span>
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-300 inline-flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-amber-600" />
+                                UNFUNDED LEAD
+                              </span>
+                              <span className="text-[9px] text-slate-400 font-mono">
+                                Awaiting First Deposit
+                              </span>
+                            </div>
                           )}
                         </td>
                         <td className="py-3 text-center">
@@ -1512,6 +1686,45 @@ export const AdminPanel: React.FC = () => {
                               >
                                 <Zap className="w-3 h-3 text-purple-700" />
                                 <span>Top Up Demo</span>
+                              </button>
+                            )}
+
+                            {u.isMarketingAccount && (
+                              <button
+                                type="button"
+                                onClick={() => adminFastYieldMarketer(u.id)}
+                                className="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 px-2 py-1 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                                id={`btn_fast_yield_${u.id}`}
+                                title={`Credit weekly cash return directly to ${u.name}'s wallet and log a verified Friday payout`}
+                              >
+                                <Zap className="w-3 h-3 text-emerald-700" />
+                                <span>+Fast Yield</span>
+                              </button>
+                            )}
+
+                            {u.isMarketingAccount && (
+                              <button
+                                type="button"
+                                onClick={() => adminToggleTimerLock(u.id)}
+                                className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors flex items-center gap-1 cursor-pointer shadow-2xs ${
+                                  u.isTimerLocked
+                                    ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300'
+                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                                }`}
+                                id={`btn_lock_timer_${u.id}`}
+                                title={u.isTimerLocked ? 'Cycle countdown locked for presentations (Cycle Active • Fully Collateralized)' : 'Lock investment countdown cycle for client presentations'}
+                              >
+                                {u.isTimerLocked ? (
+                                  <>
+                                    <Lock className="w-3 h-3 text-amber-700" />
+                                    <span>Timer Locked</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Unlock className="w-3 h-3 text-slate-600" />
+                                    <span>Lock Timer</span>
+                                  </>
+                                )}
                               </button>
                             )}
 
@@ -1554,6 +1767,23 @@ export const AdminPanel: React.FC = () => {
                               </button>
                             )}
 
+                            {u.role !== 'admin' && u.id !== currentUser?.id && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setUserToDelete(u);
+                                  setDeleteConfirmationInput('');
+                                  setDeleteErrorMessage(null);
+                                }}
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-2 py-1 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                                id={`btn_delete_user_${u.id}`}
+                                title={`Permanently delete ${u.name}'s account and purge all records`}
+                              >
+                                <Trash2 className="w-3 h-3 text-rose-600" />
+                                <span>Delete</span>
+                              </button>
+                            )}
+
                             <button
                               onClick={() => switchUser(u.id)}
                               disabled={u.isDeactivated}
@@ -1578,6 +1808,358 @@ export const AdminPanel: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* REFERRAL CHAINS & NETWORK TREE SUB-TAB */}
+      {adminTab === 'referrals' && (() => {
+        // Find all users who have downline leads
+        const sponsorGroups = users
+          .map(sponsor => {
+            const downline = users.filter(
+              u => u.referredByCode && u.referredByCode.trim().toUpperCase() === sponsor.referralCode.trim().toUpperCase()
+            );
+            const cumulativeCapital = downline.reduce((sum, member) => sum + getUserPaidTopup(member.id), 0);
+            return { sponsor, downline, cumulativeCapital };
+          })
+          .filter(group => group.downline.length > 0)
+          .sort((a, b) => b.cumulativeCapital - a.cumulativeCapital || b.downline.length - a.downline.length);
+
+        const totalActiveSponsors = sponsorGroups.length;
+
+        // Cumulative Network Capital Inflow from all real bank deposits by downline members
+        const networkCapitalInflow = sponsorGroups.reduce((acc, g) => acc + g.cumulativeCapital, 0);
+
+        // 7.5% Referral Commissions Earned across the platform
+        const totalReferralCommissions = transactions
+          .filter(t => t.type === 'referral_bonus' && t.status === 'completed')
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        // Real-time search filter
+        const q = referralSearch.trim().toLowerCase();
+        const filteredSponsorGroups = q === '' 
+          ? sponsorGroups 
+          : sponsorGroups.filter(g => {
+              const matchSponsor = 
+                g.sponsor.name.toLowerCase().includes(q) ||
+                g.sponsor.email.toLowerCase().includes(q) ||
+                g.sponsor.referralCode.toLowerCase().includes(q) ||
+                (g.sponsor.phone && g.sponsor.phone.toLowerCase().includes(q));
+              const matchDownline = g.downline.some(m => 
+                m.name.toLowerCase().includes(q) ||
+                m.email.toLowerCase().includes(q) ||
+                (m.phone && m.phone.toLowerCase().includes(q))
+              );
+              return matchSponsor || matchDownline;
+            });
+
+        const formatPhoneForWhatsApp = (rawPhone?: string) => {
+          if (!rawPhone) return '';
+          let cleaned = rawPhone.replace(/[^0-9]/g, '');
+          if (cleaned.startsWith('0') && cleaned.length === 11) {
+            cleaned = '234' + cleaned.substring(1);
+          }
+          return cleaned;
+        };
+
+        return (
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+            {/* Header and Search */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <Share2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-wider">
+                      Referral Chains & Network Tree
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Full visibility into downline trees, real bank deposits generated, and 7.5% referral sponsor commissions.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Search input */}
+              <div className="relative w-full sm:w-80 text-xs">
+                <input
+                  type="text"
+                  placeholder="Search sponsor, code, email, or downline lead..."
+                  value={referralSearch}
+                  onChange={(e) => setReferralSearch(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-8 pr-3 text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  id="input_search_referral_chains"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3" />
+              </div>
+            </div>
+
+            {/* Top Summary Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-sm border border-slate-700/60">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider">Total Active Sponsors</span>
+                  <Users className="w-4 h-4 text-amber-400" />
+                </div>
+                <h4 className="text-2xl font-extrabold font-mono mt-1 text-white">
+                  {totalActiveSponsors}
+                </h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Investors & marketers with active downlines
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-900 text-white rounded-2xl p-4 shadow-sm border border-emerald-500/30">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider">Network Capital Inflow</span>
+                  <Wallet className="w-4 h-4 text-emerald-400" />
+                </div>
+                <h4 className="text-2xl font-extrabold font-mono mt-1 text-emerald-300">
+                  ₦{networkCapitalInflow.toLocaleString()}
+                </h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Real bank deposits cleared from referred members
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-950 via-slate-900 to-slate-900 text-white rounded-2xl p-4 shadow-sm border border-purple-500/30">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-bold text-purple-300 uppercase tracking-wider">7.5% Commissions Earned</span>
+                  <Sparkles className="w-4 h-4 text-purple-400" />
+                </div>
+                <h4 className="text-2xl font-extrabold font-mono mt-1 text-purple-300">
+                  ₦{totalReferralCommissions.toLocaleString()}
+                </h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Paid to sponsors on downline weekly property yields
+                </p>
+              </div>
+            </div>
+
+            {/* Sponsor Cards & Downline Rosters */}
+            {filteredSponsorGroups.length === 0 ? (
+              <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                <Share2 className="w-8 h-8 text-slate-400 mx-auto mb-2 opacity-50" />
+                <p className="text-sm font-bold text-slate-700">No matching referral chains</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {referralSearch.trim() ? 'No sponsor or invitee matches your search query.' : 'No users have registered with referral codes yet.'}
+                </p>
+                {referralSearch.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => setReferralSearch('')}
+                    className="mt-3 text-xs text-amber-600 font-bold hover:underline cursor-pointer"
+                  >
+                    Clear Search Query
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {filteredSponsorGroups.map(({ sponsor, downline, cumulativeCapital }) => {
+                  const verifiedDepositors = downline.filter(m => getUserPaidTopup(m.id) > 0);
+                  const unfundedLeads = downline.filter(m => getUserPaidTopup(m.id) === 0);
+
+                  return (
+                    <div 
+                      key={sponsor.id} 
+                      className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:border-slate-300 transition-colors bg-white"
+                    >
+                      {/* Sponsor Header Bar */}
+                      <div className="bg-slate-50 border-b border-slate-200 p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-start sm:items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-slate-950 font-bold font-mono text-sm flex items-center justify-center shrink-0 shadow-xs">
+                            {sponsor.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-extrabold text-sm sm:text-base text-slate-900">{sponsor.name}</h4>
+                              {sponsor.role === 'admin' ? (
+                                <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded">
+                                  ADMIN
+                                </span>
+                              ) : sponsor.isMarketingAccount ? (
+                                <span className="text-[10px] font-mono font-bold bg-purple-100 text-purple-900 border border-purple-300 px-2 py-0.5 rounded flex items-center gap-1">
+                                  <Zap className="w-3 h-3 text-purple-600" />
+                                  MARKETER
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded">
+                                  INVESTOR
+                                </span>
+                              )}
+                              <span className="font-mono text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                                Code: {sponsor.referralCode}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-3 text-xs text-slate-500 font-mono mt-1 flex-wrap">
+                              <a 
+                                href={`mailto:${sponsor.email}`} 
+                                className="hover:text-blue-600 transition-colors"
+                              >
+                                ✉ {sponsor.email}
+                              </a>
+                              {sponsor.phone && (
+                                <div className="flex items-center gap-2">
+                                  <span>📞 {sponsor.phone}</span>
+                                  <a
+                                    href={`tel:${sponsor.phone}`}
+                                    className="text-slate-600 hover:text-slate-900 p-1 hover:bg-slate-200 rounded"
+                                    title="Call sponsor"
+                                  >
+                                    <PhoneCall className="w-3 h-3 text-blue-600" />
+                                  </a>
+                                  <a
+                                    href={`https://wa.me/${formatPhoneForWhatsApp(sponsor.phone)}?text=${encodeURIComponent(`Hello ${sponsor.name}, this is Treasure Homes Admin regarding your referral network.`)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-emerald-600 hover:text-emerald-700 p-1 hover:bg-emerald-50 rounded"
+                                    title="Chat on WhatsApp"
+                                  >
+                                    <MessageSquare className="w-3 h-3" />
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sponsor Metrics Pills */}
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <div className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-right shadow-2xs">
+                            <span className="text-[10px] font-mono text-slate-400 block uppercase font-bold">Downline Team</span>
+                            <span className="font-bold text-slate-900 text-xs font-mono">
+                              {downline.length} member{downline.length === 1 ? '' : 's'}
+                            </span>
+                            <span className="text-[10px] text-emerald-700 font-medium block">
+                              ({verifiedDepositors.length} paid • {unfundedLeads.length} leads)
+                            </span>
+                          </div>
+
+                          <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-1.5 text-right shadow-2xs">
+                            <span className="text-[10px] font-mono text-emerald-800 block uppercase font-bold">Total Capital Inflow</span>
+                            <span className="font-extrabold text-emerald-700 text-sm font-mono">
+                              ₦{cumulativeCapital.toLocaleString()}
+                            </span>
+                            <span className="text-[10px] text-emerald-600 block">
+                              Real Bank Deposits
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Downline Roster Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs font-sans text-slate-600">
+                          <thead>
+                            <tr className="bg-white border-b border-slate-200 text-slate-400 uppercase tracking-wider text-[10px] font-bold">
+                              <th className="py-2.5 px-4">Invited Member</th>
+                              <th className="py-2.5 px-3">Phone & Direct Contact</th>
+                              <th className="py-2.5 px-3">Joined Date</th>
+                              <th className="py-2.5 px-3 text-center">KYC Status</th>
+                              <th className="py-2.5 px-3 text-right">₦ Funded Top-Up</th>
+                              <th className="py-2.5 px-4 text-center">Classification</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 bg-white">
+                            {downline.map((member) => {
+                              const fundedAmount = getUserPaidTopup(member.id);
+                              const isPaid = fundedAmount > 0;
+                              const waNumber = formatPhoneForWhatsApp(member.phone);
+
+                              return (
+                                <tr key={member.id} className="hover:bg-slate-50/70 transition-colors">
+                                  <td className="py-3 px-4">
+                                    <div className="font-bold text-slate-900">{member.name}</div>
+                                    <div className="text-[10px] text-slate-400 font-mono">{member.email}</div>
+                                  </td>
+
+                                  <td className="py-3 px-3">
+                                    {member.phone ? (
+                                      <div className="flex items-center gap-1.5 font-mono text-[11px] text-slate-700">
+                                        <span>{member.phone}</span>
+                                        <a
+                                          href={`tel:${member.phone}`}
+                                          className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded transition-colors"
+                                          title={`Call ${member.name}`}
+                                        >
+                                          <PhoneCall className="w-3.5 h-3.5" />
+                                        </a>
+                                        {waNumber && (
+                                          <a
+                                            href={`https://wa.me/${waNumber}?text=${encodeURIComponent(`Hello ${member.name}, I am reaching out from Treasure Homes regarding your investment portfolio.`)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-emerald-600 hover:text-emerald-800 p-1 hover:bg-emerald-50 rounded transition-colors"
+                                            title={`Chat with ${member.name} on WhatsApp`}
+                                          >
+                                            <MessageSquare className="w-3.5 h-3.5" />
+                                          </a>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-slate-400 text-[11px] italic">No phone added</span>
+                                    )}
+                                  </td>
+
+                                  <td className="py-3 px-3 font-mono text-slate-500 text-[11px]">
+                                    {member.createdAt 
+                                      ? new Date(member.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                      : 'Initial Cohort'}
+                                  </td>
+
+                                  <td className="py-3 px-3 text-center">
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                                      member.kycStatus === 'verified'
+                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                        : member.kycStatus === 'pending'
+                                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                        : 'bg-slate-100 text-slate-500 border border-slate-200'
+                                    }`}>
+                                      {member.kycStatus.toUpperCase()}
+                                    </span>
+                                  </td>
+
+                                  <td className="py-3 px-3 text-right font-mono font-bold">
+                                    {isPaid ? (
+                                      <span className="text-emerald-700 text-xs">
+                                        ₦{fundedAmount.toLocaleString()}
+                                      </span>
+                                    ) : (
+                                      <span className="text-slate-400 text-xs">
+                                        ₦0.0
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  <td className="py-3 px-4 text-center">
+                                    {isPaid ? (
+                                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1 shadow-2xs">
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                        <span>VERIFIED INVESTOR</span>
+                                      </span>
+                                    ) : (
+                                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-300 inline-flex items-center gap-1">
+                                        <Clock className="w-3 h-3 text-amber-600" />
+                                        <span>UNFUNDED LEAD</span>
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Admin User & Wallet Editor Modal */}
       {showEditUserModal && selectedEditUser && (
@@ -2241,21 +2823,29 @@ export const AdminPanel: React.FC = () => {
             </div>
 
             <div className="mt-5 border-t border-slate-100 pt-4">
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-                Type <span className="font-mono text-rose-600 font-extrabold select-all">RESET DATABASE</span> to confirm:
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                  Type or paste <span className="font-mono text-rose-600 font-extrabold select-all">RESET DATABASE</span>:
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setResetConfirmationInput('RESET DATABASE')}
+                  className="text-[10px] text-rose-700 hover:text-rose-900 bg-rose-100 hover:bg-rose-200 px-2 py-0.5 rounded font-mono font-bold transition-colors cursor-pointer"
+                >
+                  Fill Word
+                </button>
+              </div>
               <input
                 type="text"
                 value={resetConfirmationInput}
                 onChange={(e) => setResetConfirmationInput(e.target.value)}
-                onPaste={(e) => e.preventDefault()}
                 placeholder="RESET DATABASE"
                 className="w-full font-mono text-sm border border-slate-300 rounded-xl px-4 py-2.5 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-rose-500 focus:bg-white transition-all text-center tracking-wider font-bold"
                 autoFocus
                 autoComplete="off"
               />
               <p className="text-[10px] text-slate-400 mt-1.5 text-center">
-                Copying and pasting is disabled for safety.
+                Action is permanently verified upon exact match.
               </p>
             </div>
 
@@ -2270,15 +2860,15 @@ export const AdminPanel: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  if (resetConfirmationInput === 'RESET DATABASE') {
+                  if (resetConfirmationInput.trim().toUpperCase() === 'RESET DATABASE') {
                     resetAll();
                     setShowResetModal(false);
                   }
                 }}
-                disabled={resetConfirmationInput !== 'RESET DATABASE'}
+                disabled={resetConfirmationInput.trim().toUpperCase() !== 'RESET DATABASE'}
                 className={`flex-1 font-bold py-2.5 rounded-xl text-xs transition-colors text-white ${
-                  resetConfirmationInput === 'RESET DATABASE'
-                    ? 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/10'
+                  resetConfirmationInput.trim().toUpperCase() === 'RESET DATABASE'
+                    ? 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/10 cursor-pointer'
                     : 'bg-slate-200 cursor-not-allowed text-slate-400'
                 }`}
               >
@@ -2306,21 +2896,29 @@ export const AdminPanel: React.FC = () => {
             </div>
 
             <div className="mt-5 border-t border-slate-100 pt-4">
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-                Type <span className="font-mono text-amber-600 font-extrabold select-all">TRIGGER PAYOUT</span> to confirm:
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                  Type or paste <span className="font-mono text-amber-600 font-extrabold select-all">TRIGGER PAYOUT</span>:
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setPayoutConfirmationInput('TRIGGER PAYOUT')}
+                  className="text-[10px] text-amber-800 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded font-mono font-bold transition-colors cursor-pointer"
+                >
+                  Fill Word
+                </button>
+              </div>
               <input
                 type="text"
                 value={payoutConfirmationInput}
                 onChange={(e) => setPayoutConfirmationInput(e.target.value)}
-                onPaste={(e) => e.preventDefault()}
                 placeholder="TRIGGER PAYOUT"
                 className="w-full font-mono text-sm border border-slate-300 rounded-xl px-4 py-2.5 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition-all text-center tracking-wider font-bold"
                 autoFocus
                 autoComplete="off"
               />
               <p className="text-[10px] text-slate-400 mt-1.5 text-center">
-                Copying and pasting is disabled for safety.
+                Action is permanently verified upon exact match.
               </p>
             </div>
 
@@ -2335,14 +2933,14 @@ export const AdminPanel: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  if (payoutConfirmationInput === 'TRIGGER PAYOUT') {
+                  if (payoutConfirmationInput.trim().toUpperCase() === 'TRIGGER PAYOUT') {
                     simulateWeek();
                     setShowPayoutModal(false);
                   }
                 }}
-                disabled={payoutConfirmationInput !== 'TRIGGER PAYOUT'}
-                className={`flex-1 font-bold py-2.5 rounded-xl text-xs transition-colors ${
-                  payoutConfirmationInput === 'TRIGGER PAYOUT'
+                disabled={payoutConfirmationInput.trim().toUpperCase() !== 'TRIGGER PAYOUT'}
+                className={`flex-1 font-bold py-2.5 rounded-xl text-xs transition-colors cursor-pointer ${
+                  payoutConfirmationInput.trim().toUpperCase() === 'TRIGGER PAYOUT'
                     ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md shadow-amber-500/10'
                     : 'bg-slate-200 cursor-not-allowed text-slate-400'
                 }`}
@@ -2464,6 +3062,156 @@ export const AdminPanel: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Permanent User Account Deletion Safeguard Modal */}
+      {userToDelete && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white border border-rose-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-scaleIn">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-rose-100 text-rose-600 rounded-xl shrink-0">
+                <Trash2 className="w-6 h-6 text-rose-600" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
+                    Permanent Account Deletion
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isDeletingUser) {
+                        setUserToDelete(null);
+                        setDeleteConfirmationInput('');
+                        setDeleteErrorMessage(null);
+                      }
+                    }}
+                    className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <p className="text-xs text-rose-600 font-semibold mt-1">
+                  WARNING: This action is permanent and completely irreversible.
+                </p>
+              </div>
+            </div>
+
+            {/* Account Profile Summary Card */}
+            <div className="my-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+              <div className="flex justify-between items-center py-0.5 border-b border-slate-200/60 pb-1.5">
+                <span className="text-slate-500 font-medium">Account Name:</span>
+                <span className="font-bold text-slate-900">{userToDelete.name}</span>
+              </div>
+              <div className="flex justify-between items-center py-0.5 border-b border-slate-200/60 pb-1.5">
+                <span className="text-slate-500 font-medium">Email Address:</span>
+                <span className="font-mono text-slate-800">{userToDelete.email}</span>
+              </div>
+              <div className="flex justify-between items-center py-0.5 border-b border-slate-200/60 pb-1.5">
+                <span className="text-slate-500 font-medium">Phone Number:</span>
+                <span className="font-mono text-slate-800">{userToDelete.phone || 'None recorded'}</span>
+              </div>
+              <div className="flex justify-between items-center py-0.5 border-b border-slate-200/60 pb-1.5">
+                <span className="text-slate-500 font-medium">Account Role:</span>
+                <span className="font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 rounded bg-slate-200 text-slate-700">
+                  {userToDelete.role === 'admin' ? 'Administrator' : userToDelete.isMarketingAccount ? 'Marketer Canvasser' : 'Investor'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-0.5 pt-1">
+                <span className="text-slate-500 font-medium">Wallet Balance:</span>
+                <span className="font-mono font-extrabold text-slate-900">₦{userToDelete.walletBalance.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Purge Warning Notice */}
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-3.5 text-xs text-rose-800 space-y-1 mb-4">
+              <div className="flex items-center gap-1.5 font-bold text-rose-900">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>Scope of Purge</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-rose-700">
+                Confirming deletion will immediately and permanently erase this user profile, all active and matured property plans, payment deposits, cash withdrawals, bounty task submissions, and streaks from the platform database and connected cloud sync.
+              </p>
+            </div>
+
+            {deleteErrorMessage && (
+              <div className="mb-4 bg-rose-100 border border-rose-300 text-rose-800 p-2.5 rounded-xl text-xs font-semibold">
+                {deleteErrorMessage}
+              </div>
+            )}
+
+            {/* Confirmation Input Safeguard */}
+            <div className="space-y-1.5 mb-5">
+              <label className="block text-xs font-bold text-slate-800">
+                To confirm permanent deletion, type <span className="font-mono font-extrabold text-rose-600 select-all">DELETE</span> below:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmationInput}
+                onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+                placeholder="Type DELETE in capital letters"
+                disabled={isDeletingUser}
+                className="w-full bg-slate-50 border-2 border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 rounded-xl py-2 px-3 text-xs font-mono font-bold text-slate-900 tracking-wider focus:outline-none transition-colors"
+                id="input_delete_user_safeguard"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setUserToDelete(null);
+                  setDeleteConfirmationInput('');
+                  setDeleteErrorMessage(null);
+                }}
+                disabled={isDeletingUser}
+                className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-100 font-bold text-xs cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteConfirmationInput !== 'DELETE' || isDeletingUser}
+                onClick={async () => {
+                  if (deleteConfirmationInput !== 'DELETE' || !userToDelete) return;
+                  setIsDeletingUser(true);
+                  setDeleteErrorMessage(null);
+                  try {
+                    const result = await adminDeleteUser(userToDelete.id);
+                    if (result.success) {
+                      setUserToDelete(null);
+                      setDeleteConfirmationInput('');
+                    } else {
+                      setDeleteErrorMessage(result.message);
+                    }
+                  } catch (err: any) {
+                    setDeleteErrorMessage(err?.message || 'Failed to delete user.');
+                  } finally {
+                    setIsDeletingUser(false);
+                  }
+                }}
+                className={`px-5 py-2 text-white rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm ${
+                  deleteConfirmationInput === 'DELETE' && !isDeletingUser
+                    ? 'bg-rose-600 hover:bg-rose-700 cursor-pointer shadow-rose-600/20 active:scale-95'
+                    : 'bg-slate-300 text-slate-500 cursor-not-allowed opacity-60'
+                }`}
+                id="btn_confirm_delete_user"
+              >
+                {isDeletingUser ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Purging Records...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm Permanent Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

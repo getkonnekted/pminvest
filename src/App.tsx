@@ -4,9 +4,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { StateProvider, useAppState, ADMIN_EMAIL } from './context/StateContext';
+import { StateProvider, useAppState } from './context/StateContext';
 import { BrandingHeader, LegalDisclosures } from './components/BrandingHeader';
 import { UserDashboard } from './components/UserDashboard';
+import { MarketerDashboard } from './components/MarketerDashboard';
 import { AdminPanel } from './components/AdminPanel';
 import { AujotenPage } from './components/AujotenPage';
 import { PmLogo } from './components/PmLogo';
@@ -25,6 +26,7 @@ import {
   AlertTriangle,
   ShieldAlert,
   LayoutGrid,
+  Zap,
   Eye,
   EyeOff,
   CheckCircle2,
@@ -56,7 +58,7 @@ function MainAppContent() {
     dismissPayoutToast
   } = useAppState();
   const [isRegistering, setIsRegistering] = useState(false);
-  const [adminView, setAdminView] = useState<'admin' | 'user'>('admin');
+  const [adminView, setAdminView] = useState<'admin' | 'investor' | 'marketer'>('admin');
   const [currentPage, setCurrentPage] = useState<'pminvest' | 'aujoten'>(() => {
     if (typeof window !== 'undefined') {
       const path = (window.location.pathname || '').toLowerCase();
@@ -135,9 +137,9 @@ function MainAppContent() {
     }
   }, []);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(loginEmail, loginPassword);
+    await login(loginEmail, loginPassword);
   };
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
@@ -720,23 +722,6 @@ function MainAppContent() {
                     Create one now
                   </button>
                 </div>
-
-                <div className="mt-2 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Admin Control Desk</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginEmail('admin@treasurehomes.com');
-                      setLoginPassword('admin123');
-                    }}
-                    className="text-amber-600 hover:text-amber-700 font-bold hover:underline cursor-pointer font-mono"
-                  >
-                    Quick-Fill Admin Login
-                  </button>
-                </div>
               </form>
             ) : (
               /* CLEAN REGISTRATION FORM */
@@ -893,9 +878,9 @@ function MainAppContent() {
         onDismiss={dismissPayoutToast}
         onNavigateToWallet={() => {
           if (currentUser?.role === 'admin') {
-            setAdminView('user');
+            setAdminView('investor');
           }
-          const walletEl = document.getElementById('user_dashboard_container');
+          const walletEl = document.getElementById('user_dashboard_container') || document.getElementById('marketer_dashboard_container');
           if (walletEl) {
             walletEl.scrollIntoView({ behavior: 'smooth' });
           }
@@ -912,10 +897,10 @@ function MainAppContent() {
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
                 <span>Treasure Homes Authorized Admin session</span>
               </div>
-              <div className="flex gap-2 bg-[#0f172a] p-1 rounded-xl border border-slate-700">
+              <div className="flex gap-2 bg-[#0f172a] p-1 rounded-xl border border-slate-700 flex-wrap justify-center">
                 <button
                   onClick={() => setAdminView('admin')}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     adminView === 'admin'
                       ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
                       : 'text-slate-400 hover:text-white'
@@ -925,15 +910,26 @@ function MainAppContent() {
                   Control Panel
                 </button>
                 <button
-                  onClick={() => setAdminView('user')}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                    adminView === 'user'
-                      ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
+                  onClick={() => setAdminView('investor')}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    adminView === 'investor'
+                      ? 'bg-emerald-500 text-slate-950 shadow-sm font-extrabold'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
-                  Investor View (Full Build)
+                  Real Investor View
+                </button>
+                <button
+                  onClick={() => setAdminView('marketer')}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    adminView === 'marketer'
+                      ? 'bg-purple-500 text-white shadow-sm font-extrabold'
+                      : 'text-purple-300 hover:text-white'
+                  }`}
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  Marketer Portal View
                 </button>
               </div>
             </div>
@@ -944,9 +940,13 @@ function MainAppContent() {
           {currentUser.role === 'admin' ? (
             adminView === 'admin' ? (
               <AdminPanel />
+            ) : adminView === 'marketer' ? (
+              <MarketerDashboard />
             ) : (
               <UserDashboard />
             )
+          ) : currentUser.isMarketingAccount ? (
+            <MarketerDashboard />
           ) : (
             <UserDashboard />
           )}
