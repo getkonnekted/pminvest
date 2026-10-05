@@ -22,8 +22,53 @@ ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS "riskAlertLevel" TEXT NOT N
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS "minWithdrawal" DOUBLE PRECISION NOT NULL DEFAULT 5000;
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS "maxWithdrawal" DOUBLE PRECISION NOT NULL DEFAULT 1000000;
 
--- Ensure default settings record exists
-INSERT INTO public.settings (id) VALUES ('system_settings') ON CONFLICT (id) DO NOTHING;
+-- Ensure defaults and drop NOT NULL from all non-id columns in settings
+DO $$ 
+DECLARE
+    r RECORD;
+BEGIN 
+    FOR r IN (
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+          AND table_name = 'settings' 
+          AND column_name != 'id'
+          AND is_nullable = 'NO'
+    ) LOOP
+        EXECUTE format('ALTER TABLE public.settings ALTER COLUMN %I DROP NOT NULL;', r.column_name);
+    END LOOP;
+END $$;
+
+-- Ensure default settings record exists with explicit fallback values
+INSERT INTO public.settings (
+    id, 
+    "liquidityReserve", 
+    "dailyLiquidityGrowth", 
+    "riskAlertLevel", 
+    "minWithdrawal", 
+    "maxWithdrawal", 
+    "autoApproveDeposits", 
+    "automatedPayouts",
+    "isMaintenanceMode",
+    "pauseInvestments",
+    "pauseWithdrawals",
+    "paystackTestMode"
+) 
+VALUES (
+    'system_settings', 
+    92066059, 
+    240000, 
+    'low', 
+    5000, 
+    1000000, 
+    FALSE, 
+    TRUE,
+    FALSE,
+    FALSE,
+    FALSE,
+    FALSE
+) 
+ON CONFLICT (id) DO NOTHING;
 
 -- 2. INDEXES FOR FAST NETWORK SEARCH & PERFORMANCE
 CREATE INDEX IF NOT EXISTS idx_users_sponsor_code ON public.users("referredByCode");

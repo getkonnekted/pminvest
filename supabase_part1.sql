@@ -180,7 +180,16 @@ ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS "rewardedAdBonusMultiplier"
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS "estimatedAdRevenueTotal" DOUBLE PRECISION DEFAULT 284500;
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS "enableLiveActivityToasts" BOOLEAN DEFAULT TRUE;
 
-INSERT INTO public.settings (id) VALUES ('system_settings') ON CONFLICT (id) DO NOTHING;
+ALTER TABLE public.settings ALTER COLUMN "liquidityReserve" SET DEFAULT 92066059;
+DO $$ BEGIN ALTER TABLE public.settings ALTER COLUMN "liquidityReserve" DROP NOT NULL; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+INSERT INTO public.settings (
+    id, "liquidityReserve", "dailyLiquidityGrowth", "riskAlertLevel", "minWithdrawal", "maxWithdrawal", "autoApproveDeposits", "automatedPayouts"
+) 
+VALUES (
+    'system_settings', 92066059, 240000, 'low', 5000, 1000000, FALSE, TRUE
+) 
+ON CONFLICT (id) DO NOTHING;
 
 -- -------------------------------------------------------------------------
 -- 6. TASK SUBMISSIONS TABLE
