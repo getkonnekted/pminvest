@@ -288,9 +288,9 @@ function MainAppContent() {
               </div>
 
               {/* Note on Plans */}
-              <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-3.5 text-xs text-slate-300">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-200 shadow-sm">
                 <span className="font-bold text-amber-400 block uppercase tracking-wider text-[11px] mb-1">Note on Plans</span>
-                <span>Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.</span>
+                <span className="leading-relaxed">Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.</span>
               </div>
             </div>
 
@@ -872,7 +872,7 @@ function MainAppContent() {
 
   // Authenticated workspace
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-between font-sans pb-10" id="app_workspace_root">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-between font-sans pb-0" id="app_workspace_root">
       <PayoutToastContainer
         toasts={payoutToasts}
         onDismiss={dismissPayoutToast}

@@ -5,7 +5,8 @@ import {
   Wallet,
   MessageCircle,
   Send,
-  ExternalLink 
+  ExternalLink,
+  Building2
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
 import { PmLogo } from './PmLogo';
@@ -68,9 +69,8 @@ export const BrandingHeader: React.FC = () => {
 };
 
 export const LegalDisclosures: React.FC = () => {
-  const { settings } = useAppState();
   return (
-    <footer className="w-full bg-[#0f172a] border-t border-t-slate-800 text-slate-400 py-10 px-4 text-xs font-sans mt-12">
+    <footer className="w-full bg-[#0f172a] border-t border-slate-800 text-slate-400 py-10 px-4 text-xs font-sans">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
           <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">TREASURE HOMES GROUP</h4>
@@ -121,21 +121,20 @@ export const LegalDisclosures: React.FC = () => {
           <p className="leading-relaxed mb-3 text-slate-300">
             To guarantee your weekly payouts, PM Invest keeps a dedicated <strong>cash reserve</strong> of over <LiveReserveCounter precision={0} showLivePulse={true} className="text-amber-400 font-bold" /> in bank reserve. This ensures every investor gets paid on time, every Friday.
           </p>
-          <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700 text-[11px] text-slate-300">
-            <span className="font-semibold text-amber-400 block mb-1">Active Cash Reserve:</span>
-            <span>Backed by physical properties and bank reserve accounts with current reserve balance of </span>
-            <span className="text-white font-mono font-bold block mt-1">
-              <LiveReserveCounter precision={0} showLivePulse={true} showRateBadge={false} size="md" />
-            </span>
-          </div>
         </div>
 
         <div>
-          <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">NOTE ON PLANS</h4>
-          <p className="leading-relaxed mb-3 text-slate-300">
-            Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.
-          </p>
-          <p className="text-[11px] text-slate-500 font-mono">
+          {/* Obvious Note on Plans Card */}
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 shadow-xs space-y-2">
+            <h4 className="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Building2 className="w-4 h-4 text-amber-400" />
+              <span>NOTE ON PLANS</span>
+            </h4>
+            <p className="leading-relaxed text-slate-200 text-xs font-medium">
+              Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.
+            </p>
+          </div>
+          <p className="text-[11px] text-slate-500 font-mono mt-3">
             © {new Date().getFullYear()} PM Invest Platforms under License of Treasure Homes Ltd. All rights reserved. Corporate office: Treasure Homes Building, Lagos, Nigeria.
           </p>
         </div>

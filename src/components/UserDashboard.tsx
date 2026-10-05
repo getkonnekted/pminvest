@@ -852,11 +852,11 @@ export const UserDashboard: React.FC = () => {
             <p className="text-xs text-slate-600 mt-1 max-w-xl mx-auto">
               Start with as little as <strong>₦15,000</strong>. All plans run for <strong>4 weeks</strong>. You get paid cash every Friday straight into your wallet, and you can withdraw to your bank anytime.
             </p>
-            <div className="mt-4 p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-slate-700 max-w-xl mx-auto text-left flex items-start gap-2.5 shadow-2xs">
-              <Building className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="mt-4 p-4 bg-slate-900 border border-slate-800 rounded-2xl text-xs max-w-xl mx-auto text-left flex items-start gap-3 shadow-sm text-white">
+              <Building className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <strong className="text-slate-900 font-bold block uppercase tracking-wider text-[11px] text-amber-900 mb-0.5">Note on Plans</strong>
-                <span>Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.</span>
+                <strong className="text-white font-bold block uppercase tracking-wider text-[11px] mb-1">NOTE ON PLANS</strong>
+                <span className="text-slate-200 leading-relaxed">Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.</span>
               </div>
             </div>
             <div className="mt-3 inline-flex items-center gap-1.5 bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium">
