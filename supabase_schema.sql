@@ -72,7 +72,7 @@ ON CONFLICT (id) DO UPDATE SET
     "weeksDuration" = EXCLUDED."weeksDuration";
 
 -- -------------------------------------------------------------------------
--- 3. INVESTMENTS TABLE (PROPERTY PLANS & 4-WEEK CYCLES)
+-- 3. INVESTMENTS TABLE (PROPERTY PLANS & 28-WEEK CYCLES)
 -- -------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.investments (
     id TEXT PRIMARY KEY,
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS public.investments (
     "weeklyPayout" DOUBLE PRECISION NOT NULL,
     "totalReturns" DOUBLE PRECISION NOT NULL,
     "weeksPaid" INTEGER NOT NULL DEFAULT 0,
-    "totalWeeks" INTEGER NOT NULL DEFAULT 4,
+    "totalWeeks" INTEGER NOT NULL DEFAULT 28,
     status TEXT NOT NULL DEFAULT 'active',
     "createdAt" TEXT NOT NULL,
     "lastPayoutDate" TEXT,
@@ -734,6 +734,8 @@ DECLARE
     v_sponsor RECORD;
     v_next_week INTEGER;
     v_is_completed BOOLEAN;
+    v_rollover_bonus DOUBLE PRECISION := 0;
+    v_payout_amount DOUBLE PRECISION;
     v_new_bal DOUBLE PRECISION;
     v_sponsor_bonus DOUBLE PRECISION;
     v_tx_id TEXT;
@@ -761,7 +763,14 @@ BEGIN
 
     v_next_week := v_inv."weeksPaid" + 1;
     v_is_completed := (v_next_week >= v_inv."totalWeeks");
-    v_new_bal := v_user."walletBalance" + v_inv."weeklyPayout";
+
+    -- Auto-Renew means investors want to rollover their weekly payouts and get 3% increment on each payout rolled over
+    IF v_inv."autoReinvest" THEN
+        v_rollover_bonus := ROUND((v_inv."weeklyPayout" * 0.03)::numeric, 2);
+    END IF;
+
+    v_payout_amount := v_inv."weeklyPayout" + v_rollover_bonus;
+    v_new_bal := v_user."walletBalance" + v_payout_amount;
     v_next_payout := (NOW() + INTERVAL '7 days')::TEXT;
 
     -- Credit user wallet
@@ -796,10 +805,13 @@ BEGIN
         v_user.id,
         v_user.name,
         'payout',
-        v_inv."weeklyPayout",
+        v_payout_amount,
         'completed',
         NOW()::TEXT,
-        'Weekly Friday Yield: ' || v_inv."planName" || ' (Week ' || v_next_week || '/' || v_inv."totalWeeks" || ')',
+        CASE 
+            WHEN v_inv."autoReinvest" THEN 'Weekly payout rolled over (+3% increment: +₦' || v_rollover_bonus || '): ' || v_inv."planName" || ' (Week ' || v_next_week || '/' || v_inv."totalWeeks" || ')'
+            ELSE 'Weekly Friday Yield: ' || v_inv."planName" || ' (Week ' || v_next_week || '/' || v_inv."totalWeeks" || ')'
+        END,
         v_inv."isMarketing"
     );
 
@@ -1530,6 +1542,8 @@ DECLARE
     v_total_paid DOUBLE PRECISION := 0;
     v_next_week_paid INTEGER;
     v_is_completed BOOLEAN;
+    v_rollover_bonus DOUBLE PRECISION := 0;
+    v_payout_amount DOUBLE PRECISION;
 BEGIN
     FOR v_inv IN 
         SELECT i.*, u.name as investor_name, u."referredByCode"
@@ -1540,9 +1554,17 @@ BEGIN
         v_next_week_paid := v_inv."weeksPaid" + 1;
         v_is_completed := (v_next_week_paid >= v_inv."totalWeeks");
 
+        -- Auto-Renew means rollover weekly payout with 3% increment on each payout rolled over
+        IF v_inv."autoReinvest" THEN
+            v_rollover_bonus := ROUND((v_inv."weeklyPayout" * 0.03)::numeric, 2);
+        ELSE
+            v_rollover_bonus := 0;
+        END IF;
+        v_payout_amount := v_inv."weeklyPayout" + v_rollover_bonus;
+
         -- 1. Credit weekly payout to investor
         UPDATE public.users 
-        SET "walletBalance" = "walletBalance" + v_inv."weeklyPayout"
+        SET "walletBalance" = "walletBalance" + v_payout_amount
         WHERE id = v_inv."userId";
 
         -- 2. Log payout transaction
@@ -1554,10 +1576,13 @@ BEGIN
             v_inv."userId",
             v_inv."userName",
             'payout',
-            v_inv."weeklyPayout",
+            v_payout_amount,
             'completed',
             NOW()::TEXT,
-            'Weekly Friday Yield: ' || v_inv."planName" || ' (Week ' || v_next_week_paid || '/' || v_inv."totalWeeks" || ')',
+            CASE
+                WHEN v_inv."autoReinvest" THEN 'Weekly payout rolled over (+3% increment: +₦' || v_rollover_bonus || '): ' || v_inv."planName" || ' (Week ' || v_next_week_paid || '/' || v_inv."totalWeeks" || ')'
+                ELSE 'Weekly Friday Yield: ' || v_inv."planName" || ' (Week ' || v_next_week_paid || '/' || v_inv."totalWeeks" || ')'
+            END,
             v_inv."isMarketing"
         );
 
@@ -1565,7 +1590,7 @@ BEGIN
         IF v_inv."referredByCode" IS NOT NULL AND v_inv."isMarketing" = FALSE THEN
             SELECT * INTO v_sponsor FROM public.users WHERE "referralCode" = v_inv."referredByCode" LIMIT 1;
             IF FOUND THEN
-                v_sponsor_bonus := v_inv."weeklyPayout" * 0.075;
+                v_sponsor_bonus := v_payout_amount * 0.075;
                 
                 UPDATE public.users 
                 SET "walletBalance" = "walletBalance" + v_sponsor_bonus
@@ -1608,7 +1633,7 @@ BEGIN
         END IF;
 
         v_count_payouts := v_count_payouts + 1;
-        v_total_paid := v_total_paid + v_inv."weeklyPayout";
+        v_total_paid := v_total_paid + v_payout_amount;
     END LOOP;
 
     -- Advance timeline week
@@ -1793,7 +1818,7 @@ CREATE OR REPLACE FUNCTION public.admin_upsert_investment_plan(
     p_cost DOUBLE PRECISION,
     p_weekly_payout DOUBLE PRECISION,
     p_total_returns DOUBLE PRECISION,
-    p_weeks_duration INTEGER DEFAULT 4
+    p_weeks_duration INTEGER DEFAULT 28
 )
 RETURNS JSONB
 LANGUAGE plpgsql
