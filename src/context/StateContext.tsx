@@ -68,6 +68,17 @@ interface StateContextType {
   toggleAutoReinvest: (investmentId: string) => void;
   submitKyc: (fullName: string, idType: string, idNumber: string) => void;
 
+  // Investment Plans & Rollover actions
+  investmentPlans: InvestmentPlan[];
+  adminUpdateInvestmentPlan: (planId: string, updates: Partial<InvestmentPlan>) => boolean;
+  adminResetInvestmentPlans: () => void;
+  rolloverInvestment: (investmentId: string) => { success: boolean; message: string; bonus?: number };
+
+  // Daily Interactive Games
+  playLuckySpinWheel: (points: number, cashBonus?: number) => void;
+  openPropertyChest: (chestName: string, points: number, cashBonus?: number) => void;
+  convertPointsToWallet: (points: number, nairaAmount: number) => void;
+
   // Daily Tasks user actions
   completeInstantTask: (taskId: string, answerIndex?: number, isAdBoosted?: boolean) => boolean;
   applyRewardedAdBoost: (taskId: string) => boolean;
@@ -176,11 +187,11 @@ const SEED_INVESTMENTS: UserInvestment[] = [];
 
 const SEED_TRANSACTIONS: Transaction[] = [];
 
-// Base cash reserve backing and automated hourly accretion (+₦10,000 every hour)
-export const BASE_LIQUIDITY_RESERVE = 92066059.975; // Starting cash reserve backing (Treasure Homes Backed)
-export const HOURLY_LIQUIDITY_GROWTH = 10000; // Adds ₦10,000 to the reserve every hour
-export const DAILY_LIQUIDITY_GROWTH = 240000; // ₦10,000 x 24 hours = ₦240,000 daily
-export const LIQUIDITY_ANCHOR_DATE = '2026-10-01T03:00:00.000Z'; // Reference baseline anchor
+// Base cash reserve backing and automated continuous daily accretion (+₦4.2M/day = +₦175,000/hr)
+export const BASE_LIQUIDITY_RESERVE = 843507547; // Starting cash reserve backing ₦843,507,547 (Treasure Homes Backed)
+export const HOURLY_LIQUIDITY_GROWTH = 175000; // Adds ₦175,000 to the reserve every hour (~₦4,200,000 daily)
+export const DAILY_LIQUIDITY_GROWTH = 4200000; // ₦175,000 x 24 hours = ₦4,200,000 daily (4M+ daily)
+export const LIQUIDITY_ANCHOR_DATE = '2026-10-10T00:00:00.000Z'; // Reference baseline anchor
 
 export function calculateHourlyLiquidity(virtualDayOffset: number = 0): number {
   const anchorTime = new Date(LIQUIDITY_ANCHOR_DATE).getTime();
@@ -197,7 +208,7 @@ export function calculateContinuousLiquidity(virtualDayOffset: number = 0, nowTi
   const elapsedMs = Math.max(0, now - anchorTime);
   const virtualMs = virtualDayOffset * 24 * 60 * 60 * 1000;
   const totalMs = elapsedMs + virtualMs;
-  // ₦10,000 spread continuously across each hour (3,600,000 ms)
+  // ₦175,000 spread continuously across each hour (3,600,000 ms) -> ₦4.2M+ daily
   const accrued = (totalMs * HOURLY_LIQUIDITY_GROWTH) / (3600 * 1000);
   return BASE_LIQUIDITY_RESERVE + accrued;
 }
@@ -214,7 +225,7 @@ export function formatReserveNumber(num: number, decimals: number = 0): string {
 export const calculateDailyLiquidity = calculateContinuousLiquidity;
 
 const DEFAULT_SETTINGS: SystemSettings = {
-  liquidityReserve: calculateContinuousLiquidity(0), // Dynamic cash reserve (+₦10,000 spread continuously every hour)
+  liquidityReserve: calculateContinuousLiquidity(0), // Dynamic cash reserve (+₦4.2M spread continuously every day)
   dailyLiquidityGrowth: DAILY_LIQUIDITY_GROWTH,
   hourlyLiquidityGrowth: HOURLY_LIQUIDITY_GROWTH,
   riskAlertLevel: 'low',
@@ -253,8 +264,49 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [investments, setInvestments] = useState<UserInvestment[]>(() => {
     const saved = localStorage.getItem('pm_prod_investments_v1');
-    return saved ? JSON.parse(saved) : SEED_INVESTMENTS;
+    const parsed = saved ? JSON.parse(saved) : SEED_INVESTMENTS;
+    if (parsed && Array.isArray(parsed)) {
+      // User decision: Convert all active investments to the new 28-week plans
+      return parsed.map((inv: UserInvestment) => {
+        if (inv.status === 'active' && inv.totalWeeks !== 28) {
+          // Calculate 21.67% weekly yield
+          const weekly = inv.weeklyPayout || Math.round(inv.cost * (6500 / 30000));
+          return {
+            ...inv,
+            totalWeeks: 28,
+            weeklyPayout: weekly,
+            totalReturns: weekly * 28
+          };
+        }
+        return inv;
+      });
+    }
+    return parsed;
   });
+
+  // Dynamic Investment Plans (Default to 6-tier 28-week plans, customizable by Admin)
+  const [investmentPlans, setInvestmentPlans] = useState<InvestmentPlan[]>(() => {
+    const saved = localStorage.getItem('pm_investment_plans_v3');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length >= 6) {
+          return parsed.map((p: InvestmentPlan) => ({
+            ...p,
+            weeksDuration: 28,
+            totalReturns: p.weeklyPayout * 28
+          }));
+        }
+      } catch (e) {
+        // Fall back to default 6 tiers
+      }
+    }
+    return INVESTMENT_PLANS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pm_investment_plans_v3', JSON.stringify(investmentPlans));
+  }, [investmentPlans]);
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const saved = localStorage.getItem('pm_prod_transactions_v1');
@@ -266,9 +318,16 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        const currentReserve = calculateContinuousLiquidity(0);
+        const resolvedReserve = (parsed.liquidityReserve && parsed.liquidityReserve >= BASE_LIQUIDITY_RESERVE)
+          ? parsed.liquidityReserve
+          : currentReserve;
         return { 
           ...DEFAULT_SETTINGS, 
           ...parsed,
+          liquidityReserve: resolvedReserve,
+          dailyLiquidityGrowth: DAILY_LIQUIDITY_GROWTH,
+          hourlyLiquidityGrowth: HOURLY_LIQUIDITY_GROWTH,
           autoApproveDeposits: false, // Force production mode
           paystackTestMode: false // Force production mode
         };
@@ -593,7 +652,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .filter((t) => (t.type === 'payout' || t.type === 'referral_bonus') && t.status === 'completed' && !t.isMarketing)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Initial base cash reserve with hourly growth (+₦10,000 every hour) + deposits - withdrawals - payouts
+    // Initial base cash reserve with hourly growth (+₦175,000 every hour = ₦4.2M/day) + deposits - withdrawals - payouts
     const dynamicBaseReserve = calculateHourlyLiquidity(virtualDayOffset);
     const activeLiquidity = dynamicBaseReserve + totalDeposits - totalWithdrawals - totalPayouts;
     
@@ -603,9 +662,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .filter(t => t.type === 'withdrawal' && t.status === 'pending')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    if (activeLiquidity < 50000000 || pendingWithdrawalSum > activeLiquidity * 0.4) {
+    if (activeLiquidity < 400000000 || pendingWithdrawalSum > activeLiquidity * 0.4) {
       risk = 'high';
-    } else if (activeLiquidity < 65000000 || pendingWithdrawalSum > activeLiquidity * 0.2) {
+    } else if (activeLiquidity < 600000000 || pendingWithdrawalSum > activeLiquidity * 0.2) {
       risk = 'medium';
     }
 
@@ -1510,7 +1569,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
-    const plan = INVESTMENT_PLANS.find(p => p.id === planId);
+    const plan = investmentPlans.find(p => p.id === planId) || INVESTMENT_PLANS.find(p => p.id === planId);
     if (!plan) {
       setErrorMsg('Selected investment plan is invalid.');
       return false;
@@ -1595,7 +1654,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
-    const plan = INVESTMENT_PLANS.find(p => p.id === planId);
+    const plan = investmentPlans.find(p => p.id === planId) || INVESTMENT_PLANS.find(p => p.id === planId);
     if (!plan) {
       setErrorMsg('Selected investment plan is invalid.');
       return false;
@@ -1694,6 +1753,204 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   };
 
+  // Admin Plan Management
+  const adminUpdateInvestmentPlan = (planId: string, updates: Partial<InvestmentPlan>): boolean => {
+    setInvestmentPlans(prev => prev.map(p => p.id === planId ? { ...p, ...updates } : p));
+    setSuccessMsg('Investment plan updated successfully.');
+    return true;
+  };
+
+  const adminResetInvestmentPlans = () => {
+    setInvestmentPlans(INVESTMENT_PLANS);
+    setSuccessMsg('Investment plans reset to default 28-week tiers.');
+  };
+
+  // Rollover Reinvestment Incentive (+3% increment on each payout rolled over, not the entire plan)
+  const rolloverInvestment = (investmentId: string): { success: boolean; message: string; bonus?: number } => {
+    clearMessages();
+    const inv = investments.find(i => i.id === investmentId);
+    if (!inv) {
+      return { success: false, message: 'Investment plan not found.' };
+    }
+
+    // 3% increment on weekly payout rolled over, not the entire plan
+    const bonus = Math.round(inv.weeklyPayout * 0.03);
+
+    // Credit user's walletBalance immediately
+    setUsers(prev => prev.map(u => {
+      if (u.id === inv.userId) {
+        return {
+          ...u,
+          walletBalance: u.walletBalance + bonus
+        };
+      }
+      return u;
+    }));
+
+    if (currentUser && currentUser.id === inv.userId) {
+      setCurrentUser(prev => prev ? { ...prev, walletBalance: prev.walletBalance + bonus } : null);
+    }
+
+    // Record rollover bonus transaction
+    const newTx: Transaction = {
+      id: 'tx_rollover_' + Date.now().toString().slice(-6),
+      userId: inv.userId,
+      userName: inv.userName,
+      type: 'rollover_bonus',
+      amount: bonus,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      description: `3% Rollover Cash Increment (+₦${bonus.toLocaleString()}) on ${inv.planName} weekly payout`,
+      isMarketing: inv.isMarketing
+    };
+    setTransactions(prev => [newTx, ...prev]);
+
+    // Renew investment into a fresh 28-week cycle
+    const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    setInvestments(prev => prev.map(i => {
+      if (i.id === investmentId) {
+        return {
+          ...i,
+          weeksPaid: 0,
+          totalWeeks: 28,
+          status: 'active',
+          lastPayoutDate: undefined,
+          nextPayoutDate: nextPayout
+        };
+      }
+      return i;
+    }));
+
+    setSuccessMsg(`🎉 Weekly payout rollover complete! ₦${bonus.toLocaleString()} (+3% increment on weekly payout) has been credited to your wallet.`);
+    return { success: true, message: `Rollover complete! Credited ₦${bonus.toLocaleString()} (+3% payout increment)`, bonus };
+  };
+
+  // Daily Interactive Games Handlers
+  const playLuckySpinWheel = (points: number, cashBonus?: number) => {
+    if (!currentUser) return;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const currHistory = currentUser.dailyGamesHistory || {};
+    const newStreak = (currHistory.streak || 0) + 1;
+    const cash = cashBonus || 0;
+
+    const updatedHistory = {
+      ...currHistory,
+      lastWheelDate: todayStr,
+      streak: newStreak
+    };
+
+    setUsers(prev => prev.map(u => {
+      if (u.id === currentUser.id) {
+        return {
+          ...u,
+          points: (u.points || 0) + points,
+          walletBalance: u.walletBalance + cash,
+          dailyGamesHistory: updatedHistory
+        };
+      }
+      return u;
+    }));
+
+    setCurrentUser(prev => prev ? {
+      ...prev,
+      points: (prev.points || 0) + points,
+      walletBalance: prev.walletBalance + cash,
+      dailyGamesHistory: updatedHistory
+    } : null);
+
+    if (cash > 0) {
+      const tx: Transaction = {
+        id: 'tx_wheel_' + Date.now().toString().slice(-6),
+        userId: currentUser.id,
+        userName: currentUser.name,
+        type: 'game_reward',
+        amount: cash,
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+        description: `Daily Lucky Spin Wheel Cash Prize (+₦${cash.toLocaleString()})`
+      };
+      setTransactions(prev => [tx, ...prev]);
+    }
+  };
+
+  const openPropertyChest = (chestName: string, points: number, cashBonus?: number) => {
+    if (!currentUser) return;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const currHistory = currentUser.dailyGamesHistory || {};
+    const cash = cashBonus || 0;
+
+    const updatedHistory = {
+      ...currHistory,
+      lastChestDate: todayStr
+    };
+
+    setUsers(prev => prev.map(u => {
+      if (u.id === currentUser.id) {
+        return {
+          ...u,
+          points: (u.points || 0) + points,
+          walletBalance: u.walletBalance + cash,
+          dailyGamesHistory: updatedHistory
+        };
+      }
+      return u;
+    }));
+
+    setCurrentUser(prev => prev ? {
+      ...prev,
+      points: (prev.points || 0) + points,
+      walletBalance: prev.walletBalance + cash,
+      dailyGamesHistory: updatedHistory
+    } : null);
+
+    if (cash > 0) {
+      const tx: Transaction = {
+        id: 'tx_chest_' + Date.now().toString().slice(-6),
+        userId: currentUser.id,
+        userName: currentUser.name,
+        type: 'game_reward',
+        amount: cash,
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+        description: `Property Mystery Chest Dividend (${chestName}: +₦${cash.toLocaleString()})`
+      };
+      setTransactions(prev => [tx, ...prev]);
+    }
+  };
+
+  const convertPointsToWallet = (points: number, nairaAmount: number) => {
+    if (!currentUser || (currentUser.points || 0) < points) return;
+
+    setUsers(prev => prev.map(u => {
+      if (u.id === currentUser.id) {
+        return {
+          ...u,
+          points: Math.max(0, (u.points || 0) - points),
+          walletBalance: u.walletBalance + nairaAmount
+        };
+      }
+      return u;
+    }));
+
+    setCurrentUser(prev => prev ? {
+      ...prev,
+      points: Math.max(0, (prev.points || 0) - points),
+      walletBalance: prev.walletBalance + nairaAmount
+    } : null);
+
+    const tx: Transaction = {
+      id: 'tx_pts_' + Date.now().toString().slice(-6),
+      userId: currentUser.id,
+      userName: currentUser.name,
+      type: 'game_reward',
+      amount: nairaAmount,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      description: `Converted ${points} Property Points into ₦${nairaAmount.toLocaleString()} Withdrawable Cash`
+    };
+    setTransactions(prev => [tx, ...prev]);
+  };
+
   const processSingleInvestmentPayout = (invId: string): boolean => {
     clearMessages();
     if (!currentUser) return false;
@@ -1719,9 +1976,12 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     const nextWeeksPaid = inv.weeksPaid + 1;
-    const payoutAmount = inv.weeklyPayout;
+    // Auto-Renew means investors want to rollover their weekly payouts and are entitled to a 3% increment on each payout rolled over not the entire plan.
+    const isAutoRenew = Boolean(inv.autoReinvest);
+    const rolloverIncrement = isAutoRenew ? Math.round(inv.weeklyPayout * 0.03) : 0;
+    const totalPayoutAmount = inv.weeklyPayout + rolloverIncrement;
     const isCompleted = nextWeeksPaid === inv.totalWeeks;
-    const updatedBalance = currentUser.walletBalance + payoutAmount;
+    const updatedBalance = currentUser.walletBalance + totalPayoutAmount;
 
     // 1. Credit User
     const updatedUser = { ...currentUser, walletBalance: updatedBalance };
@@ -1739,7 +1999,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         lastPayoutDate: new Date().toISOString(),
         nextPayoutDate: nextPayout
       };
-      setSuccessMsg(`₦${payoutAmount.toLocaleString()} weekly payout credited! ${inv.planName} has automatically rolled over into a new 4-week compounding cycle.`);
+      setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} credited! (${inv.planName} weekly payout rolled over with +3% increment [+₦${rolloverIncrement.toLocaleString()}] and renewed into a new 28-week cycle).`);
     } else {
       updatedInv = {
         ...inv,
@@ -1748,6 +2008,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         lastPayoutDate: new Date().toISOString(),
         nextPayoutDate: isCompleted ? undefined : nextPayout
       };
+      if (isAutoRenew) {
+        setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} credited! Includes +₦${rolloverIncrement.toLocaleString()} (+3% Auto-Renew increment) on your weekly payout.`);
+      } else {
+        setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} weekly yield credited directly to your wallet!`);
+      }
     }
     setInvestments(prev => prev.map(i => i.id === invId ? updatedInv : i));
 
@@ -1758,17 +2023,19 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       userId: currentUser.id,
       userName: currentUser.name,
       type: 'payout',
-      amount: payoutAmount,
+      amount: totalPayoutAmount,
       status: 'completed',
       createdAt: new Date().toISOString(),
-      description: `Weekly payout: ${inv.planName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`
+      description: isAutoRenew
+        ? `Weekly payout rolled over (+3% increment: +₦${rolloverIncrement.toLocaleString()}): ${inv.planName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`
+        : `Weekly payout: ${inv.planName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`
     };
     setTransactions(prev => [logTx, ...prev]);
 
     // 4. Trigger slide-in notification toast
     triggerPayoutToast({
-      planName: inv.planName,
-      amount: payoutAmount,
+      planName: isAutoRenew ? `${inv.planName} (+3% Rollover Increment)` : inv.planName,
+      amount: totalPayoutAmount,
       weeksPaid: nextWeeksPaid,
       totalWeeks: inv.totalWeeks,
       walletBalance: updatedBalance,
@@ -1779,7 +2046,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (currentUser.referredByCode) {
       const sponsorUser = users.find(u => u.referralCode === currentUser.referredByCode);
       if (sponsorUser) {
-        const bonusAmount = payoutAmount * 0.075;
+        const bonusAmount = inv.weeklyPayout * 0.075;
         const updatedSponsorBal = sponsorUser.walletBalance + bonusAmount;
         setUsers(prev => prev.map(u => u.id === sponsorUser.id ? { ...u, walletBalance: updatedSponsorBal } : u));
         
@@ -1798,7 +2065,6 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
-    setSuccessMsg(`₦${payoutAmount.toLocaleString()} weekly yield credited directly to your wallet!`);
     return true;
   };
 
@@ -1806,10 +2072,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setInvestments(prev => prev.map(inv => {
       if (inv.id === investmentId) {
         const nextState = !inv.autoReinvest;
+        const increment = Math.round(inv.weeklyPayout * 0.03);
         setSuccessMsg(
           nextState 
-            ? `Auto-Compounding activated for ${inv.planName}. Principal will automatically roll over upon maturity.`
-            : `Auto-Compounding disabled for ${inv.planName}. Funds will be released to your wallet upon maturity.`
+            ? `Auto-Renew activated for ${inv.planName}! Your weekly payouts will be rolled over with an extra 3% increment (+₦${increment.toLocaleString()}/week) on each payout.`
+            : `Auto-Renew disabled for ${inv.planName}. You will receive standard weekly payouts (₦${inv.weeklyPayout.toLocaleString()}) without rollover increment.`
         );
         return { ...inv, autoReinvest: nextState };
       }
@@ -2090,9 +2357,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     if (taskId === 'task_auto_reinvest') {
-      const hasAutoCompounding = investments.some(i => i.userId === currentUser.id && i.status === 'active' && i.autoReinvest === true);
-      if (!hasAutoCompounding) {
-        setErrorMsg('Auto-Compounding Required! Enable Auto-Compounding on at least one of your active investment plans to claim this bonus.');
+      const hasAutoRenew = investments.some(i => i.userId === currentUser.id && i.status === 'active' && i.autoReinvest === true);
+      if (!hasAutoRenew) {
+        setErrorMsg('Auto-Renew Required! Turn on Auto-Renew on at least one of your active investment plans to rollover weekly payouts with +3% increment and claim this bonus.');
         return false;
       }
       const hasClaimedReinvestBefore = transactions.some(t => t.userId === currentUser.id && (t.description?.includes('Auto-Renew') || t.description?.includes('Auto-Compounding')));
@@ -2512,7 +2779,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
 
       const nextWeeksPaid = inv.weeksPaid + 1;
-      const payoutAmount = inv.weeklyPayout;
+      const isAutoRenew = Boolean(inv.autoReinvest);
+      const rolloverIncrement = isAutoRenew ? Math.round(inv.weeklyPayout * 0.03) : 0;
+      const payoutAmount = inv.weeklyPayout + rolloverIncrement;
       const isCompleted = nextWeeksPaid === inv.totalWeeks;
 
       // Credit the investor
@@ -2529,7 +2798,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (currentUser && currentUser.id === inv.userId) {
         pendingToasts.push({
           id: 'toast_payout_' + Date.now() + '_' + inv.id + '_' + Math.random().toString(36).substring(2, 6),
-          planName: inv.planName,
+          planName: isAutoRenew ? `${inv.planName} (+3% Rollover Increment)` : inv.planName,
           amount: payoutAmount,
           weeksPaid: nextWeeksPaid,
           totalWeeks: inv.totalWeeks,
@@ -2549,10 +2818,16 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         amount: payoutAmount,
         status: 'completed',
         createdAt: new Date().toISOString(),
-        description: `Weekly payout: ${inv.planName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`
+        description: isAutoRenew
+          ? `Weekly payout rolled over (+3% increment: +₦${rolloverIncrement.toLocaleString()}): ${inv.planName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`
+          : `Weekly payout: ${inv.planName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`
       });
 
-      payoutLog.push(`Credited ₦${payoutAmount.toLocaleString()} to ${inv.userName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`);
+      payoutLog.push(
+        isAutoRenew
+          ? `Credited ₦${payoutAmount.toLocaleString()} to ${inv.userName} (Week ${nextWeeksPaid}/${inv.totalWeeks}) [includes +₦${rolloverIncrement.toLocaleString()} 3% Auto-Renew increment]`
+          : `Credited ₦${payoutAmount.toLocaleString()} to ${inv.userName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`
+      );
 
       // REFERRAL BONUS SYSTEM: "Users earn 7.5% of their referral's weekly payout."
       const investorUser = users.find(u => u.id === inv.userId);
@@ -2605,7 +2880,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       if (isCompleted && inv.autoReinvest) {
-        payoutLog.push(`🔄 Auto-Compounding: ${inv.planName} for ${inv.userName} completed 4 weeks and auto-rolled over into a new cycle!`);
+        payoutLog.push(`🔄 Auto-Compounding: ${inv.planName} for ${inv.userName} completed 28 weeks and auto-rolled over into a new cycle!`);
         return {
           ...inv,
           weeksPaid: 0,

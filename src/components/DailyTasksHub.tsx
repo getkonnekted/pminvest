@@ -511,7 +511,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
 
               <h4 className="font-bold text-slate-900 text-sm">Auto-Renew Bonus</h4>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Turn on auto-renew on any of your active plans to collect an instant one-time ₦250 cash bonus.
+                Turn on Auto-Renew to rollover your weekly payouts with a +3% increment on each payout and collect an instant one-time ₦250 cash bonus.
               </p>
 
               {/* Status display */}

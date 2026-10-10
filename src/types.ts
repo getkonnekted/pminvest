@@ -19,6 +19,12 @@ export interface User {
   isMarketingAccount?: boolean;
   marketingAllocatedBalance?: number;
   isTimerLocked?: boolean;
+  points?: number;
+  dailyGamesHistory?: {
+    lastWheelDate?: string;
+    lastChestDate?: string;
+    streak?: number;
+  };
 }
 
 export interface InvestmentPlan {
@@ -54,7 +60,7 @@ export interface Transaction {
   id: string;
   userId: string;
   userName: string;
-  type: 'deposit' | 'withdrawal' | 'payout' | 'referral_bonus' | 'task_reward';
+  type: 'deposit' | 'withdrawal' | 'payout' | 'referral_bonus' | 'task_reward' | 'rollover_bonus' | 'game_reward';
   amount: number;
   status: 'pending' | 'completed' | 'rejected';
   paymentMethod?: string;
@@ -178,41 +184,49 @@ export const INVESTMENT_PLANS: InvestmentPlan[] = [
   {
     id: 'plan_1',
     name: 'Plan 1',
-    cost: 15000,
-    totalReturns: 65000,
-    weeklyPayout: 16250,
-    weeksDuration: 4
+    cost: 30000,
+    totalReturns: 182000,
+    weeklyPayout: 6500,
+    weeksDuration: 28
   },
   {
     id: 'plan_2',
     name: 'Plan 2',
-    cost: 45000,
-    totalReturns: 172485,
-    weeklyPayout: 43121,
-    weeksDuration: 4
+    cost: 60000,
+    totalReturns: 364000,
+    weeklyPayout: 13000,
+    weeksDuration: 28
   },
   {
     id: 'plan_3',
     name: 'Plan 3',
-    cost: 115000,
-    totalReturns: 383295,
-    weeklyPayout: 95824,
-    weeksDuration: 4
+    cost: 120000,
+    totalReturns: 728000,
+    weeklyPayout: 26000,
+    weeksDuration: 28
   },
   {
     id: 'plan_4',
     name: 'Plan 4',
-    cost: 270000,
-    totalReturns: 764910,
-    weeklyPayout: 191228,
-    weeksDuration: 4
+    cost: 150000,
+    totalReturns: 910000,
+    weeklyPayout: 32500,
+    weeksDuration: 28
   },
   {
     id: 'plan_5',
     name: 'Plan 5',
-    cost: 500000,
-    totalReturns: 1166500,
-    weeklyPayout: 291625,
-    weeksDuration: 4
+    cost: 300000,
+    totalReturns: 1820000,
+    weeklyPayout: 65000,
+    weeksDuration: 28
+  },
+  {
+    id: 'plan_6',
+    name: 'Plan 6',
+    cost: 1500000,
+    totalReturns: 9100000,
+    weeklyPayout: 325000,
+    weeksDuration: 28
   }
 ];

@@ -45,23 +45,23 @@ export const DEFAULT_DAILY_TASKS: DailyTask[] = [
   },
   {
     id: 'task_auto_reinvest',
-    title: 'Auto-Renew Bonus',
-    subtitle: 'One-time reward for compounding wealth. Enable Auto-Reinvestment on any of your active plans to claim.',
+    title: 'Auto-Renew Rollover Bonus',
+    subtitle: 'One-time bonus for rollover investors. Turn on Auto-Renew to rollover your weekly payouts with a 3% increment on each payout.',
     category: 'reinvest',
     rewardShare: 0,
     fixedReward: 250, // ₦250 one-time bonus
     verificationType: 'instant',
     actionLabel: 'Claim Auto-Renew Bonus',
     sponsorName: 'Treasure Homes Growth Engine',
-    sponsorBadge: 'AUTO COMPOUND',
+    sponsorBadge: 'AUTO RENEW',
     detailsContent: {
-      headline: 'Automated Compounding & Yield Acceleration',
+      headline: 'Weekly Payout Rollover & 3% Increment',
       paragraphs: [
-        'Enabling Auto-Compounding ensures your principal automatically rolls over into a new 4-week growth cycle at maturity.',
-        'This quest dynamically checks that you have toggled Auto-Compounding ON for at least one active plan.',
-        'Compounding investors earn an instant ₦250 one-time cash bonus upon enabling Auto-Renew.'
+        'Auto-Renew allows investors to roll over their weekly payouts and earn an extra 3% increment on each payout rolled over (calculated on each payout, not the entire plan).',
+        'This quest dynamically checks that you have toggled Auto-Renew ON for at least one active property plan.',
+        'Investors earn an instant ₦250 one-time cash reward upon activating Auto-Renew.'
       ],
-      keyTakeaway: 'Long-term compounders generate exponential wealth growth and receive instant bonus allocations.'
+      keyTakeaway: 'Rollover investors maximize weekly yields with a 3% increment on every payout rolled over.'
     }
   },
   {

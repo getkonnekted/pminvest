@@ -1050,7 +1050,7 @@ export const AdminPanel: React.FC = () => {
                           <h5 className="font-bold text-xs text-amber-950 uppercase tracking-wide">Weekly Payout Simulator</h5>
                         </div>
                         <p className="text-[11px] text-amber-900/80 mt-1 leading-normal">
-                          Fast-forwards the platform timeline by 1 week to test Friday payouts, 4-week countdown rollovers, and 7.5% referral sponsor commissions.
+                          Fast-forwards the platform timeline by 1 week to test Friday payouts, Auto-Renew weekly rollover increments (+3%), and 7.5% referral sponsor commissions.
                         </p>
                       </div>
                       <button

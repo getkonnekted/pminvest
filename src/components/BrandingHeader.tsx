@@ -70,7 +70,7 @@ export const BrandingHeader: React.FC = () => {
 
 export const LegalDisclosures: React.FC = () => {
   return (
-    <footer className="w-full bg-[#0f172a] border-t border-slate-800 text-slate-400 py-10 px-4 text-xs font-sans">
+    <footer className="w-full bg-[#0f172a] text-slate-400 py-10 px-4 text-xs font-sans">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
           <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">TREASURE HOMES GROUP</h4>
@@ -125,13 +125,13 @@ export const LegalDisclosures: React.FC = () => {
 
         <div>
           {/* Obvious Note on Plans Card */}
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 shadow-xs space-y-2">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm space-y-2">
             <h4 className="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-amber-400" />
+              <Building2 className="w-4 h-4 text-amber-400 shrink-0" />
               <span>NOTE ON PLANS</span>
             </h4>
             <p className="leading-relaxed text-slate-200 text-xs font-medium">
-              Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.
+              Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 28 weeks, paying you cash every Friday.
             </p>
           </div>
           <p className="text-[11px] text-slate-500 font-mono mt-3">

@@ -267,7 +267,7 @@ function MainAppContent() {
 
             {/* Quick Rates Grid */}
             <div className="space-y-3">
-              <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-widest">Popular Property Plans (4-Week Cycles)</span>
+              <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-widest">Popular Property Plans (28-Week Cycles)</span>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {INVESTMENT_PLANS.slice(0, 3).map(plan => (
                   <div key={plan.id} className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
@@ -282,15 +282,15 @@ function MainAppContent() {
                   </div>
                 ))}
                 <div className="bg-slate-50 border border-dashed border-slate-300 p-4 rounded-xl flex flex-col justify-center items-center text-center">
-                  <span className="text-[11px] text-slate-700 font-bold uppercase">Up to Plan 5</span>
-                  <span className="text-[10px] text-slate-500">₦500k Plan → ₦1.16M Returns</span>
+                  <span className="text-[11px] text-slate-700 font-bold uppercase">Up to Plan 6</span>
+                  <span className="text-[10px] text-slate-500">₦1.5M Plan → ₦9.1M Returns</span>
                 </div>
               </div>
 
               {/* Note on Plans */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-200 shadow-sm">
                 <span className="font-bold text-amber-400 block uppercase tracking-wider text-[11px] mb-1">Note on Plans</span>
-                <span className="leading-relaxed">Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.</span>
+                <span className="leading-relaxed">Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 28 weeks, paying you cash every Friday.</span>
               </div>
             </div>
 
@@ -847,15 +847,15 @@ function MainAppContent() {
           </div>
         </div>
 
-        {/* Brand visual cards section */}
-        <div className="bg-[#0f172a] py-8 border-t border-slate-800 text-slate-400 text-xs">
-          <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+        {/* Unified Brand Footer */}
+        <div className="bg-[#0f172a] border-t border-slate-800 text-slate-400 text-xs">
+          <div className="max-w-7xl mx-auto px-4 pt-8 pb-2 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
             <div className="space-y-1">
               <span className="text-amber-400 font-bold text-sm block">100% REGULATED</span>
               <p className="text-slate-300">Operating transparent cash reserves under supervision of the Treasure Homes asset board.</p>
             </div>
-            <div className="space-y-1 border-t md:border-t-0 md:border-x border-slate-800 py-4 md:py-0">
-              <span className="text-amber-400 font-bold text-sm block font-mono">₦{settings ? Math.floor(settings.liquidityReserve / 1000000) : '78'}M+ RESERVE BACKING</span>
+            <div className="space-y-1 py-4 md:py-0 md:border-x md:border-slate-800">
+              <span className="text-amber-400 font-bold text-sm block font-mono">₦{settings ? Math.floor(settings.liquidityReserve / 1000000) : '843'}M+ RESERVE BACKING</span>
               <p className="text-slate-300">Ensuring complete stability with physical properties and liquid collateral holding records.</p>
             </div>
             <div className="space-y-1">
@@ -863,9 +863,9 @@ function MainAppContent() {
               <p className="text-slate-300">Anti-fraud protection including verified identification checks for seamless, quick clearances.</p>
             </div>
           </div>
-        </div>
 
-        <LegalDisclosures />
+          <LegalDisclosures />
+        </div>
       </div>
     );
   }

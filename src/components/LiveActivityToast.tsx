@@ -36,37 +36,44 @@ const LOCATIONS = [
 const NON_PAYOUT_ACTIVITIES = [
   {
     type: 'purchase' as const,
-    action: 'Acquired Plan 1 (₦15,000)',
-    sub: '4-Week Property Investment Active',
-    amount: 15000,
+    action: 'Acquired Plan 1 (₦30,000)',
+    sub: '28-Week Property Investment Active',
+    amount: 30000,
     iconType: 'investment' as const
   },
   {
     type: 'purchase' as const,
-    action: 'Acquired Plan 2 (₦45,000)',
-    sub: '4-Week Property Investment Active',
-    amount: 45000,
+    action: 'Acquired Plan 2 (₦60,000)',
+    sub: '28-Week Property Investment Active',
+    amount: 60000,
     iconType: 'investment' as const
   },
   {
     type: 'purchase' as const,
-    action: 'Acquired Plan 3 (₦115,000)',
-    sub: '4-Week Property Investment Active',
-    amount: 115000,
+    action: 'Acquired Plan 3 (₦120,000)',
+    sub: '28-Week Property Investment Active',
+    amount: 120000,
     iconType: 'investment' as const
   },
   {
     type: 'purchase' as const,
-    action: 'Acquired Plan 4 (₦270,000)',
-    sub: '4-Week Property Investment Active',
-    amount: 270000,
+    action: 'Acquired Plan 4 (₦150,000)',
+    sub: '28-Week Property Investment Active',
+    amount: 150000,
     iconType: 'investment' as const
   },
   {
     type: 'purchase' as const,
-    action: 'Acquired Plan 5 (₦500,000)',
-    sub: '4-Week Property Investment Active',
-    amount: 500000,
+    action: 'Acquired Plan 5 (₦300,000)',
+    sub: '28-Week Property Investment Active',
+    amount: 300000,
+    iconType: 'investment' as const
+  },
+  {
+    type: 'purchase' as const,
+    action: 'Acquired Plan 6 (₦1,500,000)',
+    sub: '28-Week Property Investment Active',
+    amount: 1500000,
     iconType: 'investment' as const
   },
   {

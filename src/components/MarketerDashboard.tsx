@@ -245,12 +245,12 @@ export const MarketerDashboard: React.FC = () => {
           },
           {
             id: 'buy_plans',
-            label: 'Buy Plans (From ₦15k)',
-            description: 'Acquire property plans from the 4-week cycle catalog',
+            label: 'Buy Plans (From ₦30k)',
+            description: 'Acquire property plans from the 28-week cycle catalog',
             icon: Building2,
             badge: (
               <span className="bg-amber-500 text-slate-950 font-mono text-[9px] font-extrabold px-1.5 py-0.2 rounded-full">
-                From ₦15k
+                From ₦30k
               </span>
             )
           },
@@ -523,7 +523,7 @@ export const MarketerDashboard: React.FC = () => {
                 </h3>
               </div>
               <p className="text-xs sm:text-sm text-slate-600 max-w-xl">
-                Use our Interactive Client Presentation mode to walk potential investors through real Treasure Homes properties and calculated 4-week yields.
+                Use our Interactive Client Presentation mode to walk potential investors through real Treasure Homes properties and calculated 28-week yields.
               </p>
             </div>
 
@@ -644,7 +644,7 @@ export const MarketerDashboard: React.FC = () => {
                 Acquire Verified Property Plans
               </h2>
               <p className="text-xs text-slate-300 max-w-2xl">
-                Use your active investment balance to acquire 4-week structured real estate cycles. Weekly returns accrue directly to your wallet for authentic client presentations.
+                Use your active investment balance to acquire 28-week structured real estate cycles. Weekly returns accrue directly to your wallet for authentic client presentations.
               </p>
             </div>
 
@@ -661,7 +661,7 @@ export const MarketerDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-emerald-600" />
-                <span>Available 4-Week Property Plans</span>
+                <span>Available 28-Week Property Plans</span>
               </h3>
               <span className="text-xs text-slate-500 font-mono">Friday Cash Returns</span>
             </div>
@@ -692,12 +692,12 @@ export const MarketerDashboard: React.FC = () => {
                           <span className="text-emerald-700 font-bold font-mono">₦{plan.weeklyPayout.toLocaleString()} / week</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-500">Total 4-Week Return:</span>
+                          <span className="text-slate-500">Total 28-Week Return:</span>
                           <span className="text-amber-700 font-bold font-mono">₦{plan.totalReturns.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">Duration:</span>
-                          <span className="text-slate-700 font-semibold font-mono">4 Weeks (Fridays)</span>
+                          <span className="text-slate-700 font-semibold font-mono">28 Weeks (Fridays)</span>
                         </div>
                       </div>
 
@@ -942,7 +942,7 @@ export const MarketerDashboard: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-300 max-w-3xl leading-relaxed">
-              Use this screen when presenting to prospective investors in person or via video call. Explain the 4-week structured investment cycle and cash returns backed by verified property developments.
+              Use this screen when presenting to prospective investors in person or via video call. Explain the 28-week structured investment cycle and cash returns backed by verified property developments.
             </p>
           </div>
 
@@ -950,7 +950,7 @@ export const MarketerDashboard: React.FC = () => {
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
               <Sparkles className="w-4 h-4 text-amber-500" />
-              Interactive Returns Calculator (4-Week Cycles)
+              Interactive Returns Calculator (28-Week Cycles)
             </h3>
 
             {/* Plan Selector Buttons */}
@@ -995,15 +995,15 @@ export const MarketerDashboard: React.FC = () => {
                 <h4 className="text-2xl font-extrabold text-emerald-400 font-mono">
                   ₦{selectedPlanCalc.weeklyPayout.toLocaleString()}
                 </h4>
-                <p className="text-xs text-slate-400">Paid 4 consecutive Fridays into the investor's wallet</p>
+                <p className="text-xs text-slate-400">Paid 28 consecutive Fridays into the investor's wallet</p>
               </div>
 
               <div className="space-y-1 md:pl-2">
-                <span className="text-[10px] text-amber-400 font-mono uppercase block">Total 4-Week Net Return</span>
+                <span className="text-[10px] text-amber-400 font-mono uppercase block">Total 28-Week Net Return</span>
                 <h4 className="text-2xl font-extrabold text-amber-400 font-mono">
                   ₦{selectedPlanCalc.totalReturns.toLocaleString()}
                 </h4>
-                <p className="text-xs text-slate-400">Total cash collected across the 4-week property cycle</p>
+                <p className="text-xs text-slate-400">Total cash collected across the 28-week property cycle</p>
               </div>
             </div>
           </div>

@@ -142,21 +142,14 @@ export const PayoutToastItem: React.FC<PayoutToastItemProps> = ({
             {/* Cycle / Progress indicator */}
             {!isReferral && toast.totalWeeks > 0 && (
               <div className="flex items-center gap-2 mt-2 pt-1.5 border-t border-slate-800/80 text-[11px] text-slate-300 font-mono">
-                <span className="text-slate-400">Yield Cycle:</span>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: toast.totalWeeks }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={`h-1.5 w-4 rounded-full transition-colors ${
-                        idx < toast.weeksPaid 
-                          ? 'bg-emerald-400' 
-                          : 'bg-slate-700'
-                      }`}
-                      title={`Week ${idx + 1}`}
-                    />
-                  ))}
+                <span className="text-slate-400 shrink-0">Yield Cycle:</span>
+                <div className="flex-1 bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700/60 relative">
+                  <div
+                    className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.round((toast.weeksPaid / toast.totalWeeks) * 100))}%` }}
+                  />
                 </div>
-                <span className="font-bold text-emerald-300 ml-1">
+                <span className="font-bold text-emerald-300 shrink-0">
                   Week {toast.weeksPaid}/{toast.totalWeeks}
                 </span>
               </div>

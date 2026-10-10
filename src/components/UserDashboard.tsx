@@ -183,7 +183,11 @@ export const UserDashboard: React.FC = () => {
     },
     {
       question: "How do weekly Friday payouts work?",
-      answer: "Every property plan runs for 4 weeks. Every Friday, your weekly cash profit is paid straight into your wallet. You can withdraw it to your bank account anytime."
+      answer: "Every property plan runs for 28 weeks. Every Friday, your weekly cash profit is paid straight into your wallet. You can withdraw it to your bank account anytime."
+    },
+    {
+      question: "What is Auto-Renew and weekly payout rollover?",
+      answer: "Auto-Renew means investors choose to rollover their weekly payouts and are entitled to a 3% increment on each payout rolled over (calculated on each weekly payout, not the entire plan)."
     },
     {
       question: "How do I withdraw cash to my bank?",
@@ -712,9 +716,21 @@ export const UserDashboard: React.FC = () => {
                             <span className="text-slate-500 block font-light">Total Returns</span>
                             <span className="text-sm font-bold text-amber-600">₦{inv.totalReturns.toLocaleString()}</span>
                           </div>
-                          <div className="col-span-2 pt-1.5 border-t border-slate-100">
-                            <span className="text-slate-500 block font-light">Paid Every Friday</span>
-                            <span className="text-sm font-bold text-slate-900">₦{inv.weeklyPayout.toLocaleString()} / week</span>
+                          <div className="col-span-2 pt-1.5 border-t border-slate-100 flex items-center justify-between">
+                            <div>
+                              <span className="text-slate-500 block font-light text-[10px]">Paid Every Friday</span>
+                              <span className="text-sm font-bold text-slate-900">₦{inv.weeklyPayout.toLocaleString()} / week</span>
+                            </div>
+                            {inv.autoReinvest && (
+                              <div className="text-right">
+                                <span className="text-[10px] text-amber-600 font-bold block flex items-center justify-end gap-1">
+                                  <Sparkles className="w-3 h-3 text-amber-500" /> With +3% Rollover:
+                                </span>
+                                <span className="text-xs font-bold text-emerald-700 font-mono">
+                                  ₦{(inv.weeklyPayout + Math.round(inv.weeklyPayout * 0.03)).toLocaleString()} / week
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -737,13 +753,20 @@ export const UserDashboard: React.FC = () => {
                           <PayoutCountdown targetDate={inv.nextPayoutDate} isLocked={inv.isTimerLocked || currentUser?.isTimerLocked} />
                         </div>
 
-                        {/* Auto-Compounding Rollover Toggle */}
+                        {/* Auto-Renew Weekly Payout Rollover Toggle */}
                         <div className="flex items-center justify-between bg-white border border-slate-200/90 rounded-xl p-2.5 my-2">
                           <div className="flex items-center gap-2">
                             <RotateCw className={`w-3.5 h-3.5 ${inv.autoReinvest ? 'text-amber-500 animate-spin-slow' : 'text-slate-400'}`} />
                             <div>
-                              <span className="text-[11px] font-bold text-slate-800 block leading-tight">Auto-Renew</span>
-                              <span className="text-[9px] text-slate-400 block">Restart plan automatically after 4 weeks</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-bold text-slate-800 block leading-tight">Auto-Renew</span>
+                                <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full border border-amber-200">+3% on Payout</span>
+                              </div>
+                              <span className="text-[9px] text-slate-400 block mt-0.5">
+                                {inv.autoReinvest 
+                                  ? `Active: +3% increment (+₦${Math.round(inv.weeklyPayout * 0.03).toLocaleString()}) applied to each weekly payout` 
+                                  : `Rollover weekly payouts with a 3% increment (+₦${Math.round(inv.weeklyPayout * 0.03).toLocaleString()}/wk)`}
+                              </span>
                             </div>
                           </div>
                           <button
@@ -753,7 +776,7 @@ export const UserDashboard: React.FC = () => {
                               inv.autoReinvest ? 'bg-amber-500' : 'bg-slate-300'
                             }`}
                             id={`toggle_autoreinvest_${inv.id}`}
-                            title="Toggle automatic reinvestment of principal at maturity"
+                            title="Toggle Auto-Renew to rollover weekly payouts with 3% increment"
                           >
                             <span
                               className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
@@ -850,13 +873,13 @@ export const UserDashboard: React.FC = () => {
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-center max-w-3xl mx-auto">
             <h3 className="text-lg font-bold text-slate-900 tracking-wide uppercase">Choose a Property Plan</h3>
             <p className="text-xs text-slate-600 mt-1 max-w-xl mx-auto">
-              Start with as little as <strong>₦15,000</strong>. All plans run for <strong>4 weeks</strong>. You get paid cash every Friday straight into your wallet, and you can withdraw to your bank anytime.
+              Start with as little as <strong>₦30,000</strong>. All plans run for <strong>28 weeks</strong>. You get paid cash every Friday straight into your wallet, and you can withdraw to your bank anytime.
             </p>
             <div className="mt-4 p-4 bg-slate-900 border border-slate-800 rounded-2xl text-xs max-w-xl mx-auto text-left flex items-start gap-3 shadow-sm text-white">
               <Building className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <strong className="text-white font-bold block uppercase tracking-wider text-[11px] mb-1">NOTE ON PLANS</strong>
-                <span className="text-slate-200 leading-relaxed">Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 4 weeks, paying you cash every Friday.</span>
+                <span className="text-slate-200 leading-relaxed">Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 28 weeks, paying you cash every Friday.</span>
               </div>
             </div>
             <div className="mt-3 inline-flex items-center gap-1.5 bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium">
@@ -895,7 +918,7 @@ export const UserDashboard: React.FC = () => {
                         <span className="text-lg font-extrabold text-slate-900">₦{plan.cost.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-baseline">
-                        <span className="text-xs text-slate-500">Total Returns (4w):</span>
+                        <span className="text-xs text-slate-500">Total Returns (28w):</span>
                         <span className="text-base font-bold text-amber-600">₦{plan.totalReturns.toLocaleString()}</span>
                       </div>
                       <div className="h-px bg-slate-200 w-full" />
@@ -908,11 +931,15 @@ export const UserDashboard: React.FC = () => {
                     <ul className="text-xs text-slate-600 space-y-2 mb-6">
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Paid every Friday for 4 weeks</span>
+                        <span>Paid every Friday for 28 weeks</span>
                       </li>
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
                         <span>7.5% bonus for the friend who invited you</span>
+                      </li>
+                      <li className="flex items-center gap-1.5 text-amber-700 font-medium">
+                        <RotateCw className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Auto-Renew: Rollover payouts for +3% increment (+₦{Math.round(plan.weeklyPayout * 0.03).toLocaleString()}/wk)</span>
                       </li>
                       <li className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
@@ -1624,7 +1651,7 @@ export const UserDashboard: React.FC = () => {
                 <span className="font-extrabold text-emerald-600 text-sm">₦{activatedPlanModal.plan.weeklyPayout.toLocaleString()} / wk</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500 font-medium">Total Returns (4 Weeks):</span>
+                <span className="text-slate-500 font-medium">Total Returns (28 Weeks):</span>
                 <span className="font-extrabold text-amber-600 text-sm">₦{activatedPlanModal.plan.totalReturns.toLocaleString()}</span>
               </div>
               <div className="pt-2 border-t border-slate-200">
