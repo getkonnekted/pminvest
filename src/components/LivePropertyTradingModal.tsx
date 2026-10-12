@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, TrendingUp, Activity, Building2, ArrowUpRight, MapPin, Landmark, Clock3, Globe2 } from 'lucide-react';
 import { UserInvestment } from '../types';
 
@@ -29,11 +29,26 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
   onExplorePlans
 }) => {
   const [activeMarket, setActiveMarket] = useState('All markets');
+  const [indexHistory, setIndexHistory] = useState(INDEX_HISTORY);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = window.setInterval(() => {
+      setIndexHistory(previous => {
+        const last = previous[previous.length - 1] ?? 4868;
+        const movement = Math.round((Math.random() - 0.46) * 34);
+        const next = Math.max(4700, Math.min(4950, last + movement));
+        return [...previous.slice(1), next];
+      });
+    }, 900);
+    return () => window.clearInterval(timer);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const hasPlan = userInvestments.length > 0;
-  const points = INDEX_HISTORY.map((value, index) => `${(index / (INDEX_HISTORY.length - 1)) * 400},${60 - ((value - 4750) / 150) * 50}`).join(' ');
+  const latestIndex = indexHistory[indexHistory.length - 1] ?? 4868;
+  const points = indexHistory.map((value, index) => `${(index / (indexHistory.length - 1)) * 400},${60 - ((value - 4700) / 250) * 50}`).join(' ');
   const visibleMarkets = activeMarket === 'All markets' ? MARKETS : MARKETS.filter(market => market.country === activeMarket);
 
   return (
@@ -46,7 +61,7 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
             </div>
             <div className="min-w-0">
               <h2 className="text-sm font-extrabold uppercase tracking-wide text-white sm:text-base">Global Property Markets</h2>
-              <p className="mt-1 text-[11px] text-slate-400">Company-managed market overview · Africa and the UAE</p>
+              <p className="mt-1 text-[11px] text-slate-400">Worldwide property trading simulation</p>
             </div>
           </div>
           <button onClick={onClose} aria-label="Close property markets" className="ml-3 rounded-xl bg-slate-800/70 p-2 text-slate-400 transition hover:bg-slate-700 hover:text-white">
@@ -66,7 +81,7 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-slate-800 bg-[#0B101D] p-4">
                 <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400"><Activity className="h-3.5 w-3.5 text-emerald-400" /> Global liquidity index</div>
-                <div className="flex items-end gap-2"><strong className="text-2xl font-extrabold text-white">4,864.69</strong><span className="pb-1 text-xs text-slate-400">pts</span></div>
+                <div className="flex items-end gap-2"><strong className="text-2xl font-extrabold text-white">{latestIndex.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong><span className="pb-1 text-xs text-slate-400">pts</span></div>
                 <div className="mt-1 flex items-center gap-1 text-xs font-bold text-emerald-400"><ArrowUpRight className="h-3.5 w-3.5" /> +4.28%</div>
               </div>
               <div className="rounded-xl border border-slate-800 bg-[#0B101D] p-4">
@@ -77,33 +92,33 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
               <div className="rounded-xl border border-slate-800 bg-[#0B101D] p-4">
                 <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400"><Landmark className="h-3.5 w-3.5 text-sky-400" /> Market coverage</div>
                 <strong className="text-xl font-extrabold text-white">8 markets</strong>
-                <p className="mt-1 text-xs text-slate-500">Property sectors across Africa and the UAE.</p>
+                <p className="mt-1 text-xs text-slate-500">Property sectors across worldwide markets.</p>
               </div>
             </div>
 
             <section className="rounded-xl border border-slate-800 bg-[#0B101D] p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">Global index overview</h3>
-                  <p className="mt-1 text-[10px] text-slate-500">TH-INDEX · GLOBAL</p>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">Global trading simulation</h3>
+                  <p className="mt-1 text-[10px] text-slate-500">TH-INDEX · WORLDWIDE</p>
                 </div>
-                <span className="rounded-full border border-slate-700 px-2.5 py-1 text-[10px] text-slate-400">Illustrative index figures</span>
+                <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> LIVE SIMULATION</span>
               </div>
               <div className="h-24 w-full">
-                <svg className="h-full w-full" viewBox="0 0 400 60" preserveAspectRatio="none" role="img" aria-label="Illustrative global property index trend">
+                <svg className="h-full w-full" viewBox="0 0 400 60" preserveAspectRatio="none" role="img" aria-label="Animated worldwide trading simulation chart">
                   <defs><linearGradient id="globalIndexFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity="0.28" /><stop offset="100%" stopColor="#10b981" stopOpacity="0" /></linearGradient></defs>
                   <polygon fill="url(#globalIndexFill)" points={`0,60 ${points} 400,60`} />
-                  <polyline fill="none" stroke="#10b981" strokeWidth="2" vectorEffect="non-scaling-stroke" points={points} />
+                  <polyline fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" style={{ transition: "all 800ms linear" }} points={points} />
                 </svg>
               </div>
-              <p className="mt-2 text-[10px] leading-relaxed text-slate-500">Index values are illustrative display figures. Confirmed market performance and company transactions should be sourced from verified company records.</p>
+              
             </section>
 
             <section className="overflow-hidden rounded-xl border border-slate-800 bg-[#0B101D]">
               <div className="flex flex-col gap-3 border-b border-slate-800 bg-[#0D1322] p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-white">Markets monitored</h3>
-                  <p className="mt-1 text-[10px] text-slate-500">The company manages any acquisitions and sales; investors view this overview only.</p>
+                  <p className="mt-1 text-[10px] text-slate-500">Worldwide property market activity simulation.</p>
                 </div>
                 <select value={activeMarket} onChange={event => setActiveMarket(event.target.value)} aria-label="Filter property markets" className="rounded-lg border border-slate-700 bg-[#080D18] px-3 py-2 text-xs text-slate-200 outline-none focus:border-amber-500">
                   <option>All markets</option>
@@ -123,9 +138,6 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
                 ))}
               </div>
             </section>
-            <div className="rounded-xl border border-slate-800 bg-[#080C16] px-4 py-3 text-[11px] leading-relaxed text-slate-400">
-              This dashboard is an investor-facing overview. It does not provide investor trade execution. Market figures are illustrative; company transactions should only appear here when verified company records are connected.
-            </div>
           </div>
         )}
       </section>
