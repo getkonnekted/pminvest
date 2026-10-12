@@ -451,7 +451,7 @@ export const UserDashboard: React.FC = () => {
       )}
 
       {/* Real Investor vs Unfunded Lead Status Callout */}
-      {hasFundingActivity ? (
+      {isRealInvestor ? (
         <div className="mb-5 bg-emerald-50/80 border border-emerald-200 text-emerald-900 px-4 py-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs shadow-xs">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 shrink-0">
@@ -503,6 +503,20 @@ export const UserDashboard: React.FC = () => {
           >
             Top Up Wallet Now →
           </button>
+        </div>
+      ) : currentUser.walletBalance > 0 ? null : (
+        <div className="mb-5 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200 text-amber-950 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 shrink-0 font-bold font-mono">⚡</div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold uppercase tracking-wide text-amber-900">UNFUNDED LEAD ACCOUNT</span>
+                <span className="bg-amber-200/80 text-amber-900 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">Awaiting First Deposit</span>
+              </div>
+              <p className="text-slate-600 mt-0.5 text-[11px] leading-relaxed">Add money to your wallet to become a <strong className="text-emerald-700">Verified Real Investor</strong> and start receiving cash payouts in your bank every Friday.</p>
+            </div>
+          </div>
+          <button type="button" onClick={() => setActiveTab('finance')} className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-all self-start sm:self-auto shrink-0 shadow-sm cursor-pointer whitespace-nowrap active:scale-95" id="btn_unfunded_lead_topup">Top Up Wallet Now →</button>
         </div>
       )}
 
