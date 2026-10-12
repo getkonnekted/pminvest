@@ -70,9 +70,9 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
                 <div className="mt-1 flex items-center gap-1 text-xs font-bold text-emerald-400"><ArrowUpRight className="h-3.5 w-3.5" /> +4.28%</div>
               </div>
               <div className="rounded-xl border border-slate-800 bg-[#0B101D] p-4">
-                <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400"><Clock3 className="h-3.5 w-3.5 text-amber-400" /> Scheduled payout window</div>
-                <strong className="text-xl font-extrabold text-white">Friday · 12:00 PM</strong>
-                <p className="mt-1 text-xs text-slate-500">Investor plan payouts follow each plan’s recorded schedule.</p>
+                <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400"><Clock3 className="h-3.5 w-3.5 text-amber-400" /> Investor payout cycle</div>
+                <strong className="text-xl font-extrabold text-white">Every 7 days</strong>
+                <p className="mt-1 text-xs text-slate-500">The countdown starts when a plan is purchased.</p>
               </div>
               <div className="rounded-xl border border-slate-800 bg-[#0B101D] p-4">
                 <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400"><Landmark className="h-3.5 w-3.5 text-sky-400" /> Market coverage</div>
