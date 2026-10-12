@@ -52,6 +52,7 @@ export interface UserInvestment {
   lastPayoutDate?: string;
   nextPayoutDate?: string;
   autoReinvest?: boolean;
+  autoReinvestLockedUntil?: string;
   isMarketing?: boolean;
   isTimerLocked?: boolean;
 }
