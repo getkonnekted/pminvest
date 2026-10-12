@@ -827,9 +827,6 @@ export const UserDashboard: React.FC = () => {
                   )}
                 </div>
 
-              </div>
-            )}
-
             {/* Completed Plans & Rollover Section */}
             {completedInvestments.length > 0 && (
               <div className="mt-6 pt-5 border-t border-slate-100">
@@ -888,6 +885,7 @@ export const UserDashboard: React.FC = () => {
                 </div>
               </div>
             )}
+            </div>
           </div>
 
           {/* User History List */}
