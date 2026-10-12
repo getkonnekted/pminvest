@@ -32,7 +32,10 @@ import {
   PlusCircle,
   ArrowRight,
   Link2,
-  Check
+  Check,
+  Activity,
+  Maximize2,
+  BarChart2
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
 import { INVESTMENT_PLANS, InvestmentPlan } from '../types';
@@ -71,12 +74,13 @@ export const UserDashboard: React.FC = () => {
     formatLiquidityReserve
   } = useAppState();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'tasks' | 'finance' | 'referrals' | 'kyc'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'trading' | 'tasks' | 'finance' | 'referrals' | 'kyc'>('overview');
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [activeInvestmentsViewMode, setActiveInvestmentsViewMode] = useState<'both' | 'plans' | 'trading'>('both');
 
   // Dashboard Menu Items for Hamburger & Tab Navigation
   const menuItems: {
-    id: 'overview' | 'invest' | 'tasks' | 'finance' | 'referrals' | 'kyc';
+    id: 'overview' | 'invest' | 'trading' | 'tasks' | 'finance' | 'referrals' | 'kyc';
     label: string;
     description: string;
     icon: React.ComponentType<{ className?: string }>;
@@ -94,6 +98,18 @@ export const UserDashboard: React.FC = () => {
       description: 'Choose a property plan starting from ₦30,000',
       icon: Sparkles,
       badge: <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">From ₦30k</span>
+    },
+    {
+      id: 'trading',
+      label: 'Live Trading',
+      description: 'Real-time property trading simulation & candlestick yield engine',
+      icon: Activity,
+      badge: (
+        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          Live Model
+        </span>
+      )
     },
     {
       id: 'tasks',
@@ -671,147 +687,270 @@ export const UserDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Live Trading Simulation & Active Investments Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* Live Trading Simulation Card (Compact Ticker & Real-time model for investors) */}
-            <div className="lg:col-span-5 order-2 lg:order-2">
-              <LiveTradingSimulationCard
-                onExpandTerminal={() => setIsTradingTerminalOpen(true)}
-              />
-            </div>
-
-            {/* Active Investments section */}
-            <div className="lg:col-span-7 order-1 lg:order-1 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <div id="active_investments_section" className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+          {/* Active Investments & Live Trading Simulation Section */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <div id="active_investments_section" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-100 pb-3">
+              <div>
                 <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                   <span className="w-2.5 h-2.5 bg-amber-500 rounded-full" />
                   My Active Investments ({activeInvestments.length})
                 </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Portfolio plans connected to physical real estate developments &amp; automated simulated yields.
+                </p>
               </div>
 
-            {activeInvestments.length === 0 ? (
-              <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                <Clock className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-slate-700">No active investments found.</p>
-                <p className="text-xs text-slate-500 mt-1">Go to the "Buy Plans" tab to purchase an investment plan starting at ₦30,000.</p>
+              {/* View Mode Controls & Terminal Launcher */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="bg-slate-100 p-0.5 rounded-xl border border-slate-200 flex items-center text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setActiveInvestmentsViewMode('both')}
+                    className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+                      activeInvestmentsViewMode === 'both' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Split View
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveInvestmentsViewMode('plans')}
+                    className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+                      activeInvestmentsViewMode === 'plans' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Plans Only ({activeInvestments.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveInvestmentsViewMode('trading')}
+                    className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer flex items-center gap-1 ${
+                      activeInvestmentsViewMode === 'trading' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Trading Model
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => setActiveTab('invest')}
-                  className="mt-4 bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors shadow-sm"
+                  type="button"
+                  onClick={() => setIsTradingTerminalOpen(true)}
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                  title="Open Full Real-time Property Trading Terminal Modal"
                 >
-                  Explore Plans
+                  <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">Live Terminal</span>
+                  <Maximize2 className="w-3 h-3 text-slate-400" />
                 </button>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {activeInvestments.map((inv) => {
-                  const percentComplete = (inv.weeksPaid / inv.totalWeeks) * 100;
-                  return (
-                    <div key={inv.id} className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col justify-between relative overflow-hidden shadow-xs">
-                      {/* Brand background watermark */}
-                      <div className="absolute right-2 top-2 opacity-10 pointer-events-none">
-                        <Building className="w-20 h-20 text-slate-300" />
-                      </div>
+            </div>
 
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-bold text-slate-900 uppercase tracking-wider">{inv.planName}</span>
-                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
-                            ACTIVE
-                          </span>
-                        </div>
+            {/* Live Model Top Highlight Banner on Active Investments */}
+            <div className="mb-5 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 rounded-xl p-3.5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0">
+                  <Activity className="w-5 h-5 text-emerald-400 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-extrabold text-white font-mono tracking-wider">
+                      LIVE PROPERTY TRADING ENGINE (PM-REIT / NGN)
+                    </span>
+                    <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      +4.82% 24h Yield
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    Autonomous institutional model: Streaming real estate arbitrage, rental distributions &amp; liquidity pool executions for investors 24/7.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsTradingTerminalOpen(true)}
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1 shadow-xs cursor-pointer active:scale-95 whitespace-nowrap self-start sm:self-auto"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>Expand Terminal</span>
+              </button>
+            </div>
 
-                        <div className="grid grid-cols-2 gap-2 my-3 text-xs border-y border-slate-200 py-3">
-                          <div>
-                            <span className="text-slate-500 block font-light">Plan Cost</span>
-                            <span className="text-sm font-bold text-slate-900">₦{inv.cost.toLocaleString()}</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-500 block font-light">Total Returns</span>
-                            <span className="text-sm font-bold text-amber-600">₦{inv.totalReturns.toLocaleString()}</span>
-                          </div>
-                          <div className="col-span-2 pt-1.5 border-t border-slate-100 flex items-center justify-between">
-                            <div>
-                              <span className="text-slate-500 block font-light text-[10px]">Paid Every Friday</span>
-                              <span className="text-sm font-bold text-slate-900">₦{inv.weeklyPayout.toLocaleString()} / week</span>
-                            </div>
-                            {inv.autoReinvest && (
-                              <div className="text-right">
-                                <span className="text-[10px] text-amber-600 font-bold block flex items-center justify-end gap-1">
-                                  <Sparkles className="w-3 h-3 text-amber-500" /> With +3% Rollover:
-                                </span>
-                                <span className="text-xs font-bold text-emerald-700 font-mono">
-                                  ₦{(inv.weeklyPayout + Math.round(inv.weeklyPayout * 0.03)).toLocaleString()} / week
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+            {/* If user toggled 'trading' only */}
+            {activeInvestmentsViewMode === 'trading' && (
+              <div className="mb-2">
+                <LiveTradingSimulationCard
+                  onExpandTerminal={() => setIsTradingTerminalOpen(true)}
+                />
+              </div>
+            )}
 
-                        {/* Progress */}
-                        <div className="my-3">
-                          <div className="flex justify-between text-[11px] mb-1 font-mono text-slate-500">
-                            <span>Plan Progress</span>
-                            <span>Week {inv.weeksPaid} of {inv.totalWeeks} Paid</span>
-                          </div>
-                          <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                            <div 
-                              className="bg-gradient-to-r from-amber-500 to-emerald-500 h-full rounded-full transition-all duration-500" 
-                              style={{ width: `${percentComplete}%` }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Live Payout Countdown Timer */}
-                        <div className="my-2.5">
-                          <PayoutCountdown targetDate={inv.nextPayoutDate} isLocked={inv.isTimerLocked || currentUser?.isTimerLocked} />
-                        </div>
-
-                        {/* Auto-Renew Weekly Payout Rollover Toggle */}
-                        <div className="flex items-center justify-between bg-white border border-slate-200/90 rounded-xl p-2.5 my-2">
-                          <div className="flex items-center gap-2">
-                            <RotateCw className={`w-3.5 h-3.5 ${inv.autoReinvest ? 'text-amber-500 animate-spin-slow' : 'text-slate-400'}`} />
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] font-bold text-slate-800 block leading-tight">Auto-Renew</span>
-                                <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full border border-amber-200">+3% on Payout</span>
-                              </div>
-                              <span className="text-[9px] text-slate-400 block mt-0.5">
-                                {inv.autoReinvest 
-                                  ? `Active: +3% increment (+₦${Math.round(inv.weeklyPayout * 0.03).toLocaleString()}) applied to each weekly payout` 
-                                  : `Rollover weekly payouts with a 3% increment (+₦${Math.round(inv.weeklyPayout * 0.03).toLocaleString()}/wk)`}
-                              </span>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => toggleAutoReinvest(inv.id)}
-                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                              inv.autoReinvest ? 'bg-amber-500' : 'bg-slate-300'
-                            }`}
-                            id={`toggle_autoreinvest_${inv.id}`}
-                            title="Toggle Auto-Renew to rollover weekly payouts with 3% increment"
-                          >
-                            <span
-                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                inv.autoReinvest ? 'translate-x-4' : 'translate-x-0'
-                              }`}
-                            />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-[10px] text-slate-400 font-mono">
-                          <span>Invested: {new Date(inv.createdAt).toLocaleDateString()}</span>
-                        </div>
-                        <InvestmentPayoutButton
-                          investment={inv}
-                          onPayout={processSingleInvestmentPayout}
-                        />
-                      </div>
+            {/* If user toggled 'plans' or 'both' */}
+            {activeInvestmentsViewMode !== 'trading' && (
+              <div className={activeInvestmentsViewMode === 'both' ? "grid grid-cols-1 xl:grid-cols-12 gap-5 items-start" : "space-y-4"}>
+                {/* Active Plans Container */}
+                <div className={activeInvestmentsViewMode === 'both' ? (activeInvestments.length > 0 ? "xl:col-span-7 space-y-4" : "xl:col-span-6 space-y-4") : "space-y-4"}>
+                  {activeInvestments.length === 0 ? (
+                    <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                      <Clock className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                      <p className="text-sm font-semibold text-slate-700">No active investments found.</p>
+                      <p className="text-xs text-slate-500 mt-1">Go to the "Buy Plans" tab to purchase an investment plan starting at ₦30,000.</p>
+                      <button
+                        onClick={() => setActiveTab('invest')}
+                        className="mt-4 bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors shadow-sm cursor-pointer"
+                      >
+                        Explore Plans
+                      </button>
                     </div>
-                  );
-                })}
+                  ) : (
+                    <div className={`grid grid-cols-1 ${activeInvestmentsViewMode === 'both' ? 'md:grid-cols-1 2xl:grid-cols-2' : 'md:grid-cols-2'} gap-4`}>
+                      {activeInvestments.map((inv) => {
+                        const percentComplete = (inv.weeksPaid / inv.totalWeeks) * 100;
+                        return (
+                          <div key={inv.id} className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col justify-between relative overflow-hidden shadow-xs">
+                            {/* Brand background watermark */}
+                            <div className="absolute right-2 top-2 opacity-10 pointer-events-none">
+                              <Building className="w-20 h-20 text-slate-300" />
+                            </div>
+
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-bold text-slate-900 uppercase tracking-wider">{inv.planName}</span>
+                                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
+                                  ACTIVE
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2 my-3 text-xs border-y border-slate-200 py-3">
+                                <div>
+                                  <span className="text-slate-500 block font-light">Plan Cost</span>
+                                  <span className="text-sm font-bold text-slate-900">₦{inv.cost.toLocaleString()}</span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-500 block font-light">Total Returns</span>
+                                  <span className="text-sm font-bold text-amber-600">₦{inv.totalReturns.toLocaleString()}</span>
+                                </div>
+                                <div className="col-span-2 pt-1.5 border-t border-slate-100 flex items-center justify-between">
+                                  <div>
+                                    <span className="text-slate-500 block font-light text-[10px]">Paid Every Friday</span>
+                                    <span className="text-sm font-bold text-slate-900">₦{inv.weeklyPayout.toLocaleString()} / week</span>
+                                  </div>
+                                  {inv.autoReinvest && (
+                                    <div className="text-right">
+                                      <span className="text-[10px] text-amber-600 font-bold block flex items-center justify-end gap-1">
+                                        <Sparkles className="w-3 h-3 text-amber-500" /> With +3% Rollover:
+                                      </span>
+                                      <span className="text-xs font-bold text-emerald-700 font-mono">
+                                        ₦{(inv.weeklyPayout + Math.round(inv.weeklyPayout * 0.03)).toLocaleString()} / week
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Progress */}
+                              <div className="my-3">
+                                <div className="flex justify-between text-[11px] mb-1 font-mono text-slate-500">
+                                  <span>Plan Progress</span>
+                                  <span>Week {inv.weeksPaid} of {inv.totalWeeks} Paid</span>
+                                </div>
+                                <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                                  <div 
+                                    className="bg-gradient-to-r from-amber-500 to-emerald-500 h-full rounded-full transition-all duration-500" 
+                                    style={{ width: `${percentComplete}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Live Payout Countdown Timer */}
+                              <div className="my-2.5">
+                                <PayoutCountdown targetDate={inv.nextPayoutDate} isLocked={inv.isTimerLocked || currentUser?.isTimerLocked} />
+                              </div>
+
+                              {/* Live Simulated Property Arbitrage & Yield Engine directly on this active investment */}
+                              <div className="my-2.5 bg-slate-900 border border-slate-800 rounded-xl p-3 text-white shadow-xs">
+                                <div className="flex items-center justify-between text-[11px] mb-1">
+                                  <span className="flex items-center gap-1.5 text-amber-400 font-bold uppercase tracking-wider text-[10px]">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                    Live Trading Simulation
+                                  </span>
+                                  <span className="font-mono text-emerald-400 font-bold text-[10px]">
+                                    +4.82% Daily Yield
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-[10px] text-slate-300 font-mono py-1 border-y border-slate-800/80 my-1">
+                                  <span>Index: <strong className="text-white">PM-REIT</strong> (₦148,650)</span>
+                                  <span className="text-amber-400 font-semibold">Yield Arbitrage Active</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setIsTradingTerminalOpen(true)}
+                                  className="mt-2 w-full py-1.5 px-3 bg-slate-800 hover:bg-slate-750 active:scale-98 text-amber-400 font-bold text-[10px] rounded-lg border border-slate-700 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                                >
+                                  <Activity className="w-3 h-3 text-emerald-400" />
+                                  <span>View Live Candlesticks &amp; Orders</span>
+                                </button>
+                              </div>
+
+                              {/* Auto-Renew Weekly Payout Rollover Toggle */}
+                              <div className="flex items-center justify-between bg-white border border-slate-200/90 rounded-xl p-2.5 my-2">
+                                <div className="flex items-center gap-2">
+                                  <RotateCw className={`w-3.5 h-3.5 ${inv.autoReinvest ? 'text-amber-500 animate-spin-slow' : 'text-slate-400'}`} />
+                                  <div>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[11px] font-bold text-slate-800 block leading-tight">Auto-Renew</span>
+                                      <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full border border-amber-200">+3% on Payout</span>
+                                    </div>
+                                    <span className="text-[9px] text-slate-400 block mt-0.5">
+                                      {inv.autoReinvest 
+                                        ? `Active: +3% increment (+₦${Math.round(inv.weeklyPayout * 0.03).toLocaleString()}) applied to each weekly payout` 
+                                        : `Rollover weekly payouts with a 3% increment (+₦${Math.round(inv.weeklyPayout * 0.03).toLocaleString()}/wk)`}
+                                    </span>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleAutoReinvest(inv.id)}
+                                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                    inv.autoReinvest ? 'bg-amber-500' : 'bg-slate-300'
+                                  }`}
+                                  id={`toggle_autoreinvest_${inv.id}`}
+                                  title="Toggle Auto-Renew to rollover weekly payouts with 3% increment"
+                                >
+                                  <span
+                                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                      inv.autoReinvest ? 'translate-x-4' : 'translate-x-0'
+                                    }`}
+                                  />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                              <div className="text-[10px] text-slate-400 font-mono">
+                                <span>Invested: {new Date(inv.createdAt).toLocaleDateString()}</span>
+                              </div>
+                              <InvestmentPayoutButton
+                                investment={inv}
+                                onPayout={processSingleInvestmentPayout}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Live Trading Simulation Card (Placed directly next to Active Investments in split view) */}
+                {activeInvestmentsViewMode === 'both' && (
+                  <div className={activeInvestments.length > 0 ? "xl:col-span-5" : "xl:col-span-6"}>
+                    <LiveTradingSimulationCard
+                      onExpandTerminal={() => setIsTradingTerminalOpen(true)}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -873,7 +1012,6 @@ export const UserDashboard: React.FC = () => {
                 </div>
               </div>
             )}
-            </div>
           </div>
 
           {/* User History List */}
@@ -1077,6 +1215,71 @@ export const UserDashboard: React.FC = () => {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED LIVE TRADING SIMULATION MODEL TAB */}
+      {activeTab === 'trading' && (
+        <div className="space-y-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
+                  <h3 className="text-lg font-bold text-slate-900 tracking-wide uppercase">
+                    Institutional Property Trading Simulation
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                  Real-time synthetic market simulation modeling how Treasure Homes deploys pooled capital across prime Nigerian real estate hubs (Lekki, VI, Epe, Abuja) to generate weekly Friday payouts.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsTradingTerminalOpen(true)}
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2 px-3.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+                >
+                  <Maximize2 className="w-4 h-4 text-amber-400" />
+                  <span>Launch Full-Screen Terminal</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('invest')}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2 px-3.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Invest from ₦30k</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                <span className="text-[10px] text-slate-500 block uppercase font-mono">Market Index</span>
+                <span className="text-sm font-bold text-slate-900 font-mono">PM-REIT / NGN</span>
+              </div>
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                <span className="text-[10px] text-slate-500 block uppercase font-mono">24h Price Action</span>
+                <span className="text-sm font-bold text-emerald-600 font-mono">₦148,650 (+4.82%)</span>
+              </div>
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                <span className="text-[10px] text-slate-500 block uppercase font-mono">24h Liquidity Volume</span>
+                <span className="text-sm font-bold text-slate-900 font-mono">₦3.84 Billion</span>
+              </div>
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                <span className="text-[10px] text-slate-500 block uppercase font-mono">Active Model Orders</span>
+                <span className="text-sm font-bold text-amber-600 font-mono">Live Automated Stream</span>
+              </div>
+            </div>
+
+            {/* Full Live Trading Simulation Card */}
+            <LiveTradingSimulationCard
+              onExpandTerminal={() => setIsTradingTerminalOpen(true)}
+            />
           </div>
         </div>
       )}
