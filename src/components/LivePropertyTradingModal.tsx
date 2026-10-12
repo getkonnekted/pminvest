@@ -32,17 +32,24 @@ interface SimulatedTrade {
   price: number;
   status: 'FILLED' | 'CLEARED' | 'SETTLED';
   location: string;
+  market: string;
+  currency: 'NGN' | 'ZAR' | 'KES' | 'GHS' | 'MAD' | 'EGP' | 'AED' | 'RWF';
+  currencySymbol: string;
 }
 
 const LOCATIONS = [
-  'Lekki Phase 1 Prime Terraces',
-  'Epe Expressway Corridor Plot 4B',
-  'Ibeju-Lekki Coastal Green Villa',
-  'Guzape Hills Luxury Duplex Wing',
-  'Victoria Island Commercial Office Suite',
-  'Ikeja GRA Residential Development',
-  'Maitama Diplomatic Zone Advance',
-  'Alalubosa GRA Ibadan Waterfront'
+  { market: 'Nigeria', location: 'Victoria Island Luxury Residences, Lagos', pair: 'TH-LAGOS/NGN', currency: 'NGN' as const, currencySymbol: '₦' },
+  { market: 'Nigeria', location: 'Maitama Prime Residential, Abuja', pair: 'TH-ABUJA/NGN', currency: 'NGN' as const, currencySymbol: '₦' },
+  { market: 'South Africa', location: 'Sandton Premium Apartments, Johannesburg', pair: 'TH-JOHANNESBURG/ZAR', currency: 'ZAR' as const, currencySymbol: 'R' },
+  { market: 'South Africa', location: 'Atlantic Seaboard Luxury Villa, Cape Town', pair: 'TH-CAPETOWN/ZAR', currency: 'ZAR' as const, currencySymbol: 'R' },
+  { market: 'Kenya', location: 'Westlands Premium Residence, Nairobi', pair: 'TH-NAIROBI/KES', currency: 'KES' as const, currencySymbol: 'KSh ' },
+  { market: 'Ghana', location: 'Airport Residential Luxury Suites, Accra', pair: 'TH-ACCRA/GHS', currency: 'GHS' as const, currencySymbol: 'GH₵' },
+  { market: 'Morocco', location: 'Anfa Place Luxury Residence, Casablanca', pair: 'TH-CASABLANCA/MAD', currency: 'MAD' as const, currencySymbol: 'MAD ' },
+  { market: 'Egypt', location: 'New Cairo Premium Development, Cairo', pair: 'TH-CAIRO/EGP', currency: 'EGP' as const, currencySymbol: 'E£' },
+  { market: 'United Arab Emirates', location: 'Dubai Marina Waterfront Residence, Dubai', pair: 'TH-DUBAI/AED', currency: 'AED' as const, currencySymbol: 'AED ' },
+  { market: 'United Arab Emirates', location: 'Downtown Dubai Luxury Apartment, Dubai', pair: 'TH-DOWNTOWN/AED', currency: 'AED' as const, currencySymbol: 'AED ' },
+  { market: 'United Arab Emirates', location: 'Saadiyat Island Premium Villa, Abu Dhabi', pair: 'TH-ABUDHABI/AED', currency: 'AED' as const, currencySymbol: 'AED ' },
+  { market: 'Rwanda', location: 'Kigali Heights Premium Residence, Kigali', pair: 'TH-KIGALI/RWF', currency: 'RWF' as const, currencySymbol: 'RF ' }
 ];
 
 export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> = ({
@@ -63,50 +70,10 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
   ]);
 
   const [trades, setTrades] = useState<SimulatedTrade[]>([
-    {
-      id: 'tr_101',
-      time: 'Just now',
-      pair: 'TH-LEKKI/NGN',
-      category: 'Trading',
-      type: 'BUY',
-      amount: 450000,
-      price: 4868.5,
-      status: 'FILLED',
-      location: 'Lekki Phase 1 Prime Terraces'
-    },
-    {
-      id: 'tr_102',
-      time: '12s ago',
-      pair: 'TH-EPE/NGN',
-      category: 'Flips',
-      type: 'SELL',
-      amount: 1250000,
-      price: 4865.0,
-      status: 'FILLED',
-      location: 'Epe Expressway Corridor Plot 4B'
-    },
-    {
-      id: 'tr_103',
-      time: '28s ago',
-      pair: 'TH-IBEJU/NGN',
-      category: 'Rental Yields',
-      type: 'YIELD',
-      amount: 85000,
-      price: 4862.0,
-      status: 'SETTLED',
-      location: 'Ibeju-Lekki Coastal Green Villa'
-    },
-    {
-      id: 'tr_104',
-      time: '45s ago',
-      pair: 'TH-GUZAPE/NGN',
-      category: 'Settlements',
-      type: 'BUY',
-      amount: 720000,
-      price: 4859.0,
-      status: 'CLEARED',
-      location: 'Guzape Hills Luxury Duplex Wing'
-    }
+    { id: 'tr_101', time: 'Just now', pair: 'TH-LAGOS/NGN', category: 'Trading', type: 'BUY', amount: 45000000, price: 4868.5, status: 'FILLED', location: 'Victoria Island Luxury Residences, Lagos', market: 'Nigeria', currency: 'NGN', currencySymbol: '₦' },
+    { id: 'tr_102', time: '12s ago', pair: 'TH-DUBAI/AED', category: 'Flips', type: 'SELL', amount: 2850000, price: 4865.0, status: 'FILLED', location: 'Dubai Marina Waterfront Residence, Dubai', market: 'United Arab Emirates', currency: 'AED', currencySymbol: 'AED ' },
+    { id: 'tr_103', time: '28s ago', pair: 'TH-CAPETOWN/ZAR', category: 'Rental Yields', type: 'YIELD', amount: 1850000, price: 4862.0, status: 'SETTLED', location: 'Atlantic Seaboard Luxury Villa, Cape Town', market: 'South Africa', currency: 'ZAR', currencySymbol: 'R' },
+    { id: 'tr_104', time: '45s ago', pair: 'TH-NAIROBI/KES', category: 'Settlements', type: 'BUY', amount: 18500000, price: 4859.0, status: 'CLEARED', location: 'Westlands Premium Residence, Nairobi', market: 'Kenya', currency: 'KES', currencySymbol: 'KSh ' }
   ]);
 
   // Real-time market tick generator & continuous streaming trades
@@ -137,13 +104,16 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
       const newTrade: SimulatedTrade = {
         id: 'tr_' + Date.now().toString().slice(-6),
         time: nowStr,
-        pair: `TH-${loc.split(' ')[0].toUpperCase()}/NGN`,
+        pair: loc.pair,
         category: cat,
         type: tradeType,
         amount,
         price: +(indexPrice + (Math.random() - 0.5) * 3).toFixed(2),
         status: tradeType === 'YIELD' ? 'SETTLED' : 'FILLED',
-        location: loc
+        location: loc.location,
+        market: loc.market,
+        currency: loc.currency,
+        currencySymbol: loc.currencySymbol
       };
 
       setTrades(prev => [newTrade, ...prev.slice(0, 19)]);
@@ -176,7 +146,7 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
                 </h3>
               </div>
               <p className="text-[11px] text-slate-400">
-                Simulated real estate market activity, asset categories and illustrative order history
+                Cross-border property simulation across high-value African markets and the United Arab Emirates
               </p>
             </div>
           </div>
@@ -193,9 +163,9 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
         <div className="bg-[#060911] border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="text-slate-400 font-bold">TH-INDEX/NGN</span>
+              <span className="text-slate-400 font-bold">TH-INDEX · GLOBAL</span>
               <span className="text-emerald-400 font-extrabold text-sm">
-                ₦{indexPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                {indexPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })} pts
               </span>
               <span className="text-emerald-400 text-[10px] flex items-center">
                 <ArrowUpRight className="w-3 h-3" /> +{priceChange24h}%
@@ -203,9 +173,9 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
             </div>
 
             <div className="hidden md:flex items-center gap-4 text-slate-400 text-[11px]">
-              <div>24h High: <span className="text-white">₦4,892.00</span></div>
-              <div>24h Low: <span className="text-white">₦4,755.20</span></div>
-              <div>24h Vol: <span className="text-amber-400">₦{(volume24h / 1000000).toFixed(1)}M</span></div>
+              <div>24h High: <span className="text-white">4,892.00 pts</span></div>
+              <div>24h Low: <span className="text-white">4,755.20 pts</span></div>
+              <div>Simulated Volume: <span className="text-amber-400">{(volume24h / 1000000).toFixed(1)}M units</span></div>
             </div>
           </div>
 
@@ -307,8 +277,8 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
                       <th className="py-2 px-3">Time</th>
                       <th className="py-2 px-3">Category</th>
                       <th className="py-2 px-3">Action</th>
-                      <th className="py-2 px-3">Asset / Location</th>
-                      <th className="py-2 px-3 text-right">₦ Amount</th>
+                      <th className="py-2 px-3">Asset / Location · Market</th>
+                      <th className="py-2 px-3 text-right">Amount · Local Currency</th>
                       <th className="py-2 px-3 text-right">Status</th>
                     </tr>
                   </thead>
@@ -339,10 +309,11 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
                           )}
                         </td>
                         <td className="py-2 px-3 font-sans text-xs text-slate-200 truncate max-w-[220px]">
-                          {t.location}
+                          <span>{t.location}</span>
+                          <span className="block text-[9px] text-slate-500">{t.market} · {t.pair}</span>
                         </td>
                         <td className="py-2 px-3 text-right font-bold text-white">
-                          ₦{t.amount.toLocaleString()}
+                          {t.currencySymbol}{t.amount.toLocaleString()}
                         </td>
                         <td className="py-2 px-3 text-right">
                           <span className="text-emerald-400 text-[10px] font-bold">
