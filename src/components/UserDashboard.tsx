@@ -233,8 +233,8 @@ export const UserDashboard: React.FC = () => {
       answer: "Go to the 'Deposit & Withdraw' tab, copy our official bank account details, and make a transfer from your bank app. Then upload your transfer receipt. Your wallet will be credited within 10 to 30 minutes."
     },
     {
-      question: "How do weekly Friday payouts work?",
-      answer: "Every property plan runs for 28 weeks. Every Friday, your weekly cash profit is paid straight into your wallet. You can withdraw it to your bank account anytime."
+      question: "How do weekly payouts work?",
+      answer: "Each property plan runs for 28 weeks. Your first payout is due 7 days after purchase; later payouts follow the same 7-day cycle and are credited to your wallet. You can withdraw eligible funds to your bank account."
     },
     {
       question: "What is Auto-Renew and weekly payout rollover?",
@@ -789,7 +789,7 @@ export const UserDashboard: React.FC = () => {
                                 </div>
                                 <div className="col-span-2 pt-1.5 border-t border-slate-100 flex items-center justify-between">
                                   <div>
-                                    <span className="text-slate-500 block font-light text-[10px]">Paid Every Friday</span>
+                                    <span className="text-slate-500 block font-light text-[10px]">Payout every 7 days</span>
                                     <span className="text-sm font-bold text-slate-900">₦{inv.weeklyPayout.toLocaleString()} / week</span>
                                   </div>
                                   {inv.autoReinvest && (
@@ -1678,7 +1678,7 @@ export const UserDashboard: React.FC = () => {
               <span>Frequently Asked Questions</span>
             </h3>
             <p className="text-xs text-slate-500 max-w-lg mx-auto">
-              Common questions about adding money, weekly Friday payouts, and bank withdrawals.
+              Common questions about adding money, seven-day payouts, and bank withdrawals.
             </p>
           </div>
 
