@@ -450,7 +450,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
       }
 
-      if (dbData.investments) {
+      if (dbData.investments !== null) {
+        // An empty array is authoritative only when the Supabase query succeeded.
         setInvestments(dbData.investments);
       }
 
@@ -521,7 +522,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           } else {
             const sanitizedUsers = dbData.users.filter((u: any) => u.id !== 'usr_demo_investor');
             setUsers(sanitizedUsers);
-            setInvestments(dbData.investments);
+            if (dbData.investments !== null) {
+              // Preserve locally loaded plans if the initial investments query failed.
+              setInvestments(dbData.investments);
+            }
             setTransactions(dbData.transactions);
             if (dbData.settings) {
               const dynamicReserve = calculateContinuousLiquidity(virtualDayOffset);
