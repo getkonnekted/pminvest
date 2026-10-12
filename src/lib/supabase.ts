@@ -285,18 +285,45 @@ export const syncMultipleUsersToSupabase = async (usersList: User[]) => {
   if (error) console.error('Error syncing multiple users:', error);
 };
 
+const isMissingAutoRenewLockColumn = (error: { message?: string; code?: string } | null): boolean =>
+  Boolean(error && (
+    error.message?.includes('autoReinvestLockedUntil') ||
+    error.message?.includes('auto_reinvest_locked_until') ||
+    error.code === 'PGRST204'
+  ));
+
 export const syncInvestmentToSupabase = async (investment: UserInvestment) => {
   const client = getSupabaseClient();
   if (!client) return;
   const { error } = await client.from('investments').upsert(investment);
-  if (error) console.error('Error syncing investment:', error);
+  if (!error) return;
+
+  if (isMissingAutoRenewLockColumn(error)) {
+    const { autoReinvestLockedUntil: _lockUntil, ...legacyInvestment } = investment;
+    const { error: fallbackError } = await client.from('investments').upsert(legacyInvestment);
+    if (fallbackError) console.error('Error syncing investment with legacy schema:', fallbackError);
+    else console.warn('Auto-renew lock is stored locally only until the database column is added.');
+    return;
+  }
+
+  console.error('Error syncing investment:', error);
 };
 
 export const syncMultipleInvestmentsToSupabase = async (investmentsList: UserInvestment[]) => {
   const client = getSupabaseClient();
   if (!client || investmentsList.length === 0) return;
   const { error } = await client.from('investments').upsert(investmentsList);
-  if (error) console.error('Error syncing multiple investments:', error);
+  if (!error) return;
+
+  if (isMissingAutoRenewLockColumn(error)) {
+    const legacyInvestments = investmentsList.map(({ autoReinvestLockedUntil: _lockUntil, ...investment }) => investment);
+    const { error: fallbackError } = await client.from('investments').upsert(legacyInvestments);
+    if (fallbackError) console.error('Error syncing investments with legacy schema:', fallbackError);
+    else console.warn('Auto-renew lock is stored locally only until the database column is added.');
+    return;
+  }
+
+  console.error('Error syncing multiple investments:', error);
 };
 
 export const syncTransactionToSupabase = async (transaction: Transaction) => {
