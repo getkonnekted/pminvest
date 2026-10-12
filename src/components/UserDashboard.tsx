@@ -825,7 +825,6 @@ export const UserDashboard: React.FC = () => {
                       })}
                     </div>
                   )}
-                </div>
 
             {/* Completed Plans & Rollover Section */}
             {completedInvestments.length > 0 && (
