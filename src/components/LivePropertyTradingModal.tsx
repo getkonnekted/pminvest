@@ -224,7 +224,7 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
             </div>
             <h4 className="text-lg font-bold text-white mb-2">No Active Property Plan Monitored</h4>
             <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed mb-6">
-              The Real-Time Property Trading Simulator streams live operations for active investor capital. Acquire any 28-week property plan to unlock real-time allocation, plot flips, and rental yield tracking.
+              Purchase any investment plan to unlock this illustrative property market simulation. The activity shown here is simulated and does not represent live executed trades.
             </p>
             <button
               onClick={() => {
