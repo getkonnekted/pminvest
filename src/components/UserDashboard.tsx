@@ -45,7 +45,6 @@ import { PmLogo } from './PmLogo';
 import { PayoutCountdown } from './PayoutCountdown';
 import { InvestmentPayoutButton } from './InvestmentPayoutButton';
 import { CommunityBanner } from './CommunityBanner';
-import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
 import { LivePropertyTradingModal } from './LivePropertyTradingModal';
 
 export const UserDashboard: React.FC = () => {
@@ -76,7 +75,6 @@ export const UserDashboard: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'trading' | 'tasks' | 'finance' | 'referrals' | 'kyc'>('overview');
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
-  const [activeInvestmentsViewMode, setActiveInvestmentsViewMode] = useState<'both' | 'plans' | 'trading'>('both');
 
   // Dashboard Menu Items for Hamburger & Tab Navigation
   const menuItems: {
@@ -98,18 +96,6 @@ export const UserDashboard: React.FC = () => {
       description: 'Choose a property plan starting from ₦30,000',
       icon: Sparkles,
       badge: <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">From ₦30k</span>
-    },
-    {
-      id: 'trading',
-      label: 'Live Trading',
-      description: 'Real-time property trading simulation & candlestick yield engine',
-      icon: Activity,
-      badge: (
-        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 font-mono">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Live Model
-        </span>
-      )
     },
     {
       id: 'tasks',
@@ -687,7 +673,7 @@ export const UserDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Active Investments & Live Trading Simulation Section */}
+          {/* Active Investments and the single Trading Simulation launcher */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
             <div id="active_investments_section" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-100 pb-3">
               <div>
@@ -699,98 +685,21 @@ export const UserDashboard: React.FC = () => {
                   Portfolio plans connected to physical real estate developments &amp; automated simulated yields.
                 </p>
               </div>
-
-              {/* View Mode Controls & Terminal Launcher */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="bg-slate-100 p-0.5 rounded-xl border border-slate-200 flex items-center text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setActiveInvestmentsViewMode('both')}
-                    className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
-                      activeInvestmentsViewMode === 'both' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Split View
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveInvestmentsViewMode('plans')}
-                    className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
-                      activeInvestmentsViewMode === 'plans' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Plans Only ({activeInvestments.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveInvestmentsViewMode('trading')}
-                    className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer flex items-center gap-1 ${
-                      activeInvestmentsViewMode === 'trading' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Trading Model
-                  </button>
-                </div>
-
+              {userInvestments.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setIsTradingTerminalOpen(true)}
-                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
-                  title="Open Full Real-time Property Trading Terminal Modal"
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-95"
+                  title="Open Trading Simulation"
                 >
-                  <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="hidden sm:inline">Live Terminal</span>
-                  <Maximize2 className="w-3 h-3 text-slate-400" />
+                  <Activity className="w-4 h-4 text-emerald-400" />
+                  <span>Trading Simulation</span>
+                  <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
                 </button>
-              </div>
+              )}
             </div>
 
-            {/* Live Model Top Highlight Banner on Active Investments */}
-            <div className="mb-5 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 rounded-xl p-3.5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0">
-                  <Activity className="w-5 h-5 text-emerald-400 animate-pulse" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-extrabold text-white font-mono tracking-wider">
-                      LIVE PROPERTY TRADING ENGINE (PM-REIT / NGN)
-                    </span>
-                    <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                      +4.82% 24h Yield
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-300 mt-0.5">
-                    Autonomous institutional model: Streaming real estate arbitrage, rental distributions &amp; liquidity pool executions for investors 24/7.
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsTradingTerminalOpen(true)}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1 shadow-xs cursor-pointer active:scale-95 whitespace-nowrap self-start sm:self-auto"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-                <span>Expand Terminal</span>
-              </button>
-            </div>
-
-            {/* If user toggled 'trading' only */}
-            {activeInvestmentsViewMode === 'trading' && (
-              <div className="mb-2">
-                <LiveTradingSimulationCard
-                  onExpandTerminal={() => setIsTradingTerminalOpen(true)}
-                />
-              </div>
-            )}
-
-            {/* If user toggled 'plans' or 'both' */}
-            {activeInvestmentsViewMode !== 'trading' && (
-              <div className={activeInvestmentsViewMode === 'both' ? "grid grid-cols-1 xl:grid-cols-12 gap-5 items-start" : "space-y-4"}>
-                {/* Active Plans Container */}
-                <div className={activeInvestmentsViewMode === 'both' ? (activeInvestments.length > 0 ? "xl:col-span-7 space-y-4" : "xl:col-span-6 space-y-4") : "space-y-4"}>
+            <div className="space-y-4">
                   {activeInvestments.length === 0 ? (
                     <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
                       <Clock className="w-8 h-8 text-slate-400 mx-auto mb-2" />
@@ -804,7 +713,7 @@ export const UserDashboard: React.FC = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className={`grid grid-cols-1 ${activeInvestmentsViewMode === 'both' ? 'md:grid-cols-1 2xl:grid-cols-2' : 'md:grid-cols-2'} gap-4`}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {activeInvestments.map((inv) => {
                         const percentComplete = (inv.weeksPaid / inv.totalWeeks) * 100;
                         return (
@@ -868,31 +777,6 @@ export const UserDashboard: React.FC = () => {
                                 <PayoutCountdown targetDate={inv.nextPayoutDate} isLocked={inv.isTimerLocked || currentUser?.isTimerLocked} />
                               </div>
 
-                              {/* Live Simulated Property Arbitrage & Yield Engine directly on this active investment */}
-                              <div className="my-2.5 bg-slate-900 border border-slate-800 rounded-xl p-3 text-white shadow-xs">
-                                <div className="flex items-center justify-between text-[11px] mb-1">
-                                  <span className="flex items-center gap-1.5 text-amber-400 font-bold uppercase tracking-wider text-[10px]">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                    Live Trading Simulation
-                                  </span>
-                                  <span className="font-mono text-emerald-400 font-bold text-[10px]">
-                                    +4.82% Daily Yield
-                                  </span>
-                                </div>
-                                <div className="flex items-center justify-between text-[10px] text-slate-300 font-mono py-1 border-y border-slate-800/80 my-1">
-                                  <span>Index: <strong className="text-white">PM-REIT</strong> (₦148,650)</span>
-                                  <span className="text-amber-400 font-semibold">Yield Arbitrage Active</span>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => setIsTradingTerminalOpen(true)}
-                                  className="mt-2 w-full py-1.5 px-3 bg-slate-800 hover:bg-slate-750 active:scale-98 text-amber-400 font-bold text-[10px] rounded-lg border border-slate-700 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                                >
-                                  <Activity className="w-3 h-3 text-emerald-400" />
-                                  <span>View Live Candlesticks &amp; Orders</span>
-                                </button>
-                              </div>
-
                               {/* Auto-Renew Weekly Payout Rollover Toggle */}
                               <div className="flex items-center justify-between bg-white border border-slate-200/90 rounded-xl p-2.5 my-2">
                                 <div className="flex items-center gap-2">
@@ -943,14 +827,6 @@ export const UserDashboard: React.FC = () => {
                   )}
                 </div>
 
-                {/* Live Trading Simulation Card (Placed directly next to Active Investments in split view) */}
-                {activeInvestmentsViewMode === 'both' && (
-                  <div className={activeInvestments.length > 0 ? "xl:col-span-5" : "xl:col-span-6"}>
-                    <LiveTradingSimulationCard
-                      onExpandTerminal={() => setIsTradingTerminalOpen(true)}
-                    />
-                  </div>
-                )}
               </div>
             )}
 
@@ -1215,71 +1091,6 @@ export const UserDashboard: React.FC = () => {
                 </div>
               );
             })}
-          </div>
-        </div>
-      )}
-
-      {/* DEDICATED LIVE TRADING SIMULATION MODEL TAB */}
-      {activeTab === 'trading' && (
-        <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
-                  <h3 className="text-lg font-bold text-slate-900 tracking-wide uppercase">
-                    Institutional Property Trading Simulation
-                  </h3>
-                </div>
-                <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-                  Real-time synthetic market simulation modeling how Treasure Homes deploys pooled capital across prime Nigerian real estate hubs (Lekki, VI, Epe, Abuja) to generate weekly Friday payouts.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsTradingTerminalOpen(true)}
-                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2 px-3.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
-                >
-                  <Maximize2 className="w-4 h-4 text-amber-400" />
-                  <span>Launch Full-Screen Terminal</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('invest')}
-                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2 px-3.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Invest from ₦30k</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Metrics Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4">
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                <span className="text-[10px] text-slate-500 block uppercase font-mono">Market Index</span>
-                <span className="text-sm font-bold text-slate-900 font-mono">PM-REIT / NGN</span>
-              </div>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                <span className="text-[10px] text-slate-500 block uppercase font-mono">24h Price Action</span>
-                <span className="text-sm font-bold text-emerald-600 font-mono">₦148,650 (+4.82%)</span>
-              </div>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                <span className="text-[10px] text-slate-500 block uppercase font-mono">24h Liquidity Volume</span>
-                <span className="text-sm font-bold text-slate-900 font-mono">₦3.84 Billion</span>
-              </div>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                <span className="text-[10px] text-slate-500 block uppercase font-mono">Active Model Orders</span>
-                <span className="text-sm font-bold text-amber-600 font-mono">Live Automated Stream</span>
-              </div>
-            </div>
-
-            {/* Full Live Trading Simulation Card */}
-            <LiveTradingSimulationCard
-              onExpandTerminal={() => setIsTradingTerminalOpen(true)}
-            />
           </div>
         </div>
       )}
