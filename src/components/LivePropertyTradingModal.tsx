@@ -129,7 +129,7 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
                 <div className={`mt-1 flex items-center gap-1 text-xs font-bold ${isAboveAverage ? 'text-emerald-400' : 'text-red-400'}`}>
                   {isAboveAverage ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
                   {indexChangePercent > 0 ? '+' : ''}{indexChangePercent.toFixed(2)}%
-                  <span className="font-medium text-slate-500">vs. average</span>
+                  
                 </div>
               </div>
               <div className="rounded-xl border border-slate-800 bg-[#0B101D] p-4">
