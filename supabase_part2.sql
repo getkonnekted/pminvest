@@ -40,6 +40,7 @@ SELECT
     id,
     public.get_live_continuous_liquidity_reserve() AS "liquidityReserve",
     "dailyLiquidityGrowth",
+    "hourlyLiquidityGrowth",
     "riskAlertLevel",
     "minWithdrawal",
     "maxWithdrawal",
@@ -48,8 +49,7 @@ SELECT
     "paystackTestMode",
     "isMaintenanceMode",
     "pauseInvestments",
-    "pauseWithdrawals",
-    "updatedAt"
+    "pauseWithdrawals"
 FROM public.settings;
 
 -- 1. Public Platform Stats (With Live Dynamic Bank Reserve Accretion)
