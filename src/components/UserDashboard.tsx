@@ -279,6 +279,7 @@ export const UserDashboard: React.FC = () => {
   );
   const totalPaidTopup = userPaidDeposits.reduce((sum, t) => sum + t.amount, 0);
   const isRealInvestor = totalPaidTopup > 0;
+  const hasFundingActivity = totalPaidTopup > 0 || currentUser.walletBalance > 0;
 
   const referredUsers = users.filter(u => u.referredByCode === currentUser.referralCode);
 
@@ -450,7 +451,7 @@ export const UserDashboard: React.FC = () => {
       )}
 
       {/* Real Investor vs Unfunded Lead Status Callout */}
-      {isRealInvestor ? (
+      {hasFundingActivity ? (
         <div className="mb-5 bg-emerald-50/80 border border-emerald-200 text-emerald-900 px-4 py-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs shadow-xs">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 shrink-0">
