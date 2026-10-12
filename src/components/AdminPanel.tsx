@@ -35,16 +35,22 @@ import {
   ShieldBan,
   Database,
   Copy,
-  CheckCheck,
   Clock,
+  CheckCheck,
   Trash2,
   Phone,
   PhoneCall,
-  MessageSquare
+  MessageSquare,
+  Activity,
+  Code2,
+  Terminal,
+  ExternalLink
 } from 'lucide-react';
 import { User, INVESTMENT_PLANS } from '../types';
 import { PmLogo } from './PmLogo';
 import { LiveReserveCounter } from './LiveReserveCounter';
+import { testSupabaseConnection } from '../lib/supabase';
+import { SUPABASE_CORE_SQL, FULL_SUPABASE_SQL } from '../data/supabaseSql';
 
 export const AdminPanel: React.FC = () => {
   const { 
@@ -106,6 +112,10 @@ export const AdminPanel: React.FC = () => {
   const [dbUrlInput, setDbUrlInput] = useState(() => getSupabaseConfig().url);
   const [dbKeyInput, setDbKeyInput] = useState(() => getSupabaseConfig().key);
   const [dbSaveNotice, setDbSaveNotice] = useState<string | null>(null);
+  const [isTestingDb, setIsTestingDb] = useState(false);
+  const [dbTestResult, setDbTestResult] = useState<{ ok: boolean; message: string; latencyMs?: number } | null>(null);
+  const [activeSqlTab, setActiveSqlTab] = useState<'core' | 'full'>('core');
+  const [copiedSql, setCopiedSql] = useState(false);
 
   // Admin User & Wallet Edit State
   const [selectedEditUser, setSelectedEditUser] = useState<User | null>(null);
@@ -2974,34 +2984,78 @@ export const AdminPanel: React.FC = () => {
         </div>
       )}
 
-      {/* Supabase Connection Configuration Modal */}
+      {/* Supabase Connection Configuration & Diagnostics Modal */}
       {showDbConfigModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-scaleIn">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-xl w-full p-6 shadow-2xl animate-scaleIn max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
                   <Database className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-950">Supabase Cloud Database Connection</h3>
-                  <p className="text-[11px] text-slate-500">Live multi-device database and realtime sync</p>
+                  <h3 className="text-base font-bold text-slate-950">Supabase Cloud Database & Realtime</h3>
+                  <p className="text-[11px] text-slate-500">Live multi-device database, WebSocket push, and PostgreSQL schemas</p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setShowDbConfigModal(false)}
+                onClick={() => {
+                  setShowDbConfigModal(false);
+                  setDbTestResult(null);
+                  setDbSaveNotice(null);
+                }}
                 className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 mb-4 space-y-1">
-              <p className="font-semibold text-slate-800">Where to find these in Supabase:</p>
-              <p>Go to your <strong>Supabase Dashboard → Project Settings → API</strong>.</p>
-              <p>Copy your <strong>Project URL</strong> and <strong>Project API Anon/Public Key</strong>.</p>
+            {/* Live Connection Status & Diagnostics Badge */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mb-4 space-y-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5 text-emerald-600" /> Current Status:
+                </span>
+                <span className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold flex items-center gap-1.5 ${
+                  supabaseStatus === 'connected'
+                    ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30'
+                    : supabaseStatus === 'loading'
+                    ? 'bg-amber-500/15 text-amber-700 border border-amber-500/30'
+                    : 'bg-slate-200 text-slate-700'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${supabaseStatus === 'connected' ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`} />
+                  {supabaseStatus === 'connected' ? 'CONNECTED & SYNCING' : supabaseStatus === 'loading' ? 'CHECKING...' : 'LOCAL FALLBACK'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Connect your free Supabase PostgreSQL database to synchronize investors, deposits, weekly Friday payouts, and real-time activity toasts across every device instantly.
+              </p>
             </div>
+
+            {/* Test Connection Output Alert */}
+            {dbTestResult && (
+              <div className={`mb-4 p-3.5 rounded-xl border text-xs flex items-start gap-2.5 animate-fadeIn ${
+                dbTestResult.ok
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                  : 'bg-rose-50 border-rose-200 text-rose-900'
+              }`}>
+                {dbTestResult.ok ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1">
+                  <p className="font-bold">{dbTestResult.ok ? 'Connection Verified' : 'Connection Test Failed'}</p>
+                  <p className="mt-0.5 text-[11px] opacity-90">{dbTestResult.message}</p>
+                  {dbTestResult.latencyMs && (
+                    <span className="inline-block mt-1 font-mono text-[10px] bg-white/70 px-1.5 py-0.5 rounded border">
+                      Latency: {dbTestResult.latencyMs}ms
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {dbSaveNotice && (
               <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2">
@@ -3011,57 +3065,165 @@ export const AdminPanel: React.FC = () => {
             )}
 
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 saveSupabaseCredentials(dbUrlInput, dbKeyInput);
-                setDbSaveNotice('Credentials saved! Testing live connection...');
-                setTimeout(async () => {
-                  await refreshFromSupabase();
+                setDbSaveNotice('Credentials stored. Performing live handshake...');
+                await refreshFromSupabase();
+                setTimeout(() => {
                   setShowDbConfigModal(false);
-                }, 1000);
+                }, 900);
               }}
               className="space-y-4 text-xs"
             >
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Project URL</label>
+                <label className="block text-slate-700 font-semibold mb-1">
+                  Supabase Project URL
+                </label>
                 <input
                   type="url"
                   value={dbUrlInput}
-                  onChange={(e) => setDbUrlInput(e.target.value)}
-                  placeholder="https://xyzcompany.supabase.co"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono focus:outline-none focus:border-emerald-500"
+                  onChange={(e) => {
+                    setDbUrlInput(e.target.value);
+                    setDbTestResult(null);
+                  }}
+                  placeholder="https://xyzprojectid.supabase.co"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono text-xs focus:outline-none focus:border-emerald-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Anon / Public API Key</label>
+                <label className="block text-slate-700 font-semibold mb-1">
+                  Supabase Anon / Public API Key
+                </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={dbKeyInput}
-                  onChange={(e) => setDbKeyInput(e.target.value)}
+                  onChange={(e) => {
+                    setDbKeyInput(e.target.value);
+                    setDbTestResult(null);
+                  }}
                   placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono text-[11px] focus:outline-none focus:border-emerald-500"
                   required
                 />
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => setShowDbConfigModal(false)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl transition-colors cursor-pointer"
+                  disabled={isTestingDb || !dbUrlInput.trim() || !dbKeyInput.trim()}
+                  onClick={async () => {
+                    setIsTestingDb(true);
+                    setDbTestResult(null);
+                    const res = await testSupabaseConnection(dbUrlInput, dbKeyInput);
+                    setDbTestResult(res);
+                    setIsTestingDb(false);
+                  }}
+                  className="bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-800 font-bold px-3 py-2 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  Cancel
+                  <Activity className={`w-3.5 h-3.5 text-emerald-600 ${isTestingDb ? 'animate-spin' : ''}`} />
+                  {isTestingDb ? 'Testing Connection...' : 'Test Handshake'}
                 </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl transition-colors shadow-sm cursor-pointer"
-                >
-                  Save & Connect Live
-                </button>
+
+                {getSupabaseConfig().isConfigured && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      saveSupabaseCredentials('', '');
+                      setDbUrlInput('');
+                      setDbKeyInput('');
+                      setDbSaveNotice('Credentials cleared. Switched back to local storage fallback.');
+                      setDbTestResult(null);
+                    }}
+                    className="text-rose-600 hover:bg-rose-50 border border-rose-200 font-semibold px-3 py-2 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Disconnect
+                  </button>
+                )}
+
+                <div className="ml-auto flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDbConfigModal(false)}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl transition-colors shadow-sm cursor-pointer"
+                  >
+                    Save & Sync Live
+                  </button>
+                </div>
               </div>
             </form>
+
+            {/* Quick SQL Setup Script Viewer & Copy Tab */}
+            <div className="mt-6 pt-5 border-t border-slate-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Code2 className="w-4 h-4 text-emerald-600" />
+                  <span className="font-bold text-xs text-slate-800">Supabase SQL Editor Setup Scripts</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveSqlTab('core')}
+                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase transition-colors cursor-pointer ${
+                      activeSqlTab === 'core'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    Core Setup (~320 lines)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSqlTab('full')}
+                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase transition-colors cursor-pointer ${
+                      activeSqlTab === 'full'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    Full Schema
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-500 mb-2">
+                Paste into your <strong>Supabase Dashboard &rarr; SQL Editor</strong> and click <strong>Run</strong> to create all tables, indexes, 28-week plans, and realtime publications.
+              </p>
+
+              <div className="relative">
+                <pre className="bg-slate-900 text-slate-100 p-3 rounded-xl text-[10px] font-mono max-h-36 overflow-y-auto leading-relaxed border border-slate-800 select-all">
+                  {activeSqlTab === 'core' ? SUPABASE_CORE_SQL : FULL_SUPABASE_SQL}
+                </pre>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sql = activeSqlTab === 'core' ? SUPABASE_CORE_SQL : FULL_SUPABASE_SQL;
+                    navigator.clipboard.writeText(sql);
+                    setCopiedSql(true);
+                    setTimeout(() => setCopiedSql(false), 2000);
+                  }}
+                  className="absolute top-2 right-2 bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors border border-slate-700 cursor-pointer"
+                >
+                  {copiedSql ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-400" /> Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" /> Copy SQL
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

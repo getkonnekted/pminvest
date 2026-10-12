@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { User, UserInvestment, Transaction, SystemSettings, TaskSubmission, UserDailyProgress } from '../types';
+import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, TaskSubmission, UserDailyProgress } from '../types';
 
 export const getSupabaseConfig = () => {
   const envUrl = (import.meta as any).env.VITE_SUPABASE_URL || (import.meta as any).env.SUPABASE_URL || '';
@@ -84,7 +84,62 @@ export interface SupabaseFetchResult {
   currentWeek: number | null;
   taskSubmissions: TaskSubmission[];
   userDailyProgress: Record<string, UserDailyProgress>;
+  investmentPlans?: InvestmentPlan[];
 }
+
+export interface SupabaseConnectionTestResult {
+  ok: boolean;
+  message: string;
+  latencyMs?: number;
+  tablesFound?: string[];
+}
+
+export const testSupabaseConnection = async (testUrl?: string, testKey?: string): Promise<SupabaseConnectionTestResult> => {
+  const url = testUrl?.trim() || getSupabaseConfig().url;
+  const key = testKey?.trim() || getSupabaseConfig().key;
+
+  if (!url || !key || !url.startsWith('http')) {
+    return { ok: false, message: 'Please provide a valid Supabase Project URL (https://...) and API Key.' };
+  }
+
+  const start = Date.now();
+  try {
+    const testClient = createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+
+    // Test a lightweight select on public.users or public.settings
+    const { error, count, status } = await testClient
+      .from('users')
+      .select('id', { count: 'exact', head: true });
+
+    const latencyMs = Date.now() - start;
+
+    if (error) {
+      // Analyze error
+      if (status === 401 || status === 403 || error.message.toLowerCase().includes('apikey')) {
+        return { ok: false, message: `Authentication failed: Invalid Supabase anon API key (${error.message}).`, latencyMs };
+      }
+      if (error.code === '42P01' || error.message.toLowerCase().includes('relation') || error.message.toLowerCase().includes('does not exist')) {
+        return { 
+          ok: false, 
+          message: `Connected to Supabase, but platform tables were not found in schema public! Please run the Setup SQL Script in your Supabase SQL Editor.`, 
+          latencyMs 
+        };
+      }
+      return { ok: false, message: `Supabase query responded with error: ${error.message}`, latencyMs };
+    }
+
+    return { 
+      ok: true, 
+      message: `Successfully connected to Supabase in ${latencyMs}ms! Schema is online and accessible.`, 
+      latencyMs 
+    };
+  } catch (err: any) {
+    const latencyMs = Date.now() - start;
+    return { ok: false, message: `Connection failed: ${err?.message || 'Network unreachable'}`, latencyMs };
+  }
+};
 
 export const fetchAllSupabaseData = async (): Promise<SupabaseFetchResult | null> => {
   const client = getSupabaseClient();
@@ -98,7 +153,8 @@ export const fetchAllSupabaseData = async (): Promise<SupabaseFetchResult | null
       { data: settingsData, error: sErr },
       { data: stateData, error: stErr },
       { data: taskSubs, error: subErr },
-      { data: dailyProgData, error: progErr }
+      { data: dailyProgData, error: progErr },
+      { data: plansData, error: plansErr }
     ] = await Promise.all([
       client.from('users').select('*'),
       client.from('investments').select('*'),
@@ -106,7 +162,8 @@ export const fetchAllSupabaseData = async (): Promise<SupabaseFetchResult | null
       client.from('settings').select('*').eq('id', 'system_settings').single(),
       client.from('system_state').select('*').eq('key', 'current_week').single(),
       client.from('task_submissions').select('*').order('createdAt', { ascending: false }),
-      client.from('user_daily_progress').select('*')
+      client.from('user_daily_progress').select('*'),
+      client.from('investment_plans').select('*').order('cost', { ascending: true })
     ]);
 
     if (uErr && uErr.code !== 'PGRST116') console.warn('Supabase users error:', uErr);
@@ -114,6 +171,7 @@ export const fetchAllSupabaseData = async (): Promise<SupabaseFetchResult | null
     if (tErr) console.warn('Supabase transactions error:', tErr);
     if (subErr) console.warn('Supabase task submissions error:', subErr);
     if (progErr) console.warn('Supabase daily progress error:', progErr);
+    if (plansErr) console.warn('Supabase investment plans error (optional):', plansErr);
 
     const currentWeekVal = stateData ? parseInt(stateData.value, 10) : null;
 
@@ -146,7 +204,8 @@ export const fetchAllSupabaseData = async (): Promise<SupabaseFetchResult | null
       settings: (settingsData as SystemSettings) || null,
       currentWeek: isNaN(Number(currentWeekVal)) ? null : Number(currentWeekVal),
       taskSubmissions: (taskSubs as TaskSubmission[]) || [],
-      userDailyProgress: progressMap
+      userDailyProgress: progressMap,
+      investmentPlans: (plansData && plansData.length > 0) ? (plansData as InvestmentPlan[]) : undefined
     };
   } catch (error) {
     console.error('Failed to fetch from Supabase:', error);
@@ -185,6 +244,15 @@ export const subscribeToSupabaseRealtime = (onUpdate: (table: string) => void) =
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_daily_progress' }, () => {
         onUpdate('user_daily_progress');
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'investment_plans' }, () => {
+        onUpdate('investment_plans');
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wallets' }, () => {
+        onUpdate('wallets');
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wallet_transactions' }, () => {
+        onUpdate('wallet_transactions');
+      })
       .subscribe();
 
     return () => {
@@ -194,6 +262,13 @@ export const subscribeToSupabaseRealtime = (onUpdate: (table: string) => void) =
     console.warn('Realtime subscription notice:', err);
     return () => {};
   }
+};
+
+export const syncInvestmentPlansToSupabase = async (plans: InvestmentPlan[]) => {
+  const client = getSupabaseClient();
+  if (!client || plans.length === 0) return;
+  const { error } = await client.from('investment_plans').upsert(plans);
+  if (error) console.error('Error syncing investment plans to Supabase:', error);
 };
 
 export const syncUserToSupabase = async (user: User) => {

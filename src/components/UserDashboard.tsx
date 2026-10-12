@@ -60,6 +60,7 @@ export const UserDashboard: React.FC = () => {
     purchaseInvestment, 
     topUpAndPurchaseInvestment,
     toggleAutoReinvest,
+    rolloverInvestment,
     submitKyc,
     processSingleInvestmentPayout,
     successMsg,
@@ -799,6 +800,65 @@ export const UserDashboard: React.FC = () => {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {/* Completed Plans & Rollover Section */}
+            {completedInvestments.length > 0 && (
+              <div className="mt-6 pt-5 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Completed Plans ({completedInvestments.length})
+                    </h4>
+                  </div>
+                  <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                    Eligible for Rollover (+3% Weekly Payout Increment)
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {completedInvestments.map(inv => {
+                    const rolloverBonus = Math.round(inv.weeklyPayout * 0.03);
+                    return (
+                      <div key={inv.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">{inv.planName}</span>
+                            <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 rounded-full">
+                              Completed ({inv.totalWeeks} Wks)
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-slate-600 my-2 py-2 border-y border-slate-200">
+                            <div>
+                              <span className="text-[10px] text-slate-400 block">Weekly Payout</span>
+                              <span className="font-bold text-slate-900">₦{inv.weeklyPayout.toLocaleString()}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-[10px] text-emerald-600 font-semibold block">Rollover Yield (+3%)</span>
+                              <span className="font-bold text-emerald-700 font-mono">₦{(inv.weeklyPayout + rolloverBonus).toLocaleString()} / wk</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <span className="text-[9px] text-slate-400">
+                            +₦{rolloverBonus.toLocaleString()} bonus on weekly payouts
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => rolloverInvestment(inv.id)}
+                            className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-xs transition-all active:scale-95 cursor-pointer"
+                            id={`btn_rollover_${inv.id}`}
+                            title="Rollover this plan into a fresh 28-week cycle with 3% weekly increment"
+                          >
+                            <RotateCw className="w-3 h-3" />
+                            <span>Rollover Plan</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

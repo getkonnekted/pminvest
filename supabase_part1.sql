@@ -51,20 +51,23 @@ CREATE TABLE IF NOT EXISTS public.investment_plans (
     cost DOUBLE PRECISION NOT NULL,
     "weeklyPayout" DOUBLE PRECISION NOT NULL,
     "totalReturns" DOUBLE PRECISION NOT NULL,
-    "weeksDuration" INTEGER NOT NULL DEFAULT 4
+    "weeksDuration" INTEGER NOT NULL DEFAULT 28
 );
 
 INSERT INTO public.investment_plans (id, name, cost, "weeklyPayout", "totalReturns", "weeksDuration")
 VALUES
-    ('plan_1', 'Plan 1', 15000, 16250, 65000, 4),
-    ('plan_2', 'Plan 2', 45000, 43121, 172485, 4),
-    ('plan_3', 'Plan 3', 115000, 95824, 383295, 4),
-    ('plan_4', 'Plan 4', 270000, 191228, 764910, 4),
-    ('plan_5', 'Plan 5', 500000, 291625, 1166500, 4)
+    ('plan_1', 'Plan 1', 30000, 6500, 182000, 28),
+    ('plan_2', 'Plan 2', 60000, 13000, 364000, 28),
+    ('plan_3', 'Plan 3', 120000, 26000, 728000, 28),
+    ('plan_4', 'Plan 4', 150000, 32500, 910000, 28),
+    ('plan_5', 'Plan 5', 300000, 65000, 1820000, 28),
+    ('plan_6', 'Plan 6', 1500000, 325000, 9100000, 28)
 ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
     cost = EXCLUDED.cost,
     "weeklyPayout" = EXCLUDED."weeklyPayout",
-    "totalReturns" = EXCLUDED."totalReturns";
+    "totalReturns" = EXCLUDED."totalReturns",
+    "weeksDuration" = EXCLUDED."weeksDuration";
 
 -- -------------------------------------------------------------------------
 -- 3. INVESTMENTS TABLE (4-WEEK PROPERTY CYCLES)
@@ -79,7 +82,7 @@ CREATE TABLE IF NOT EXISTS public.investments (
     "weeklyPayout" DOUBLE PRECISION NOT NULL,
     "totalReturns" DOUBLE PRECISION NOT NULL,
     "weeksPaid" INTEGER NOT NULL DEFAULT 0,
-    "totalWeeks" INTEGER NOT NULL DEFAULT 4,
+    "totalWeeks" INTEGER NOT NULL DEFAULT 28,
     status TEXT NOT NULL DEFAULT 'active',
     "createdAt" TEXT NOT NULL,
     "lastPayoutDate" TEXT,
@@ -93,7 +96,7 @@ ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "autoReinvest" BOOLEAN N
 ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "lastPayoutDate" TEXT;
 ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "nextPayoutDate" TEXT;
 ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "weeksPaid" INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "totalWeeks" INTEGER NOT NULL DEFAULT 4;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "totalWeeks" INTEGER NOT NULL DEFAULT 28;
 
 CREATE INDEX IF NOT EXISTS idx_investments_user ON public.investments("userId");
 CREATE INDEX IF NOT EXISTS idx_investments_status ON public.investments(status);

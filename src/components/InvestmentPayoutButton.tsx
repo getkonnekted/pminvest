@@ -70,13 +70,17 @@ export const InvestmentPayoutButton: React.FC<InvestmentPayoutButtonProps> = ({
   // Active state during the final minute before clicking
   if (isLastMinuteOrDue) {
     const secondsRemaining = Math.max(0, Math.floor(diff / 1000));
+    const isAutoRenew = Boolean(investment.autoReinvest);
+    const rolloverIncrement = isAutoRenew ? Math.round(investment.weeklyPayout * 0.03) : 0;
+    const payoutAmount = investment.weeklyPayout + rolloverIncrement;
+
     return (
       <button
         onClick={handleClaim}
         disabled={isProcessing}
         className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md shadow-emerald-700/20 active:scale-95 cursor-pointer ring-2 ring-emerald-400/50 animate-pulse"
         id={`btn_credit_weekly_payout_${investment.id}`}
-        title="Active on last minute! Click once to credit your weekly yield and return to idle"
+        title={isAutoRenew ? "Auto-Renew active: Claim weekly rollover payout with 3% increment" : "Active on last minute! Click once to credit your weekly yield and return to idle"}
       >
         {isProcessing ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
@@ -84,7 +88,7 @@ export const InvestmentPayoutButton: React.FC<InvestmentPayoutButtonProps> = ({
           <Zap className="w-3.5 h-3.5 text-amber-300 animate-bounce" />
         )}
         <span>
-          Claim Due Yield (+₦{investment.weeklyPayout.toLocaleString()})
+          {isAutoRenew ? `Claim Rollover (+₦${payoutAmount.toLocaleString()})` : `Claim Due Yield (+₦${payoutAmount.toLocaleString()})`}
           {secondsRemaining > 0 && ` [${secondsRemaining}s]`}
         </span>
       </button>

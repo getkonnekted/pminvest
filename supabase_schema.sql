@@ -1826,7 +1826,7 @@ SECURITY DEFINER
 AS $$
 BEGIN
     INSERT INTO public.investment_plans (id, name, cost, "weeklyPayout", "totalReturns", "weeksDuration")
-    VALUES (p_plan_id, TRIM(p_name), p_cost, p_weekly_payout, p_total_returns, COALESCE(p_weeks_duration, 4))
+    VALUES (p_plan_id, TRIM(p_name), p_cost, p_weekly_payout, p_total_returns, COALESCE(p_weeks_duration, 28))
     ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
         cost = EXCLUDED.cost,

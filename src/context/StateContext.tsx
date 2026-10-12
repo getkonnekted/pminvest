@@ -18,6 +18,7 @@ import {
   syncTaskSubmissionToSupabase,
   syncMultipleTaskSubmissionsToSupabase,
   syncUserDailyProgressToSupabase,
+  syncInvestmentPlansToSupabase,
   recordWalletAuditToSupabase,
   subscribeToSupabaseRealtime,
   getSupabaseConfig,
@@ -473,6 +474,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setUserDailyProgress(prev => ({ ...prev, ...dbData.userDailyProgress }));
       }
 
+      if (dbData.investmentPlans && dbData.investmentPlans.length >= 6) {
+        setInvestmentPlans(dbData.investmentPlans);
+      }
+
       setTimeout(() => {
         isRemoteSyncingRef.current = false;
       }, 500);
@@ -524,6 +529,12 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
             if (dbData.userDailyProgress && Object.keys(dbData.userDailyProgress).length > 0) {
               setUserDailyProgress(prev => ({ ...prev, ...dbData.userDailyProgress }));
+            }
+            if (dbData.investmentPlans && dbData.investmentPlans.length >= 6) {
+              setInvestmentPlans(dbData.investmentPlans);
+            } else {
+              // Ensure default 6 plans exist in Supabase
+              await syncInvestmentPlansToSupabase(investmentPlans);
             }
 
             const savedUser = localStorage.getItem('pm_prod_current_user_v1');
@@ -592,6 +603,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       syncMultipleInvestmentsToSupabase(investments);
     }
   }, [investments, isDbLoaded]);
+
+  useEffect(() => {
+    if (isDbLoaded && isSupabaseConfigured() && investmentPlans.length > 0) {
+      if (isRemoteSyncingRef.current) return;
+      syncInvestmentPlansToSupabase(investmentPlans);
+    }
+  }, [investmentPlans, isDbLoaded]);
 
   useEffect(() => {
     localStorage.setItem('pm_prod_transactions_v1', JSON.stringify(transactions));
