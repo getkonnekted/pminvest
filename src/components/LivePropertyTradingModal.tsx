@@ -176,6 +176,8 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
               </div>
             </section>
 
+            {/* Markets Monitored is intentionally hidden from the dashboard and retained here for future use. */}
+            {false && (
             <section className="overflow-hidden rounded-xl border border-slate-800 bg-[#0B101D]">
               <div className="flex flex-col gap-3 border-b border-slate-800 bg-[#0D1322] p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -200,6 +202,7 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
                 ))}
               </div>
             </section>
+            )}
           </div>
         )}
       </section>
