@@ -342,6 +342,53 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
+-- -------------------------------------------------------------------------
+-- 13. AUTONOMOUS LIVE CONTINUOUS BANK / CASH RESERVE FUNCTION
+-- -------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_live_continuous_liquidity_reserve()
+RETURNS DOUBLE PRECISION
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $
+DECLARE
+    v_base DOUBLE PRECISION := 843507547.0;
+    v_hourly_growth DOUBLE PRECISION := 175000.0;
+    v_anchor TIMESTAMPTZ := '2026-10-10 00:00:00+00'::TIMESTAMPTZ;
+    v_elapsed_seconds DOUBLE PRECISION;
+    v_virtual_offset DOUBLE PRECISION := 0;
+    v_offset_val TEXT;
+BEGIN
+    SELECT value INTO v_offset_val FROM public.system_state WHERE key = 'virtual_day_offset';
+    IF v_offset_val IS NOT NULL THEN
+        BEGIN
+            v_virtual_offset := v_offset_val::DOUBLE PRECISION;
+        EXCEPTION WHEN OTHERS THEN
+            v_virtual_offset := 0;
+        END;
+    END IF;
+
+    v_elapsed_seconds := GREATEST(0.0, EXTRACT(EPOCH FROM (CLOCK_TIMESTAMP() - v_anchor)));
+    RETURN ROUND((v_base + ((v_elapsed_seconds + (v_virtual_offset * 86400.0)) / 3600.0) * v_hourly_growth)::NUMERIC, 2);
+END;
+$;
+
+CREATE OR REPLACE VIEW public.settings_with_live_reserve AS
+SELECT 
+    id,
+    public.get_live_continuous_liquidity_reserve() AS "liquidityReserve",
+    "dailyLiquidityGrowth",
+    "riskAlertLevel",
+    "minWithdrawal",
+    "maxWithdrawal",
+    "autoApproveDeposits",
+    "automatedPayouts",
+    "paystackTestMode",
+    "isMaintenanceMode",
+    "pauseInvestments",
+    "pauseWithdrawals",
+    "updatedAt"
+FROM public.settings;
+
 COMMIT;
 `;
 

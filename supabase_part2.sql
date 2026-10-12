@@ -8,7 +8,51 @@
 -- PART A: VISITOR FUNCTIONS
 -- -------------------------------------------------------------------------
 
--- 1. Public Platform Stats
+-- 0. Autonomous Live Continuous Bank/Cash Reserve
+-- Increases continuously based on clock time without stopping or waiting for users to be online
+CREATE OR REPLACE FUNCTION public.get_live_continuous_liquidity_reserve()
+RETURNS DOUBLE PRECISION LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_base DOUBLE PRECISION := 843507547.0;
+    v_hourly_growth DOUBLE PRECISION := 175000.0;
+    v_anchor TIMESTAMPTZ := '2026-10-10 00:00:00+00'::TIMESTAMPTZ;
+    v_elapsed_seconds DOUBLE PRECISION;
+    v_virtual_offset DOUBLE PRECISION := 0;
+    v_offset_val TEXT;
+BEGIN
+    SELECT value INTO v_offset_val FROM public.system_state WHERE key = 'virtual_day_offset';
+    IF v_offset_val IS NOT NULL THEN
+        BEGIN
+            v_virtual_offset := v_offset_val::DOUBLE PRECISION;
+        EXCEPTION WHEN OTHERS THEN
+            v_virtual_offset := 0;
+        END;
+    END IF;
+
+    v_elapsed_seconds := GREATEST(0.0, EXTRACT(EPOCH FROM (CLOCK_TIMESTAMP() - v_anchor)));
+    RETURN ROUND((v_base + ((v_elapsed_seconds + (v_virtual_offset * 86400.0)) / 3600.0) * v_hourly_growth)::NUMERIC, 2);
+END;
+$$;
+
+-- Create view with live continuous dynamic reserve
+CREATE OR REPLACE VIEW public.settings_with_live_reserve AS
+SELECT 
+    id,
+    public.get_live_continuous_liquidity_reserve() AS "liquidityReserve",
+    "dailyLiquidityGrowth",
+    "riskAlertLevel",
+    "minWithdrawal",
+    "maxWithdrawal",
+    "autoApproveDeposits",
+    "automatedPayouts",
+    "paystackTestMode",
+    "isMaintenanceMode",
+    "pauseInvestments",
+    "pauseWithdrawals",
+    "updatedAt"
+FROM public.settings;
+
+-- 1. Public Platform Stats (With Live Dynamic Bank Reserve Accretion)
 CREATE OR REPLACE FUNCTION public.public_get_platform_stats()
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
@@ -16,12 +60,12 @@ DECLARE
     v_active_capital DOUBLE PRECISION;
     v_investors_count INTEGER;
 BEGIN
-    SELECT "liquidityReserve" INTO v_reserve FROM public.settings WHERE id = 'system_settings';
+    v_reserve := public.get_live_continuous_liquidity_reserve();
     SELECT COALESCE(SUM(cost), 0) INTO v_active_capital FROM public.investments WHERE status = 'active' AND "isMarketing" = FALSE;
     SELECT COUNT(*) INTO v_investors_count FROM public.users WHERE role != 'admin' AND "isMarketingAccount" = FALSE;
 
     RETURN jsonb_build_object(
-        'liquidityReserve', COALESCE(v_reserve, 92000000),
+        'liquidityReserve', v_reserve,
         'activeInvestorCapital', v_active_capital,
         'registeredInvestors', v_investors_count,
         'payoutDay', 'Friday'

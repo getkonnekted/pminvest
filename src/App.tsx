@@ -47,6 +47,7 @@ function MainAppContent() {
     currentUser, 
     users, 
     settings,
+    liveLiquidityReserve,
     register, 
     login, 
     requestPasswordReset,
@@ -261,7 +262,7 @@ function MainAppContent() {
                 Put your money into real properties. Get paid cash every Friday.
               </p>
               <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-xl">
-                Start with as little as ₦15,000. Backed by verified properties worldwide managed by <strong>TREASURE HOMES</strong>.
+                Start with as little as ₦30,000. Backed by verified properties worldwide managed by <strong>TREASURE HOMES</strong>.
               </p>
             </div>
 
@@ -855,7 +856,7 @@ function MainAppContent() {
               <p className="text-slate-300">Operating transparent cash reserves under supervision of the Treasure Homes asset board.</p>
             </div>
             <div className="space-y-1 py-4 md:py-0 md:border-x md:border-slate-800">
-              <span className="text-amber-400 font-bold text-sm block font-mono">₦{settings ? Math.floor(settings.liquidityReserve / 1000000) : '843'}M+ RESERVE BACKING</span>
+              <span className="text-amber-400 font-bold text-sm block font-mono">₦{Math.floor(liveLiquidityReserve / 1000000)}M+ RESERVE BACKING</span>
               <p className="text-slate-300">Ensuring complete stability with physical properties and liquid collateral holding records.</p>
             </div>
             <div className="space-y-1">

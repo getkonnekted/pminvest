@@ -42,6 +42,8 @@ import { PmLogo } from './PmLogo';
 import { PayoutCountdown } from './PayoutCountdown';
 import { InvestmentPayoutButton } from './InvestmentPayoutButton';
 import { CommunityBanner } from './CommunityBanner';
+import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
+import { LivePropertyTradingModal } from './LivePropertyTradingModal';
 
 export const UserDashboard: React.FC = () => {
   const { 
@@ -89,9 +91,9 @@ export const UserDashboard: React.FC = () => {
     {
       id: 'invest',
       label: 'Buy Plans',
-      description: 'Choose a property plan starting from ₦15,000',
+      description: 'Choose a property plan starting from ₦30,000',
       icon: Sparkles,
-      badge: <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">From ₦15k</span>
+      badge: <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">From ₦30k</span>
     },
     {
       id: 'tasks',
@@ -176,6 +178,7 @@ export const UserDashboard: React.FC = () => {
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [copiedAccount2, setCopiedAccount2] = useState(false);
   const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(null);
+  const [isTradingTerminalOpen, setIsTradingTerminalOpen] = useState(false);
 
   const faqItems = [
     {
@@ -668,20 +671,29 @@ export const UserDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Active Investments section */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div id="active_investments_section" className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-amber-500 rounded-full" />
-                My Active Investments ({activeInvestments.length})
-              </h3>
+          {/* Live Trading Simulation & Active Investments Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            {/* Live Trading Simulation Card (Compact Ticker & Real-time model for investors) */}
+            <div className="lg:col-span-5 order-2 lg:order-2">
+              <LiveTradingSimulationCard
+                onExpandTerminal={() => setIsTradingTerminalOpen(true)}
+              />
             </div>
+
+            {/* Active Investments section */}
+            <div className="lg:col-span-7 order-1 lg:order-1 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+              <div id="active_investments_section" className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 bg-amber-500 rounded-full" />
+                  My Active Investments ({activeInvestments.length})
+                </h3>
+              </div>
 
             {activeInvestments.length === 0 ? (
               <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
                 <Clock className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                 <p className="text-sm font-semibold text-slate-700">No active investments found.</p>
-                <p className="text-xs text-slate-500 mt-1">Go to the "Buy Plans" tab to purchase an investment plan starting at ₦15,000.</p>
+                <p className="text-xs text-slate-500 mt-1">Go to the "Buy Plans" tab to purchase an investment plan starting at ₦30,000.</p>
                 <button
                   onClick={() => setActiveTab('invest')}
                   className="mt-4 bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors shadow-sm"
@@ -861,6 +873,7 @@ export const UserDashboard: React.FC = () => {
                 </div>
               </div>
             )}
+            </div>
           </div>
 
           {/* User History List */}
@@ -1746,6 +1759,17 @@ export const UserDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Full Institutional Property Trading Terminal Modal */}
+      <LivePropertyTradingModal
+        isOpen={isTradingTerminalOpen}
+        onClose={() => setIsTradingTerminalOpen(false)}
+        userInvestments={userInvestments}
+        onExplorePlans={() => {
+          setIsTradingTerminalOpen(false);
+          setActiveTab('invest');
+        }}
+      />
     </div>
   );
 };

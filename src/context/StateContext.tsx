@@ -459,7 +459,12 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
 
       if (dbData.settings) {
-        setSettings(prev => ({ ...prev, ...dbData.settings }));
+        const dynamicReserve = calculateContinuousLiquidity(virtualDayOffset);
+        setSettings(prev => ({
+          ...prev,
+          ...dbData.settings,
+          liquidityReserve: Math.max(dbData.settings.liquidityReserve || 0, dynamicReserve)
+        }));
       }
 
       if (dbData.currentWeek !== null) {
@@ -519,7 +524,12 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setInvestments(dbData.investments);
             setTransactions(dbData.transactions);
             if (dbData.settings) {
-              setSettings(prev => ({ ...prev, ...dbData.settings }));
+              const dynamicReserve = calculateContinuousLiquidity(virtualDayOffset);
+              setSettings(prev => ({
+                ...prev,
+                ...dbData.settings,
+                liquidityReserve: Math.max(dbData.settings.liquidityReserve || 0, dynamicReserve)
+              }));
             }
             if (dbData.currentWeek !== null) {
               setCurrentWeek(dbData.currentWeek);

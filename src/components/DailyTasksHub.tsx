@@ -490,7 +490,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
                   onClick={onNavigateToInvest}
                   className="w-full bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold text-xs py-2 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <span>Choose a Plan (From ₦15k)</span>
+                  <span>Choose a Plan (From ₦30k)</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               )}

@@ -129,7 +129,7 @@ export const MarketerDashboard: React.FC = () => {
   });
 
   // Pre-formatted WhatsApp share copy
-  const sharePitchText = `Hello! Have you seen PM Invest by Treasure Homes? 🏢\n\nThey offer verified property-backed investments starting from just ₦15,000 with cash returns paid directly into your bank every Friday!\n\nUse my official invite code *${currentUser.referralCode}* to register here:\n${referralLink}`;
+  const sharePitchText = `Hello! Have you seen PM Invest by Treasure Homes? 🏢\n\nThey offer verified property-backed investments starting from just ₦30,000 with cash returns paid directly into your bank every Friday!\n\nUse my official invite code *${currentUser.referralCode}* to register here:\n${referralLink}`;
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(sharePitchText)}`;
 
   return (
