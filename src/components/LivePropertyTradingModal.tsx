@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, TrendingUp, Activity, Building2, ArrowUpRight, MapPin, Landmark, Clock3, Globe2 } from 'lucide-react';
+import { X, Activity, Building2, ArrowUpRight, ArrowDownRight, MapPin, Landmark, Clock3, Globe2 } from 'lucide-react';
 import { UserInvestment } from '../types';
 
 interface LivePropertyTradingModalProps {
@@ -20,7 +20,42 @@ const MARKETS = [
   { country: 'Rwanda', cities: 'Kigali', focus: 'Prime residential · Commercial', code: 'RW', accent: 'from-indigo-500/20 to-indigo-900/5' }
 ];
 
-const INDEX_HISTORY = [4780, 4805, 4790, 4820, 4810, 4835, 4825, 4850, 4840, 4860, 4855, 4868];
+const INDEX_MIN = 1284;
+const INDEX_MAX = 5275;
+const INDEX_AVERAGE = (INDEX_MIN + INDEX_MAX) / 2;
+const CANDLE_COUNT = 32;
+
+interface IndexCandle {
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
+const clampIndex = (value: number) => Math.max(INDEX_MIN, Math.min(INDEX_MAX, value));
+
+const makeCandle = (open: number, close: number): IndexCandle => ({
+  open,
+  close,
+  high: clampIndex(Math.max(open, close) + Math.random() * 125),
+  low: clampIndex(Math.min(open, close) - Math.random() * 125)
+});
+
+const createInitialCandles = (): IndexCandle[] => {
+  const candles: IndexCandle[] = [];
+  let close = Math.round(INDEX_AVERAGE + (Math.random() - 0.5) * 220);
+  for (let i = 0; i < CANDLE_COUNT; i += 1) {
+    const open = clampIndex(close + (Math.random() - 0.5) * 180);
+    const nextClose = clampIndex(open + (Math.random() - 0.5) * 260);
+    candles.push(makeCandle(open, nextClose));
+    close = nextClose;
+  }
+  // Keep the latest reading close to the midpoint so both market directions can be seen.
+  const last = candles[candles.length - 1];
+  const latestClose = Math.round(INDEX_AVERAGE + (Math.random() - 0.5) * 220);
+  candles[candles.length - 1] = makeCandle(last.open, latestClose);
+  return candles;
+};
 
 export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> = ({
   isOpen,
@@ -29,16 +64,18 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
   onExplorePlans
 }) => {
   const [activeMarket, setActiveMarket] = useState('All markets');
-  const [indexHistory, setIndexHistory] = useState(INDEX_HISTORY);
+  const [candles, setCandles] = useState<IndexCandle[]>(createInitialCandles);
 
   useEffect(() => {
     if (!isOpen) return;
     const timer = window.setInterval(() => {
-      setIndexHistory(previous => {
-        const last = previous[previous.length - 1] ?? 4868;
-        const movement = Math.round((Math.random() - 0.46) * 34);
-        const next = Math.max(4700, Math.min(4950, last + movement));
-        return [...previous.slice(1), next];
+      setCandles(previous => {
+        const lastClose = previous[previous.length - 1]?.close ?? INDEX_AVERAGE;
+        // Simulated global index movement; each update forms a new OHLC candle.
+        const movement = (Math.random() - 0.5) * 360;
+        const open = lastClose;
+        const close = clampIndex(Math.round(lastClose + movement));
+        return [...previous.slice(1), makeCandle(open, close)];
       });
     }, 900);
     return () => window.clearInterval(timer);
@@ -47,8 +84,15 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
   if (!isOpen) return null;
 
   const hasPlan = userInvestments.length > 0;
-  const latestIndex = indexHistory[indexHistory.length - 1] ?? 4868;
-  const points = indexHistory.map((value, index) => `${(index / (indexHistory.length - 1)) * 400},${60 - ((value - 4700) / 250) * 50}`).join(' ');
+  const latestIndex = candles[candles.length - 1]?.close ?? INDEX_AVERAGE;
+  const indexChangePercent = ((latestIndex - INDEX_AVERAGE) / INDEX_AVERAGE) * 100;
+  const isAboveAverage = latestIndex >= INDEX_AVERAGE;
+  const chartTop = 8;
+  const chartBottom = 112;
+  const chartHeight = chartBottom - chartTop;
+  const yForIndex = (value: number) => chartBottom - ((value - INDEX_MIN) / (INDEX_MAX - INDEX_MIN)) * chartHeight;
+  const candleWidth = 7;
+  const candleGap = 5;
   const visibleMarkets = activeMarket === 'All markets' ? MARKETS : MARKETS.filter(market => market.country === activeMarket);
 
   return (
@@ -81,8 +125,12 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-slate-800 bg-[#0B101D] p-4">
                 <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400"><Activity className="h-3.5 w-3.5 text-emerald-400" /> Global liquidity index</div>
-                <div className="flex items-end gap-2"><strong className="text-2xl font-extrabold text-white">{latestIndex.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong><span className="pb-1 text-xs text-slate-400">pts</span></div>
-                <div className="mt-1 flex items-center gap-1 text-xs font-bold text-emerald-400"><ArrowUpRight className="h-3.5 w-3.5" /> +4.28%</div>
+                <div className="flex items-end gap-2"><strong className="text-2xl font-extrabold text-white">{Math.round(latestIndex).toLocaleString('en-US')}</strong><span className="pb-1 text-xs text-slate-400">pts</span></div>
+                <div className={`mt-1 flex items-center gap-1 text-xs font-bold ${isAboveAverage ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {isAboveAverage ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+                  {indexChangePercent > 0 ? '+' : ''}{indexChangePercent.toFixed(2)}%
+                  <span className="font-medium text-slate-500">vs. average</span>
+                </div>
               </div>
               <div className="rounded-xl border border-slate-800 bg-[#0B101D] p-4">
                 <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400"><Clock3 className="h-3.5 w-3.5 text-amber-400" /> Investor payout cycle</div>
@@ -104,14 +152,32 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
                 </div>
                 <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> LIVE SIMULATION</span>
               </div>
-              <div className="h-24 w-full">
-                <svg className="h-full w-full" viewBox="0 0 400 60" preserveAspectRatio="none" role="img" aria-label="Animated worldwide trading simulation chart">
-                  <defs><linearGradient id="globalIndexFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity="0.28" /><stop offset="100%" stopColor="#10b981" stopOpacity="0" /></linearGradient></defs>
-                  <polygon fill="url(#globalIndexFill)" points={`0,60 ${points} 400,60`} />
-                  <polyline fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" style={{ transition: "all 800ms linear" }} points={points} />
+              <div className="h-36 w-full">
+                <svg className="h-full w-full" viewBox="0 0 400 120" preserveAspectRatio="none" role="img" aria-label="Animated worldwide global liquidity index candlestick simulation">
+                  {[INDEX_MIN, INDEX_AVERAGE, INDEX_MAX].map(level => (
+                    <g key={level}>
+                      <line x1="0" x2="400" y1={yForIndex(level)} y2={yForIndex(level)} stroke={level === INDEX_AVERAGE ? '#64748b' : '#1e293b'} strokeDasharray={level === INDEX_AVERAGE ? '4 4' : '2 4'} strokeWidth="0.8" />
+                    </g>
+                  ))}
+                  {candles.map((candle, index) => {
+                    const x = index * (candleWidth + candleGap) + 5;
+                    const rising = candle.close >= candle.open;
+                    const candleColor = rising ? '#10b981' : '#f87171';
+                    const bodyTop = Math.min(yForIndex(candle.open), yForIndex(candle.close));
+                    const bodyHeight = Math.max(1.5, Math.abs(yForIndex(candle.open) - yForIndex(candle.close)));
+                    return (
+                      <g key={index}>
+                        <line x1={x + candleWidth / 2} x2={x + candleWidth / 2} y1={yForIndex(candle.high)} y2={yForIndex(candle.low)} stroke={candleColor} strokeWidth="1.2" />
+                        <rect x={x} y={bodyTop} width={candleWidth} height={bodyHeight} rx="0.7" fill={candleColor} />
+                      </g>
+                    );
+                  })}
                 </svg>
               </div>
-              
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-500">
+                <span>Index range: {INDEX_MIN.toLocaleString('en-US')}–{INDEX_MAX.toLocaleString('en-US')}</span>
+                <span>Average: {INDEX_AVERAGE.toLocaleString('en-US')}</span>
+              </div>
             </section>
 
             <section className="overflow-hidden rounded-xl border border-slate-800 bg-[#0B101D]">
