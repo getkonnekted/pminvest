@@ -673,7 +673,7 @@ export const UserDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Active Investments and the single Trading Simulation launcher */}
+          {/* Active Investments and the single Global Property Markets launcher */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
             <div id="active_investments_section" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-100 pb-3">
               <div>
@@ -682,7 +682,7 @@ export const UserDashboard: React.FC = () => {
                   My Active Investments ({activeInvestments.length})
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Portfolio plans connected to physical real estate developments &amp; automated simulated yields.
+                  Your property plans, payout schedule, and company-managed market overview.
                 </p>
               </div>
               {userInvestments.length > 0 && (
@@ -690,10 +690,10 @@ export const UserDashboard: React.FC = () => {
                   type="button"
                   onClick={() => setIsTradingTerminalOpen(true)}
                   className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-95"
-                  title="Open Trading Simulation"
+                  title="Open Global Property Markets"
                 >
                   <Activity className="w-4 h-4 text-emerald-400" />
-                  <span>Trading Simulation</span>
+                  <span>Global Property Markets</span>
                   <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
                 </button>
               )}
@@ -716,6 +716,8 @@ export const UserDashboard: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {activeInvestments.map((inv) => {
                         const percentComplete = (inv.weeksPaid / inv.totalWeeks) * 100;
+                        const autoRenewLockUntil = inv.autoReinvestLockedUntil ? new Date(inv.autoReinvestLockedUntil).getTime() : 0;
+                        const isAutoRenewLocked = autoRenewLockUntil > Date.now();
                         return (
                           <div key={inv.id} className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col justify-between relative overflow-hidden shadow-xs">
                             {/* Brand background watermark */}
@@ -787,20 +789,24 @@ export const UserDashboard: React.FC = () => {
                                       <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full border border-amber-200">+3% on Payout</span>
                                     </div>
                                     <span className="text-[9px] text-slate-400 block mt-0.5">
-                                      {inv.autoReinvest 
-                                        ? `Active: +3% increment (+₦${Math.round(inv.weeklyPayout * 0.03).toLocaleString()}) applied to each weekly payout` 
-                                        : `Rollover weekly payouts with a 3% increment (+₦${Math.round(inv.weeklyPayout * 0.03).toLocaleString()}/wk)`}
+                                      {isAutoRenewLocked
+                                        ? `Locked until payout: ${new Date(autoRenewLockUntil).toLocaleDateString()} ${new Date(autoRenewLockUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                                        : inv.autoReinvest
+                                          ? `Active: +3% increment (+₦${Math.round(inv.weeklyPayout * 0.03).toLocaleString()}) on each eligible weekly payout`
+                                          : `Enable rollover for a 3% increment (+₦${Math.round(inv.weeklyPayout * 0.03).toLocaleString()}/wk)`}
                                     </span>
                                   </div>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={() => toggleAutoReinvest(inv.id)}
-                                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                    inv.autoReinvest ? 'bg-amber-500' : 'bg-slate-300'
-                                  }`}
+                                  disabled={isAutoRenewLocked}
+                                  aria-pressed={Boolean(inv.autoReinvest)}
+                                  className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                    isAutoRenewLocked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                                  } ${inv.autoReinvest ? 'bg-amber-500' : 'bg-slate-300'}`}
                                   id={`toggle_autoreinvest_${inv.id}`}
-                                  title="Toggle Auto-Renew to rollover weekly payouts with 3% increment"
+                                  title={isAutoRenewLocked ? `Auto-Renew locked until ${new Date(autoRenewLockUntil).toLocaleString()}` : "Toggle Auto-Renew to rollover weekly payouts with 3% increment"}
                                 >
                                   <span
                                     className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
