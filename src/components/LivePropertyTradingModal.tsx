@@ -174,10 +174,6 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
                   })}
                 </svg>
               </div>
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-500">
-                <span>Index range: {INDEX_MIN.toLocaleString('en-US')}–{INDEX_MAX.toLocaleString('en-US')}</span>
-                <span>Average: {INDEX_AVERAGE.toLocaleString('en-US')}</span>
-              </div>
             </section>
 
             <section className="overflow-hidden rounded-xl border border-slate-800 bg-[#0B101D]">
