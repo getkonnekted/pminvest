@@ -38,7 +38,7 @@ import {
   BarChart2
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
-import { INVESTMENT_PLANS, InvestmentPlan } from '../types';
+import { INVESTMENT_PLANS, InvestmentPlan, UserInvestment } from '../types';
 import { DailyTasksHub } from './DailyTasksHub';
 import { NIGERIAN_BANKS, resolveNigerianAccount } from '../lib/paystack';
 import { PmLogo } from './PmLogo';
@@ -46,6 +46,51 @@ import { PayoutCountdown } from './PayoutCountdown';
 import { InvestmentPayoutButton } from './InvestmentPayoutButton';
 import { CommunityBanner } from './CommunityBanner';
 import { LivePropertyTradingModal } from './LivePropertyTradingModal';
+
+const AutoRenewControl: React.FC<{ investment: UserInvestment; onToggle: (id: string) => void }> = ({ investment, onToggle }) => {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const lockUntil = investment.autoReinvestLockedUntil ? new Date(investment.autoReinvestLockedUntil).getTime() : 0;
+  const isLocked = lockUntil > now;
+  const increment = Math.round(investment.weeklyPayout * 0.03);
+
+  return (
+    <div className="flex items-center justify-between bg-white border border-slate-200/90 rounded-xl p-2.5 my-2">
+      <div className="flex items-center gap-2">
+        <RotateCw className={`w-3.5 h-3.5 ${investment.autoReinvest ? 'text-amber-500 animate-spin-slow' : 'text-slate-400'}`} />
+        <div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-800 block leading-tight">Auto-Renew</span>
+            <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full border border-amber-200">+3% on Payout</span>
+          </div>
+          <span className="text-[9px] text-slate-400 block mt-0.5">
+            {isLocked
+              ? `Locked until payout: ${new Date(lockUntil).toLocaleDateString()} ${new Date(lockUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+              : investment.autoReinvest
+                ? `Active: +3% increment (+₦${increment.toLocaleString()}) on each eligible weekly payout`
+                : `Enable rollover for a 3% increment (+₦${increment.toLocaleString()}/wk)`}
+          </span>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => onToggle(investment.id)}
+        disabled={isLocked}
+        aria-pressed={Boolean(investment.autoReinvest)}
+        className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isLocked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${investment.autoReinvest ? 'bg-amber-500' : 'bg-slate-300'}`}
+        id={`toggle_autoreinvest_${investment.id}`}
+        title={isLocked ? `Auto-Renew locked until ${new Date(lockUntil).toLocaleString()}` : 'Toggle Auto-Renew to rollover weekly payouts with 3% increment'}
+      >
+        <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${investment.autoReinvest ? 'translate-x-4' : 'translate-x-0'}`} />
+      </button>
+    </div>
+  );
+};
 
 export const UserDashboard: React.FC = () => {
   const { 
@@ -779,42 +824,7 @@ export const UserDashboard: React.FC = () => {
                                 <PayoutCountdown targetDate={inv.nextPayoutDate} isLocked={inv.isTimerLocked || currentUser?.isTimerLocked} />
                               </div>
 
-                              {/* Auto-Renew Weekly Payout Rollover Toggle */}
-                              <div className="flex items-center justify-between bg-white border border-slate-200/90 rounded-xl p-2.5 my-2">
-                                <div className="flex items-center gap-2">
-                                  <RotateCw className={`w-3.5 h-3.5 ${inv.autoReinvest ? 'text-amber-500 animate-spin-slow' : 'text-slate-400'}`} />
-                                  <div>
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-[11px] font-bold text-slate-800 block leading-tight">Auto-Renew</span>
-                                      <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full border border-amber-200">+3% on Payout</span>
-                                    </div>
-                                    <span className="text-[9px] text-slate-400 block mt-0.5">
-                                      {isAutoRenewLocked
-                                        ? `Locked until payout: ${new Date(autoRenewLockUntil).toLocaleDateString()} ${new Date(autoRenewLockUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                                        : inv.autoReinvest
-                                          ? `Active: +3% increment (+₦${Math.round(inv.weeklyPayout * 0.03).toLocaleString()}) on each eligible weekly payout`
-                                          : `Enable rollover for a 3% increment (+₦${Math.round(inv.weeklyPayout * 0.03).toLocaleString()}/wk)`}
-                                    </span>
-                                  </div>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleAutoReinvest(inv.id)}
-                                  disabled={isAutoRenewLocked}
-                                  aria-pressed={Boolean(inv.autoReinvest)}
-                                  className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                    isAutoRenewLocked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
-                                  } ${inv.autoReinvest ? 'bg-amber-500' : 'bg-slate-300'}`}
-                                  id={`toggle_autoreinvest_${inv.id}`}
-                                  title={isAutoRenewLocked ? `Auto-Renew locked until ${new Date(autoRenewLockUntil).toLocaleString()}` : "Toggle Auto-Renew to rollover weekly payouts with 3% increment"}
-                                >
-                                  <span
-                                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                      inv.autoReinvest ? 'translate-x-4' : 'translate-x-0'
-                                    }`}
-                                  />
-                                </button>
-                              </div>
+                              <AutoRenewControl investment={inv} onToggle={toggleAutoReinvest} />
                             </div>
 
                             <div className="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
