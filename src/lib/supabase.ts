@@ -78,7 +78,8 @@ export const supabase = getSupabaseClient();
 
 export interface SupabaseFetchResult {
   users: User[];
-  investments: UserInvestment[];
+  // null means the investments query failed; [] means it succeeded and found no rows.
+  investments: UserInvestment[] | null;
   transactions: Transaction[];
   settings: SystemSettings | null;
   currentWeek: number | null;
@@ -199,7 +200,8 @@ export const fetchAllSupabaseData = async (): Promise<SupabaseFetchResult | null
 
     return {
       users: (users as User[]) || [],
-      investments: (investments as UserInvestment[]) || [],
+      // Never turn a failed query into an empty list: callers must preserve existing state on errors.
+      investments: iErr ? null : ((investments as UserInvestment[]) || []),
       transactions: (transactions as Transaction[]) || [],
       settings: (settingsData as SystemSettings) || null,
       currentWeek: isNaN(Number(currentWeekVal)) ? null : Number(currentWeekVal),
