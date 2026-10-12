@@ -2025,7 +2025,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         weeksPaid: 0,
         status: 'active',
         lastPayoutDate: new Date().toISOString(),
-        nextPayoutDate: nextPayout
+        nextPayoutDate: nextPayout,
+        autoReinvestLockedUntil: inv.autoReinvestLockedUntil && new Date(inv.autoReinvestLockedUntil).getTime() > Date.now()
+          ? nextPayout
+          : undefined
       };
       setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} credited! (${inv.planName} weekly payout rolled over with +3% increment [+₦${rolloverIncrement.toLocaleString()}] and renewed into a new 28-week cycle).`);
     } else {
@@ -2034,7 +2037,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         weeksPaid: nextWeeksPaid,
         status: isCompleted ? 'completed' : 'active',
         lastPayoutDate: new Date().toISOString(),
-        nextPayoutDate: isCompleted ? undefined : nextPayout
+        nextPayoutDate: isCompleted ? undefined : nextPayout,
+        autoReinvestLockedUntil: !isCompleted && inv.autoReinvestLockedUntil && new Date(inv.autoReinvestLockedUntil).getTime() > Date.now()
+          ? nextPayout
+          : undefined
       };
       if (isAutoRenew) {
         setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} credited! Includes +₦${rolloverIncrement.toLocaleString()} (+3% Auto-Renew increment) on your weekly payout.`);
@@ -2097,19 +2103,37 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const toggleAutoReinvest = (investmentId: string) => {
-    setInvestments(prev => prev.map(inv => {
-      if (inv.id === investmentId) {
-        const nextState = !inv.autoReinvest;
-        const increment = Math.round(inv.weeklyPayout * 0.03);
-        setSuccessMsg(
-          nextState 
-            ? `Auto-Renew activated for ${inv.planName}! Your weekly payouts will be rolled over with an extra 3% increment (+₦${increment.toLocaleString()}/week) on each payout.`
-            : `Auto-Renew disabled for ${inv.planName}. You will receive standard weekly payouts (₦${inv.weeklyPayout.toLocaleString()}) without rollover increment.`
-        );
-        return { ...inv, autoReinvest: nextState };
-      }
-      return inv;
-    }));
+    clearMessages();
+    const target = investments.find(inv => inv.id === investmentId && inv.userId === currentUser?.id);
+    if (!target) {
+      setErrorMsg('Investment plan not found.');
+      return;
+    }
+
+    const now = Date.now();
+    const existingLock = target.autoReinvestLockedUntil ? new Date(target.autoReinvestLockedUntil).getTime() : 0;
+    if (existingLock > now) {
+      setErrorMsg(`Auto-Renew is locked until your next scheduled payout on ${new Date(existingLock).toLocaleString()}.`);
+      return;
+    }
+
+    const nextState = !target.autoReinvest;
+    const increment = Math.round(target.weeklyPayout * 0.03);
+    const scheduledPayout = target.nextPayoutDate ? new Date(target.nextPayoutDate).getTime() : new Date(target.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000;
+    const lockUntil = scheduledPayout > now ? scheduledPayout : now + 7 * 24 * 60 * 60 * 1000;
+    const updatedInvestment: UserInvestment = {
+      ...target,
+      autoReinvest: nextState,
+      autoReinvestLockedUntil: new Date(lockUntil).toISOString()
+    };
+
+    setInvestments(prev => prev.map(inv => inv.id === investmentId ? updatedInvestment : inv));
+    syncInvestmentToSupabase(updatedInvestment);
+    setSuccessMsg(
+      nextState
+        ? `Auto-Renew activated for ${target.planName}. Changes are locked until the next scheduled payout; the 3% increment applies to each eligible weekly payout.`
+        : `Auto-Renew disabled for ${target.planName}. This setting is locked until the next scheduled payout.`
+    );
   };
 
   const submitKyc = (fullName: string, idType: string, idNumber: string) => {
