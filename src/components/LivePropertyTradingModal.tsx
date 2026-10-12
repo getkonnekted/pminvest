@@ -147,10 +147,10 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
             <section className="rounded-xl border border-slate-800 bg-[#0B101D] p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">Global trading simulation</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">Global trading</h3>
                   <p className="mt-1 text-[10px] text-slate-500">TH-INDEX · WORLDWIDE</p>
                 </div>
-                <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> LIVE SIMULATION</span>
+                <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> LIVE</span>
               </div>
               <div className="h-36 w-full">
                 <svg className="h-full w-full" viewBox="0 0 400 120" preserveAspectRatio="none" role="img" aria-label="Animated worldwide global liquidity index candlestick simulation">
