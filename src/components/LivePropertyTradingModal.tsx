@@ -94,7 +94,6 @@ export const LivePropertyTradingModal: React.FC<LivePropertyTradingModalProps> =
   const candleWidth = 7;
   const candleGap = 5;
   const visibleMarkets = activeMarket === 'All markets' ? MARKETS : MARKETS.filter(market => market.country === activeMarket);
-  const visibleMarkets = activeMarket === 'All markets' ? MARKETS : MARKETS.filter(market => market.country === activeMarket);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-2 backdrop-blur-sm sm:p-4">
