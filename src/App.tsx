@@ -6,10 +6,6 @@
 import React, { useState, useEffect } from 'react';
 import { StateProvider, useAppState } from './context/StateContext';
 import { BrandingHeader, LegalDisclosures } from './components/BrandingHeader';
-import { UserDashboard } from './components/UserDashboard';
-import { MarketerDashboard } from './components/MarketerDashboard';
-import { AdminPanel } from './components/AdminPanel';
-import { AujotenPage } from './components/AujotenPage';
 import { PmLogo } from './components/PmLogo';
 import { 
   Building, 
@@ -41,6 +37,11 @@ import { INVESTMENT_PLANS } from './types';
 import { PayoutToastContainer } from './components/PayoutToast';
 import { LiveActivityToast } from './components/LiveActivityToast';
 import { LiveReserveCounter } from './components/LiveReserveCounter';
+
+const UserDashboard = React.lazy(() => import('./components/UserDashboard').then(module => ({ default: module.UserDashboard })));
+const MarketerDashboard = React.lazy(() => import('./components/MarketerDashboard').then(module => ({ default: module.MarketerDashboard })));
+const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(module => ({ default: module.AdminPanel })));
+const AujotenPage = React.lazy(() => import('./components/AujotenPage').then(module => ({ default: module.AujotenPage })));
 
 function MainAppContent() {
   // Smooth scrolling is loaded on demand and disabled for users who prefer reduced motion.
@@ -128,7 +129,11 @@ function MainAppContent() {
 
   // If user navigated to /aujoten, render the Aujoten dedicated website
   if (currentPage === 'aujoten') {
-    return <AujotenPage onBackToPmInvest={() => navigateTo('pminvest')} />;
+    return (
+      <React.Suspense fallback={<div className="min-h-screen bg-slate-950 p-8 text-center text-sm text-slate-300">Loading page…</div>}>
+        <AujotenPage onBackToPmInvest={() => navigateTo('pminvest')} />
+      </React.Suspense>
+    );
   }
   
   // Login state
@@ -957,19 +962,21 @@ function MainAppContent() {
         )}
         
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {currentUser.role === 'admin' ? (
-            adminView === 'admin' ? (
-              <AdminPanel />
-            ) : adminView === 'marketer' ? (
+          <React.Suspense fallback={<div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Loading your dashboard…</div>}>
+            {currentUser.role === 'admin' ? (
+              adminView === 'admin' ? (
+                <AdminPanel />
+              ) : adminView === 'marketer' ? (
+                <MarketerDashboard />
+              ) : (
+                <UserDashboard />
+              )
+            ) : currentUser.isMarketingAccount ? (
               <MarketerDashboard />
             ) : (
               <UserDashboard />
-            )
-          ) : currentUser.isMarketingAccount ? (
-            <MarketerDashboard />
-          ) : (
-            <UserDashboard />
-          )}
+            )}
+          </React.Suspense>
         </main>
       </div>
 
