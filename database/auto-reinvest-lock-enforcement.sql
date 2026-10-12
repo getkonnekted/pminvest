@@ -2,16 +2,19 @@
 -- Apply this migration to the Supabase project actually used by PM Invest.
 -- The existing autoReinvestLockedUntil column must already exist.
 --
--- Rules:
--- 1. New rows cannot start with Auto-Renew enabled or a client-supplied lock.
--- 2. A change to autoReinvest sets the lock from the existing row's scheduled
---    nextPayoutDate (or seven days from database time if no future payout exists).
--- 3. While that lock is active, direct REST/API updates cannot change either
---    autoReinvest or autoReinvestLockedUntil, even if the browser is modified.
--- 4. When no toggle occurs, clients cannot rewrite the lock timestamp.
+-- Rules for UPDATEs:
+-- 1. While a lock is active, clients cannot toggle Auto-Renew or clear/extend the lock.
+-- 2. When a permitted toggle occurs, the database derives the lock from the existing
+--    row's nextPayoutDate (or seven days from database time if no future payout exists).
+-- 3. If no toggle occurs, clients cannot rewrite the lock timestamp.
 --
--- This trigger protects the Auto-Renew setting. It does not secure unrelated
--- wallet/payout mutations; those require separate server-side authorization.
+-- This deliberately runs on UPDATE, not INSERT, because the current client uses
+-- upsert for existing investments; a BEFORE INSERT trigger would alter the row
+-- supplied by an upsert before PostgreSQL handles its conflict.
+--
+-- IMPORTANT: Keep direct INSERT/DELETE access to public.investments restricted
+-- by RLS/policies. This trigger protects Auto-Renew changes on existing rows; it
+-- does not secure wallet/payout mutations or replace user-level authorization.
 
 CREATE OR REPLACE FUNCTION public.enforce_auto_reinvest_lock()
 RETURNS trigger
@@ -25,18 +28,6 @@ DECLARE
   old_auto text;
   new_auto text;
 BEGIN
-  IF TG_OP = 'INSERT' THEN
-    -- Auto-Renew must be opted into through an update, which starts a lock.
-    NEW := jsonb_populate_record(
-      NEW,
-      jsonb_build_object(
-        'autoReinvest', false,
-        'autoReinvestLockedUntil', NULL
-      )
-    );
-    RETURN NEW;
-  END IF;
-
   old_lock_json := to_jsonb(OLD)->'autoReinvestLockedUntil';
 
   BEGIN
@@ -91,6 +82,6 @@ $$;
 DROP TRIGGER IF EXISTS investments_enforce_auto_reinvest_lock ON public.investments;
 
 CREATE TRIGGER investments_enforce_auto_reinvest_lock
-BEFORE INSERT OR UPDATE ON public.investments
+BEFORE UPDATE ON public.investments
 FOR EACH ROW
 EXECUTE FUNCTION public.enforce_auto_reinvest_lock();
