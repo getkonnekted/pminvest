@@ -98,7 +98,7 @@ export const DEFAULT_DAILY_TASKS: DailyTask[] = [
     sponsorBadge: 'PROOF OF WORK',
     detailsContent: {
       headline: 'Expand the Investor Network & Earn ₦200 per Verified Post',
-      shareTemplate: 'I am earning steady weekly yields backed by verified Nigerian real estate with PM Invest & Treasure Homes! Join using my referral code: ',
+      shareTemplate: 'I am earning steady weekly yields backed by verified UAE luxury real estate with PM Invest & Treasure Homes! Join using my referral code: ',
       paragraphs: [
         'Share your personalized invite link or referral code across your WhatsApp status, Telegram investment groups, or Twitter/X.',
         'Capture a screenshot of your post or copy the direct link, then submit below.',

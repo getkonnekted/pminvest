@@ -3195,7 +3195,7 @@ export const AdminPanel: React.FC = () => {
               </div>
 
               <p className="text-[11px] text-slate-500 mb-2">
-                Paste into your <strong>Supabase Dashboard &rarr; SQL Editor</strong> and click <strong>Run</strong> to create all tables, indexes, 28-week plans, and realtime publications.
+                Paste into your <strong>Supabase Dashboard &rarr; SQL Editor</strong> and click <strong>Run</strong> to create all tables, indexes, 24-week UAE plans, and realtime publications.
               </p>
 
               <div className="relative">

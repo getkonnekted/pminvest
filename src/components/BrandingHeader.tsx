@@ -131,7 +131,7 @@ export const LegalDisclosures: React.FC = () => {
               <span>NOTE ON PLANS</span>
             </h4>
             <p className="leading-relaxed text-slate-200 text-xs font-medium">
-              Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 28 weeks, paying you cash every Friday.
+              Your profit comes from physical UAE luxury property developments, trading, and rental income. Once you pick a plan, your capital works for the full 24 weeks, paying you cash every Friday.
             </p>
           </div>
           <p className="text-[11px] text-slate-500 font-mono mt-3">

@@ -292,7 +292,7 @@ function MainAppContent() {
 
             {/* Quick Rates Grid */}
             <div className="space-y-3">
-              <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-widest">Popular Property Plans (28-Week Cycles)</span>
+              <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-widest">Popular Property Plans (24-Week Cycles)</span>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {INVESTMENT_PLANS.slice(0, 3).map(plan => (
                   <div key={plan.id} className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
@@ -308,14 +308,14 @@ function MainAppContent() {
                 ))}
                 <div className="bg-slate-50 border border-dashed border-slate-300 p-4 rounded-xl flex flex-col justify-center items-center text-center">
                   <span className="text-[11px] text-slate-700 font-bold uppercase">Up to Plan 6</span>
-                  <span className="text-[10px] text-slate-500">₦1.5M Plan → ₦9.1M Returns</span>
+                  <span className="text-[10px] text-slate-500">₦1.5M Plan → ₦7.8M Returns</span>
                 </div>
               </div>
 
               {/* Note on Plans */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-200 shadow-sm">
                 <span className="font-bold text-amber-400 block uppercase tracking-wider text-[11px] mb-1">Note on Plans</span>
-                <span className="leading-relaxed">Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 28 weeks, paying you cash every Friday.</span>
+                <span className="leading-relaxed">Your profit comes from physical UAE luxury property developments, trading, and rental income. Once you pick a plan, your capital works for the full 24 weeks, paying you cash every Friday.</span>
               </div>
             </div>
 

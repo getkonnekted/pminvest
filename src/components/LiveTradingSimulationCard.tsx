@@ -1,20 +1,18 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   TrendingUp, 
   Activity, 
   Maximize2, 
-  Building2, 
-  Layers, 
   ShieldCheck, 
   ArrowUpRight, 
   ArrowDownRight,
   Sparkles,
   BarChart3,
-  RefreshCw,
-  Clock
+  Clock,
+  Building2
 } from 'lucide-react';
 
-interface SimulatedOrder {
+export interface SimulatedOrder {
   id: string;
   time: string;
   pair: string;
@@ -26,7 +24,7 @@ interface SimulatedOrder {
   status: 'FILLED' | 'SETTLED' | 'DISTRIBUTED';
 }
 
-interface Candle {
+export interface Candle {
   time: string;
   open: number;
   high: number;
@@ -36,24 +34,25 @@ interface Candle {
   isBull: boolean;
 }
 
-interface LiveTradingSimulationCardProps {
+export interface LiveTradingSimulationCardProps {
   onExpandTerminal?: () => void;
   className?: string;
+  variant?: 'compact' | 'full';
 }
 
-const PROPERTY_LOCATIONS = [
-  { name: 'Lekki Phase 1 Prime Suites', code: 'LK-01', baseYield: '14.2%' },
-  { name: 'Victoria Island Commercial Wing', code: 'VI-09', baseYield: '15.8%' },
-  { name: 'Epe Express Corridor Agro-Hub', code: 'EP-04', baseYield: '18.1%' },
-  { name: 'Guzape Hills Terraces Abuja', code: 'GZ-02', baseYield: '16.4%' },
-  { name: 'Maitama Diplomatic Villa Wing', code: 'MT-07', baseYield: '13.9%' },
-  { name: 'Ibeju-Lekki Coastal Green Villa', code: 'IB-03', baseYield: '17.5%' },
-  { name: 'Ikeja GRA Executive Enclave', code: 'IK-05', baseYield: '15.0%' }
+export const UAE_PROPERTY_LOCATIONS = [
+  { name: 'Marina Bay Residences', code: 'DXB-MB', district: 'Dubai Marina 🇦🇪', baseYield: '15.2%' },
+  { name: 'Creek Horizon Suites', code: 'DXB-CH', district: 'Dubai Creek Harbour 🇦🇪', baseYield: '14.8%' },
+  { name: 'Downtown Sky Vista', code: 'DXB-DT', district: 'Burj Khalifa District 🇦🇪', baseYield: '16.5%' },
+  { name: 'Sobha Sanctuary Estates', code: 'DXB-SB', district: 'Sobha Hartland / MBR City 🇦🇪', baseYield: '17.4%' },
+  { name: 'Palm Azure Ocean Villa', code: 'DXB-PJ', district: 'Palm Jumeirah 🇦🇪', baseYield: '18.2%' },
+  { name: 'Emirates Financial Tower', code: 'DXB-DIFC', district: 'DIFC Financial Center 🇦🇪', baseYield: '15.9%' }
 ];
 
 export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps> = ({
   onExpandTerminal,
-  className = ''
+  className = '',
+  variant = 'full'
 }) => {
   const [timeframe, setTimeframe] = useState<'1m' | '5m' | '15m' | '1D'>('5m');
   const [currentPrice, setCurrentPrice] = useState<number>(148650.0);
@@ -95,50 +94,50 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
     return list;
   });
 
-  // Recent simulated order executions stream
+  // Recent simulated order executions stream (UAE Exclusive)
   const [orders, setOrders] = useState<SimulatedOrder[]>([
     {
       id: 'ORD-9841',
       time: '12:14:02',
-      pair: 'PM-REIT / LK-01',
-      location: 'Lekki Phase 1 Prime Suites',
+      pair: 'UAE-REIT / DXB-MB',
+      location: 'Marina Bay Residences (Dubai Marina)',
       type: 'RENTAL YIELD',
       side: 'YIELD',
       amount: 45000000,
-      yieldRate: '+14.2% p.a.',
+      yieldRate: '+15.2% p.a.',
       status: 'DISTRIBUTED'
     },
     {
       id: 'ORD-9840',
       time: '12:13:41',
-      pair: 'PM-REIT / VI-09',
-      location: 'Victoria Island Commercial Wing',
+      pair: 'UAE-REIT / DXB-DT',
+      location: 'Downtown Sky Vista (Burj Khalifa Dist.)',
       type: 'BUY ORDER',
       side: 'BUY',
       amount: 85000000,
-      yieldRate: '+15.8% p.a.',
+      yieldRate: '+16.5% p.a.',
       status: 'FILLED'
     },
     {
       id: 'ORD-9839',
       time: '12:13:10',
-      pair: 'PM-REIT / EP-04',
-      location: 'Epe Express Corridor Agro-Hub',
+      pair: 'UAE-REIT / DXB-CH',
+      location: 'Creek Horizon Suites (Dubai Creek)',
       type: 'COLLATERAL SETTLED',
       side: 'SETTLE',
       amount: 32000000,
-      yieldRate: '+18.1% p.a.',
+      yieldRate: '+14.8% p.a.',
       status: 'SETTLED'
     },
     {
       id: 'ORD-9838',
       time: '12:12:35',
-      pair: 'PM-REIT / GZ-02',
-      location: 'Guzape Hills Terraces Abuja',
+      pair: 'UAE-REIT / DXB-PJ',
+      location: 'Palm Azure Ocean Villa (Palm Jumeirah)',
       type: 'BUY ORDER',
       side: 'BUY',
-      amount: 120000000,
-      yieldRate: '+16.4% p.a.',
+      amount: 140000000,
+      yieldRate: '+18.2% p.a.',
       status: 'FILLED'
     }
   ]);
@@ -184,10 +183,10 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
     return () => clearInterval(tickInterval);
   }, []);
 
-  // Periodic simulated order generator (every ~3.2 seconds)
+  // Periodic simulated order generator (UAE Exclusive)
   useEffect(() => {
     const orderInterval = setInterval(() => {
-      const loc = PROPERTY_LOCATIONS[Math.floor(Math.random() * PROPERTY_LOCATIONS.length)];
+      const loc = UAE_PROPERTY_LOCATIONS[Math.floor(Math.random() * UAE_PROPERTY_LOCATIONS.length)];
       const types: ('BUY ORDER' | 'RENTAL YIELD' | 'COLLATERAL SETTLED')[] = [
         'BUY ORDER', 'BUY ORDER', 'RENTAL YIELD', 'COLLATERAL SETTLED'
       ];
@@ -211,8 +210,8 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
       const newOrder: SimulatedOrder = {
         id: `ORD-${orderNum}`,
         time: timeStr,
-        pair: `PM-REIT / ${loc.code}`,
-        location: loc.name,
+        pair: `UAE-REIT / ${loc.code}`,
+        location: `${loc.name} (${loc.district})`,
         type: selectedType,
         side,
         amount: selectedAmount,
@@ -247,6 +246,81 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
     return chartHeight - ((val - svgData.min) / svgData.range) * chartHeight;
   };
 
+  const latestOrder = orders[0] || null;
+
+  // COMPACT TICKER BAR (Image 3 Style: Placed directly above Active Investments)
+  if (variant === 'compact') {
+    return (
+      <div className={`bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 text-white rounded-2xl p-3.5 shadow-sm mb-5 relative overflow-hidden font-sans ${className}`}>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 relative z-10">
+          {/* Index & Real-time Rate */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 font-bold shadow-md shadow-amber-500/20 shrink-0">
+              <TrendingUp className="w-4 h-4 text-slate-950" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-xs sm:text-sm text-white tracking-tight font-mono">
+                  UAE-REIT / NGN
+                </span>
+                <span className="text-[10px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full font-mono font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  LIVE
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-mono mt-0.5">
+                <span className="font-bold text-white">₦{currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="text-emerald-400 font-bold flex items-center">
+                  <ArrowUpRight className="w-3 h-3" />
+                  +{priceChangePercent}%
+                </span>
+                <span className="text-slate-500 hidden sm:inline">·</span>
+                <span className="text-slate-400 text-[11px] hidden sm:inline">24h Vol: ₦{(volume24h / 1000000000).toFixed(2)}B</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Real-time Order Stream Bar (Latest UAE Execution) */}
+          {latestOrder && (
+            <div className="min-w-0 flex-1 bg-slate-900/80 border border-slate-800/80 rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 text-xs font-mono">
+              <div className="flex items-center gap-2 truncate">
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                  latestOrder.side === 'BUY' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                  latestOrder.side === 'YIELD' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                  'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
+                }`}>
+                  {latestOrder.type}
+                </span>
+                <span className="text-slate-200 truncate text-[11px]">
+                  {latestOrder.location}
+                </span>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-emerald-400 font-bold text-[11px]">
+                  +₦{(latestOrder.amount / 1000000).toFixed(1)}M
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Action Trigger */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={onExpandTerminal}
+              className="bg-slate-800 hover:bg-slate-750 text-amber-400 hover:text-amber-300 font-bold text-xs py-2 px-3.5 rounded-xl border border-slate-700/80 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 whitespace-nowrap"
+            >
+              <Activity className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Open Trading Terminal</span>
+              <Maximize2 className="w-3 h-3 text-slate-400" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // FULL CARD (Candlestick chart, 24h stats, depth, and order book)
   return (
     <div className={`bg-slate-900 border border-slate-800 text-white rounded-2xl p-5 shadow-lg flex flex-col justify-between relative overflow-hidden font-sans ${className}`}>
       {/* Background ambient gradient */}
@@ -260,8 +334,8 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm sm:text-base text-white tracking-tight">
-                PM-REIT / NGN
+              <span className="font-extrabold text-sm sm:text-base text-white tracking-tight font-mono">
+                UAE-REIT / NGN
               </span>
               <span className="text-[10px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full font-mono font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -269,9 +343,9 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
               </span>
             </div>
             <p className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-              <span>Treasure Homes Prime Property Liquidity Index</span>
+              <span>Prime UAE Luxury Property Liquidity Index</span>
               <span className="text-slate-600">•</span>
-              <span className="text-amber-400/90 font-medium">Verified Yield Model</span>
+              <span className="text-amber-400/90 font-medium">Dubai Asset Backing 🇦🇪</span>
             </p>
           </div>
         </div>
@@ -280,93 +354,92 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
         <div className="flex items-center gap-2">
           {onExpandTerminal && (
             <button
-              type="button"
               onClick={onExpandTerminal}
-              className="bg-slate-800/90 hover:bg-slate-750 text-slate-200 hover:text-white border border-slate-700/80 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer"
+              className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700/60 cursor-pointer flex items-center gap-1.5 text-xs font-bold"
               title="Open Full Institutional Property Trading Terminal"
             >
-              <span>Expand Terminal</span>
               <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Terminal</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Price & 24h Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-3.5 py-2.5 px-3 bg-slate-950/60 border border-slate-800/60 rounded-xl relative z-10">
-        <div>
-          <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider block">Index Price</span>
+      {/* Primary Price & 24h Metrics Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 my-4 relative z-10 font-mono">
+        <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-2.5">
+          <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-sans">Index Price</span>
           <div className="flex items-baseline gap-1.5 mt-0.5">
-            <span className="text-base sm:text-lg font-extrabold text-white font-mono tabular-nums">
-              ₦{currentPrice.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-            <span className="text-[11px] font-bold text-emerald-400 flex items-center font-mono">
-              <ArrowUpRight className="w-3 h-3 inline" /> +{priceChangePercent}%
+            <span className="text-base sm:text-lg font-bold text-white tabular-nums">
+              ₦{currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
+          <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5 mt-0.5">
+            <ArrowUpRight className="w-3 h-3" />
+            +{priceChangePercent}% 24h
+          </span>
         </div>
 
-        <div>
-          <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider block">24h High</span>
-          <span className="text-xs sm:text-sm font-bold text-slate-200 font-mono tabular-nums mt-0.5 block">
+        <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-2.5">
+          <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-sans">24h High</span>
+          <span className="text-xs sm:text-sm font-bold text-slate-200 block mt-0.5 tabular-nums">
             ₦{high24h.toLocaleString()}
           </span>
+          <span className="text-[10px] text-slate-500 block mt-0.5">Peak Yield</span>
         </div>
 
-        <div>
-          <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider block">24h Low</span>
-          <span className="text-xs sm:text-sm font-bold text-slate-300 font-mono tabular-nums mt-0.5 block">
+        <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-2.5">
+          <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-sans">24h Low</span>
+          <span className="text-xs sm:text-sm font-bold text-slate-200 block mt-0.5 tabular-nums">
             ₦{low24h.toLocaleString()}
           </span>
+          <span className="text-[10px] text-slate-500 block mt-0.5">Support Level</span>
         </div>
 
-        <div>
-          <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider block">24h Volume</span>
-          <span className="text-xs sm:text-sm font-bold text-amber-400 font-mono tabular-nums mt-0.5 block">
+        <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-2.5">
+          <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-sans">24h Volume</span>
+          <span className="text-xs sm:text-sm font-bold text-amber-400 block mt-0.5 tabular-nums">
             ₦{(volume24h / 1000000000).toFixed(2)}B
           </span>
+          <span className="text-[10px] text-slate-500 block mt-0.5">Dubai Real Estate</span>
         </div>
       </div>
 
-      {/* View Switcher: Candlestick Chart vs Orders Stream */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3 relative z-10">
-        <div className="flex items-center gap-1.5">
+      {/* Middle Interactive Toggle: Candlestick Chart vs Real-time Executed Orders */}
+      <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3 relative z-10">
+        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
           <button
-            type="button"
             onClick={() => setActiveTab('chart')}
-            className={`text-xs px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'chart' 
-                ? 'bg-amber-500 text-slate-950 shadow-xs' 
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                ? 'bg-amber-500 text-slate-950 shadow-sm' 
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             <BarChart3 className="w-3.5 h-3.5" />
-            <span>Candlestick</span>
+            <span>Candlesticks</span>
           </button>
           <button
-            type="button"
             onClick={() => setActiveTab('orders')}
-            className={`text-xs px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'orders' 
-                ? 'bg-amber-500 text-slate-950 shadow-xs' 
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                ? 'bg-amber-500 text-slate-950 shadow-sm' 
+                : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Executed Yields ({orders.length})</span>
+            <Activity className="w-3.5 h-3.5" />
+            <span>Live Yield Stream ({orders.length})</span>
           </button>
         </div>
 
-        {/* Timeframe Selector (Only active in chart tab) */}
         {activeTab === 'chart' && (
-          <div className="flex items-center gap-1 bg-slate-950/80 border border-slate-800 rounded-lg p-0.5 text-[11px] font-mono">
+          <div className="flex items-center gap-1 text-[11px] font-mono text-slate-400">
             {(['1m', '5m', '15m', '1D'] as const).map(tf => (
               <button
                 key={tf}
-                type="button"
                 onClick={() => setTimeframe(tf)}
-                className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
-                  timeframe === tf ? 'bg-slate-800 text-amber-400 font-bold' : 'text-slate-500 hover:text-slate-300'
+                className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                  timeframe === tf ? 'bg-slate-800 text-amber-400 font-bold' : 'hover:text-slate-200'
                 }`}
               >
                 {tf}
@@ -376,119 +449,92 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
         )}
       </div>
 
-      {/* Main Interactive Display */}
-      <div className="relative z-10">
+      {/* Main Content Area */}
+      <div className="relative z-10 min-h-[190px] flex flex-col justify-center">
         {activeTab === 'chart' ? (
           <div>
             {/* SVG Candlestick Chart */}
-            <div className="w-full bg-[#060a12] border border-slate-800/90 rounded-xl p-2.5 relative overflow-hidden shadow-inner">
+            <div className="w-full overflow-hidden bg-slate-950/70 border border-slate-800/80 rounded-xl p-3 relative">
+              <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono mb-1">
+                <span>High: ₦{high24h.toLocaleString()}</span>
+                <span>Timeframe: {timeframe}</span>
+                <span>Low: ₦{low24h.toLocaleString()}</span>
+              </div>
+
               <svg 
                 viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
-                className="w-full h-36 sm:h-40 overflow-visible"
+                className="w-full h-36 overflow-visible"
                 preserveAspectRatio="none"
               >
-                <defs>
-                  <linearGradient id="gridLine" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#1e293b" stopOpacity="0.2" />
-                    <stop offset="50%" stopColor="#334155" stopOpacity="0.5" />
-                    <stop offset="100%" stopColor="#1e293b" stopOpacity="0.2" />
-                  </linearGradient>
-                </defs>
-
-                {/* Horizontal reference lines */}
-                <line x1="0" y1="30" x2={chartWidth} y2="30" stroke="url(#gridLine)" strokeDasharray="3 3" />
-                <line x1="0" y1="75" x2={chartWidth} y2="75" stroke="url(#gridLine)" strokeDasharray="3 3" />
-                <line x1="0" y1="120" x2={chartWidth} y2="120" stroke="url(#gridLine)" strokeDasharray="3 3" />
+                {/* Horizontal reference grid lines */}
+                <line x1="0" y1="30" x2={chartWidth} y2="30" stroke="#1e293b" strokeDasharray="3 3" />
+                <line x1="0" y1="75" x2={chartWidth} y2="75" stroke="#1e293b" strokeDasharray="3 3" />
+                <line x1="0" y1="120" x2={chartWidth} y2="120" stroke="#1e293b" strokeDasharray="3 3" />
 
                 {/* Candlesticks */}
                 {candles.map((candle, idx) => {
                   const spacing = chartWidth / candles.length;
                   const x = idx * spacing + spacing / 2;
-                  const yOpen = getY(candle.open);
-                  const yClose = getY(candle.close);
                   const yHigh = getY(candle.high);
                   const yLow = getY(candle.low);
-                  
-                  const isBull = candle.isBull;
+                  const yOpen = getY(candle.open);
+                  const yClose = getY(candle.close);
                   const bodyTop = Math.min(yOpen, yClose);
                   const bodyHeight = Math.max(3, Math.abs(yClose - yOpen));
-                  const candleColor = isBull ? '#10b981' : '#ef4444';
-                  const isLatest = idx === candles.length - 1;
+                  const color = candle.isBull ? '#10b981' : '#ef4444';
 
                   return (
                     <g key={idx} className="transition-all duration-300">
-                      {/* Upper and lower wick */}
+                      {/* Wick */}
                       <line 
                         x1={x} 
                         y1={yHigh} 
                         x2={x} 
                         y2={yLow} 
-                        stroke={candleColor} 
-                        strokeWidth="1.25"
+                        stroke={color} 
+                        strokeWidth="1.5" 
                       />
-                      {/* Candle body */}
+                      {/* Candle Body */}
                       <rect
                         x={x - svgData.candleWidth / 2}
                         y={bodyTop}
                         width={svgData.candleWidth}
                         height={bodyHeight}
-                        fill={candleColor}
+                        fill={color}
                         rx="1"
                       />
-                      {/* Pulsing indicator on the latest active candle */}
-                      {isLatest && (
-                        <circle 
-                          cx={x} 
-                          cy={bodyTop + bodyHeight / 2} 
-                          r="3" 
-                          fill="#f59e0b" 
-                          className="animate-ping"
-                        />
-                      )}
                     </g>
                   );
                 })}
               </svg>
 
-              {/* Real-time Order Depth Gauge */}
-              <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-                <span className="flex items-center gap-1 text-emerald-400 font-bold">
-                  <span>BUY DEPTH: {buyRatio}%</span>
-                </span>
-                <div className="w-32 sm:w-48 bg-rose-950/70 h-1.5 rounded-full overflow-hidden flex mx-2 border border-slate-800">
+              {/* Real-time Order Depth indicator */}
+              <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] font-mono">
+                <span className="text-emerald-400 font-bold">Buyers: {buyRatio}%</span>
+                <div className="w-1/2 bg-rose-500/40 h-1.5 rounded-full overflow-hidden mx-2">
                   <div 
-                    className="bg-emerald-500 h-full transition-all duration-500" 
-                    style={{ width: `${buyRatio}%` }}
-                  />
-                  <div 
-                    className="bg-rose-500 h-full transition-all duration-500" 
-                    style={{ width: `${100 - buyRatio}%` }}
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-500" 
+                    style={{ width: `${buyRatio}%` }} 
                   />
                 </div>
-                <span className="flex items-center gap-1 text-rose-400 font-bold">
-                  <span>SELL DEPTH: {+(100 - buyRatio).toFixed(1)}%</span>
-                </span>
+                <span className="text-rose-400 font-bold">Sellers: {(100 - buyRatio).toFixed(1)}%</span>
               </div>
             </div>
           </div>
         ) : (
-          /* Automated Real-time Orders & Yields Stream */
-          <div className="bg-[#060a12] border border-slate-800/90 rounded-xl p-2.5 max-h-52 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-slate-800">
-            {orders.map((ord, idx) => (
+          /* Live Executed Orders Stream Table */
+          <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs font-mono">
+            {orders.map((ord) => (
               <div 
                 key={ord.id} 
-                className={`p-2 rounded-lg border flex items-center justify-between gap-2 text-xs font-mono transition-all ${
-                  idx === 0 
-                    ? 'bg-slate-800/80 border-amber-500/40 shadow-xs animate-fadeIn' 
-                    : 'bg-slate-900/60 border-slate-800/80'
-                }`}
+                className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-2.5 flex items-center justify-between gap-3 animate-fadeIn"
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                <div className="flex items-center gap-2 truncate">
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
                     ord.side === 'BUY' 
                       ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
                       : ord.side === 'YIELD' 
-                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
                       : 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
                   }`}>
                     {ord.type}
@@ -521,10 +567,10 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
       <div className="mt-3.5 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-500 font-mono relative z-10">
         <span className="flex items-center gap-1.5 text-slate-400">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Simulated Institutional Liquidity Engine • 100% Backed Property Models</span>
+          <span>UAE Sovereign Property Model · Dubai Marina · Downtown · Palm</span>
         </span>
         <span className="text-slate-400">
-          Live Yield Cycle: <strong className="text-amber-400">Every Friday 12:00 AM WAT</strong>
+          Payouts: <strong className="text-amber-400">Every Friday 12:00 AM WAT</strong>
         </span>
       </div>
     </div>

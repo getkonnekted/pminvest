@@ -267,16 +267,15 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const saved = localStorage.getItem('pm_prod_investments_v1');
     const parsed = saved ? JSON.parse(saved) : SEED_INVESTMENTS;
     if (parsed && Array.isArray(parsed)) {
-      // User decision: Convert all active investments to the new 28-week plans
+      // Standardize active investments to canonical 24-week UAE property plans
       return parsed.map((inv: UserInvestment) => {
-        if (inv.status === 'active' && inv.totalWeeks !== 28) {
-          // Calculate 21.67% weekly yield
+        if (inv.status === 'active' && inv.totalWeeks !== 24) {
           const weekly = inv.weeklyPayout || Math.round(inv.cost * (6500 / 30000));
           return {
             ...inv,
-            totalWeeks: 28,
+            totalWeeks: 24,
             weeklyPayout: weekly,
-            totalReturns: weekly * 28
+            totalReturns: weekly * 24
           };
         }
         return inv;
@@ -285,28 +284,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return parsed;
   });
 
-  // Dynamic Investment Plans (Default to 6-tier 28-week plans, customizable by Admin)
+  // Dynamic Investment Plans (Canonical 6-tier 24-week UAE luxury plans)
   const [investmentPlans, setInvestmentPlans] = useState<InvestmentPlan[]>(() => {
-    const saved = localStorage.getItem('pm_investment_plans_v3');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length >= 6) {
-          return parsed.map((p: InvestmentPlan) => ({
-            ...p,
-            weeksDuration: 28,
-            totalReturns: p.weeklyPayout * 28
-          }));
-        }
-      } catch (e) {
-        // Fall back to default 6 tiers
-      }
-    }
     return INVESTMENT_PLANS;
   });
 
   useEffect(() => {
-    localStorage.setItem('pm_investment_plans_v3', JSON.stringify(investmentPlans));
+    localStorage.setItem('pm_investment_plans_v4', JSON.stringify(investmentPlans));
   }, [investmentPlans]);
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
@@ -1794,7 +1778,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const adminResetInvestmentPlans = () => {
     setInvestmentPlans(INVESTMENT_PLANS);
-    setSuccessMsg('Investment plans reset to default 28-week tiers.');
+    setSuccessMsg('Investment plans reset to default 24-week UAE tiers.');
   };
 
   // Rollover Reinvestment Incentive (+3% increment on each payout rolled over, not the entire plan)
@@ -1837,14 +1821,14 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
     setTransactions(prev => [newTx, ...prev]);
 
-    // Renew investment into a fresh 28-week cycle
+    // Renew investment into a fresh 24-week cycle
     const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     setInvestments(prev => prev.map(i => {
       if (i.id === investmentId) {
         return {
           ...i,
           weeksPaid: 0,
-          totalWeeks: 28,
+          totalWeeks: 24,
           status: 'active',
           lastPayoutDate: undefined,
           nextPayoutDate: nextPayout
@@ -2034,7 +2018,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           ? nextPayout
           : undefined
       };
-      setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} credited! (${inv.planName} weekly payout rolled over with +3% increment [+₦${rolloverIncrement.toLocaleString()}] and renewed into a new 28-week cycle).`);
+      setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} credited! (${inv.planName} weekly payout rolled over with +3% increment [+₦${rolloverIncrement.toLocaleString()}] and renewed into a new 24-week cycle).`);
     } else {
       updatedInv = {
         ...inv,
@@ -2936,7 +2920,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       if (isCompleted && inv.autoReinvest) {
-        payoutLog.push(`🔄 Auto-Compounding: ${inv.planName} for ${inv.userName} completed 28 weeks and auto-rolled over into a new cycle!`);
+        payoutLog.push(`🔄 Auto-Compounding: ${inv.planName} for ${inv.userName} completed 24 weeks and auto-rolled over into a new cycle!`);
         return {
           ...inv,
           weeksPaid: 0,

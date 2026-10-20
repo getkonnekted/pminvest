@@ -42,6 +42,11 @@ export interface UserInvestment {
   userName: string;
   planId: string;
   planName: string;
+  propertyName?: string;
+  propertyLocation?: string;
+  propertyType?: string;
+  deedTier?: string;
+  deedReferenceCode?: string;
   cost: number;
   weeklyPayout: number;
   totalReturns: number;
@@ -181,53 +186,97 @@ export interface SystemSettings {
   enableLiveActivityToasts?: boolean; // Live purchase & activity social proof alerts
 }
 
+export interface InvestmentPlan {
+  id: string;
+  name: string;
+  propertyName?: string;
+  propertyLocation?: string;
+  propertyType?: string;
+  occupancyRate?: string;
+  deedTier?: string;
+  cost: number;
+  totalReturns: number;
+  weeklyPayout: number;
+  weeksDuration: number;
+}
+
 export const INVESTMENT_PLANS: InvestmentPlan[] = [
   {
     id: 'plan_1',
     name: 'Plan 1',
+    propertyName: 'Marina Bay Residences',
+    propertyLocation: 'Dubai Marina 🇦🇪',
+    propertyType: 'Executive Studio Waterfront Stake',
+    occupancyRate: '98.4%',
+    deedTier: 'Marina Bay Tier (₦30,000 Co-Owner)',
     cost: 30000,
-    totalReturns: 182000,
+    totalReturns: 156000,
     weeklyPayout: 6500,
-    weeksDuration: 28
+    weeksDuration: 24
   },
   {
     id: 'plan_2',
     name: 'Plan 2',
+    propertyName: 'Creek Horizon Suites',
+    propertyLocation: 'Dubai Creek Harbour 🇦🇪',
+    propertyType: '1-Bedroom Waterfront Apartment',
+    occupancyRate: '97.2%',
+    deedTier: 'Creek Horizon Tier (₦60,000 Co-Owner)',
     cost: 60000,
-    totalReturns: 364000,
+    totalReturns: 312000,
     weeklyPayout: 13000,
-    weeksDuration: 28
+    weeksDuration: 24
   },
   {
     id: 'plan_3',
     name: 'Plan 3',
+    propertyName: 'Downtown Sky Vista',
+    propertyLocation: 'Downtown Burj Khalifa District 🇦🇪',
+    propertyType: 'Serviced Luxury Residence Stake',
+    occupancyRate: '99.1%',
+    deedTier: 'Downtown Sky Tier (₦120,000 Co-Owner)',
     cost: 120000,
-    totalReturns: 728000,
+    totalReturns: 624000,
     weeklyPayout: 26000,
-    weeksDuration: 28
+    weeksDuration: 24
   },
   {
     id: 'plan_4',
     name: 'Plan 4',
-    cost: 150000,
-    totalReturns: 910000,
-    weeklyPayout: 32500,
-    weeksDuration: 28
+    propertyName: 'Sobha Sanctuary Estates',
+    propertyLocation: 'Sobha Hartland / MBR City 🇦🇪',
+    propertyType: '2-Bedroom Forest Villa Stake',
+    occupancyRate: '96.8%',
+    deedTier: 'Sobha Sanctuary Tier (₦250,000 Co-Owner)',
+    cost: 250000,
+    totalReturns: 1300000,
+    weeklyPayout: 54166,
+    weeksDuration: 24
   },
   {
     id: 'plan_5',
     name: 'Plan 5',
-    cost: 300000,
-    totalReturns: 1820000,
-    weeklyPayout: 65000,
-    weeksDuration: 28
+    propertyName: 'Palm Azure Ocean Villa',
+    propertyLocation: 'Palm Jumeirah 🇦🇪',
+    propertyType: 'Ultra-Luxury Waterfront Residence',
+    occupancyRate: '98.9%',
+    deedTier: 'Palm Azure Tier (₦600,000 Co-Owner)',
+    cost: 600000,
+    totalReturns: 3120000,
+    weeklyPayout: 130000,
+    weeksDuration: 24
   },
   {
     id: 'plan_6',
     name: 'Plan 6',
+    propertyName: 'Emirates Financial Tower',
+    propertyLocation: 'DIFC Financial District 🇦🇪',
+    propertyType: 'Prime Grade-A Commercial Asset',
+    occupancyRate: '99.4%',
+    deedTier: 'Emirates Tower Tier (₦1,500,000 Co-Owner)',
     cost: 1500000,
-    totalReturns: 9100000,
+    totalReturns: 7800000,
     weeklyPayout: 325000,
-    weeksDuration: 28
+    weeksDuration: 24
   }
 ];

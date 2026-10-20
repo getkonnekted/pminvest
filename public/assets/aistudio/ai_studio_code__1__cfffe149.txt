@@ -1,0 +1,24 @@
+src/
+├── components/
+│   ├── UserDashboard.tsx            # Full investor portal (Overview, Buy Plans, Active Contracts, My Deeds, Finance, KYC)
+│   ├── AdminPanel.tsx               # Master admin command center (Approvals, Drops, Users, Settings, Timeline Engine)
+│   ├── RealInvestorDropCounter.tsx  # Genuine investor deposit counter with "Manage Deposits" routing
+│   ├── UaeDeedModal.tsx             # Official Title Deed certificate with PDF & PNG downloads
+│   ├── PayoutCountdown.tsx          # Real-time countdown clock to next Friday payout
+│   ├── InvestmentPayoutButton.tsx   # 1-click Friday payout claim component
+│   ├── LiveActivityToast.tsx        # Social proof activity pop-ups
+│   ├── CommunityBanner.tsx          # Official community link banner
+│   ├── PmLogo.tsx                   # Treasure Homes / PM Invest branding SVG
+│   └── InfoTooltip.tsx              # Contextual tooltips explaining real estate backing
+├── context/
+│   └── StateContext.tsx             # Central state machine (Dual Supabase sync + offline resilience)
+├── data/
+│   ├── uaeProperties.ts             # 6 UAE luxury properties specs, valuations, and deed code generators
+│   └── supabaseSql.ts               # Core and full SQL scripts for database initialization
+├── lib/
+│   ├── paystack.ts                  # Paystack gateway handler & Nigerian bank resolver
+│   ├── sound.ts                     # Audio chime helper
+│   └── supabase.ts                  # Supabase client initialization
+├── types.ts                         # Complete TypeScript interfaces (User, Investment, Plan, Task, etc.)
+├── App.tsx                          # Main shell routing between Landing Page, Investor Portal & Admin Desk
+└── main.tsx                         # React 19 application entry point

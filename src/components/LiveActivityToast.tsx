@@ -37,42 +37,42 @@ const NON_PAYOUT_ACTIVITIES = [
   {
     type: 'purchase' as const,
     action: 'Acquired Plan 1 (₦30,000)',
-    sub: '28-Week Property Investment Active',
+    sub: '24-Week UAE Property Investment Active',
     amount: 30000,
     iconType: 'investment' as const
   },
   {
     type: 'purchase' as const,
     action: 'Acquired Plan 2 (₦60,000)',
-    sub: '28-Week Property Investment Active',
+    sub: '24-Week UAE Property Investment Active',
     amount: 60000,
     iconType: 'investment' as const
   },
   {
     type: 'purchase' as const,
     action: 'Acquired Plan 3 (₦120,000)',
-    sub: '28-Week Property Investment Active',
+    sub: '24-Week UAE Property Investment Active',
     amount: 120000,
     iconType: 'investment' as const
   },
   {
     type: 'purchase' as const,
-    action: 'Acquired Plan 4 (₦150,000)',
-    sub: '28-Week Property Investment Active',
-    amount: 150000,
+    action: 'Acquired Plan 4 (₦250,000)',
+    sub: '24-Week UAE Property Investment Active',
+    amount: 250000,
     iconType: 'investment' as const
   },
   {
     type: 'purchase' as const,
-    action: 'Acquired Plan 5 (₦300,000)',
-    sub: '28-Week Property Investment Active',
-    amount: 300000,
+    action: 'Acquired Plan 5 (₦600,000)',
+    sub: '24-Week UAE Property Investment Active',
+    amount: 600000,
     iconType: 'investment' as const
   },
   {
     type: 'purchase' as const,
     action: 'Acquired Plan 6 (₦1,500,000)',
-    sub: '28-Week Property Investment Active',
+    sub: '24-Week UAE Property Investment Active',
     amount: 1500000,
     iconType: 'investment' as const
   },

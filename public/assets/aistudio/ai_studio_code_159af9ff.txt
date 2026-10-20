@@ -1,0 +1,102 @@
+# Prompt: Build "PM Invest" — UAE Luxury Real Estate Fractional Syndicate Platform
+
+You are to build "PM Invest" (powered by Treasure Homes Ltd), a production-grade, full-stack real estate fractional investment and syndication web application tailored for the Nigerian market with physical asset backing in prime United Arab Emirates (UAE) developments (Dubai Marina, Dubai Creek, Downtown Dubai, Sobha Hartland, Palm Jumeirah, and DIFC).
+
+The platform features a multi-tiered architecture supporting three distinct user roles: **Investors**, **Marketers**, and **Administrators**, powered by a robust double-entry ledger, automated weekly Friday distributions, official downloadable Title Deeds, and a PostgreSQL / Supabase backend.
+
+---
+
+## 1. Core Platform Architecture & Business Logic
+
+### A. Real Estate Investment Engine & 24-Week Cycles
+- The platform offers 6 verified fractional property stakes. Each plan runs for a **24-week fixed tenure**.
+- **Guaranteed Friday Cash Distributions**: Every Friday, investors receive fixed weekly cash profits credited straight to their platform wallet.
+- **Auto-Renew (+3% Instant Cash Bonus)**: When an active plan reaches Week 24 maturity, investors can toggle Auto-Renew. Auto-Renew immediately credits a +3% instant cash dividend on the principal into their liquid wallet and automatically rolls over the principal into a new 24-week cycle.
+- **Official UAE Fractional Title Deeds**: Every investment generates an authentic, cryptographically referenced UAE Fractional Co-Ownership Title Deed issued under Treasure Homes Ltd and UAE property trustees. Investors can view, print, and download this deed as both an official **PDF document** (`.pdf`) and a **high-resolution certificate image** (`.png`) via client-side `html2canvas` and `jsPDF`.
+
+### B. Standardized Property Plans (No Discrepancies)
+1. **Plan 1 — Marina Bay** (Marina Bay Residences, Dubai Marina)
+   - Entry: ₦30,000 | Friday Payout: ₦6,500 / week | Total Returns (24w): ₦156,000 | Net Profit: +₦126,000
+   - Deed Tier: `Marina Bay Tier (₦30,000 Co-Owner)`
+2. **Plan 2 — Creek Horizon** (Creek Horizon Suites, Dubai Creek Harbour)
+   - Entry: ₦60,000 | Friday Payout: ₦13,000 / week | Total Returns (24w): ₦312,000 | Net Profit: +₦252,000
+   - Deed Tier: `Creek Horizon Tier (₦60,000 Co-Owner)`
+3. **Plan 3 — Downtown Sky** (Downtown Sky Vista, Downtown Burj Khalifa District)
+   - Entry: ₦120,000 | Friday Payout: ₦26,000 / week | Total Returns (24w): ₦624,000 | Net Profit: +₦504,000
+   - Deed Tier: `Downtown Sky Tier (₦120,000 Co-Owner)`
+4. **Plan 4 — Sobha Sanctuary** (Sobha Sanctuary Estates, MBR City)
+   - Entry: ₦250,000 | Friday Payout: ₦54,166 / week | Total Returns (24w): ₦1,300,000 | Net Profit: +₦1,050,000
+   - Deed Tier: `Sobha Sanctuary Tier (₦250,000 Co-Owner)`
+5. **Plan 5 — Palm Azure** (Palm Azure Ocean Villa, Palm Jumeirah)
+   - Entry: ₦600,000 | Friday Payout: ₦130,000 / week | Total Returns (24w): ₦3,120,000 | Net Profit: +₦2,520,000
+   - Deed Tier: `Palm Azure Tier (₦600,000 Co-Owner)`
+6. **Plan 6 — Emirates Tower** (Emirates Financial Tower, DIFC)
+   - Entry: ₦1,500,000 | Friday Payout: ₦325,000 / week | Total Returns (24w): ₦7,800,000 | Net Profit: +₦6,300,000
+   - Deed Tier: `Emirates Tower Tier (₦1,500,000 Co-Owner)`
+
+### C. Multi-Role Functionalities
+
+#### 1. Investor Functionality
+- **Authentication & Onboarding**: Email and password registration with mandatory sponsor referral validation.
+- **Financial Desk**:
+  - **Wallet Balance**: Real-time spendable NGN balance.
+  - **Deposit**: Dual deposit options:
+    1. Automated card/bank gateway via Paystack integration with instant crediting.
+    2. Direct bank transfer into Treasure Homes corporate accounts with payment proof slip upload for admin verification.
+  - **Withdrawal**: Nigerian bank cashout requiring Bank Name, 10-digit NUBAN Account Number, and Account Name. Enforces minimum (₦5,000) and maximum limits.
+- **My Active Contracts**:
+  - Clean executive architectural card layout with zero text repetition.
+  - Media banner displays location badge (`🇦🇪 Location`), Property Plan Name badge (`Marina Bay`, `Creek Horizon`, etc.), property type, title, and co-owner stake.
+  - 3-column financial metric breakdown: **Invested Capital**, **Friday Cash Payout** (emerald highlight), and **Total Return (24w)**.
+  - Progress bar showing tenure (`Week X of 24 Paid`) and percentage.
+  - Live Friday countdown timer and Auto-Renew (+3% rollover bonus) toggle.
+  - Card footer with official Deed Reference code, "Rollover (+3%)" trigger, and "Claim Friday Payout".
+- **Buy Plans Grid**: Clean 6-card display with property name badges, compact `24 WEEKS` badges, rental model descriptions, occupancy rates (94% to 99%), and 1-click purchase triggers.
+- **My Deeds Registry**:
+  - Dedicated tab displaying all verified fractional deeds held by the user.
+  - 1-click "View Official Deed" opening the certificate modal with instant **Download PDF**, **Download High-Res Image (.png)**, and **Print** capabilities.
+- **Growth Quests / Daily Yield Board**:
+  - Daily attendance streak rewards, property inspection polls, educational quizzes, and sponsored brand tasks with streak milestone payouts (₦1,500 for 7-day streak).
+- **KYC Verification**: Tier 1 and Tier 2 ID submission (NIN, Driver's License, International Passport, or Voter's Card) with compliance badges.
+
+#### 2. Marketer Functionality
+- **Sponsor Network & Referral Tree**:
+  - Every marketer receives a unique referral code and invite link.
+  - **7.5% Weekly Sponsor Commission**: Every Friday, whenever a referred downline investor claims their Friday payout, the marketer receives a recurring 7.5% cash commission credited straight to their wallet.
+- **Downline Tracking**: Separates real funded investors from unfunded leads with total deposited volume and active plans count.
+- **Marketing Presentation Isolation**:
+  - Ability for canvassers to showcase platform mechanics with designated marketing demo accounts.
+  - **Strict Security Rule**: Marketing allocations and demo funds are strictly tagged (`isMarketing: true`, `isMarketingAccount: true`) and never co-mingled with treasury funds or live deposit ledgers.
+
+#### 3. Admin Master Control Panel
+- **Fast Approvals Queue**:
+  - Single-click review, approval, or rejection of pending manual bank deposits (with preview modal for uploaded payment proof slips).
+  - Single-click approval of withdrawal cashout requests with reference recording.
+- **Real Investor Drop Counter**:
+  - Real-time monitor tracking genuine incoming completed deposits across the platform.
+  - Header features a direct **"Manage Deposits"** shortcut button that routes directly to the Fast Approvals deposit queue.
+- **User & Account Management**:
+  - Master user directory with search and filtering by classification (Real Paid Investor, Unfunded Lead, Marketing Canvasser, Admin).
+  - Role management: Toggle admin privileges, assign marketer status, adjust wallet balances, review KYC documentation, and activate/deactivate accounts.
+- **Weekly Payout Processing Engine**:
+  - Administrative trigger allowing operators to advance the timeline by 1 week, processing all scheduled Friday payouts, 7.5% referral sponsor distributions, and auto-renew rollovers in an automated transactional batch.
+- **System Settings & Treasury Controls**:
+  - Configurable Liquidity Reserve (e.g. ₦423M+ backing), withdrawal bounds, deposit auto-approval toggles, maintenance mode, and live social proof activity toasts.
+- **Database Seed Restore**:
+  - Safe staging reset utility protected by verification keyword prompts.
+
+---
+
+## 2. Tech Stack & Frontend Engineering Guidelines
+
+- **Framework**: React 19 SPA running on Vite with TypeScript.
+- **Styling**: Tailwind CSS v4 (`@import "tailwindcss";`), Lucide React icons, and Motion for animations.
+- **Document & Image Engine**: `html2canvas` and `jsPDF` for client-side raster and vector rendering of legal certificates.
+- **Database / Backend**: Supabase (PostgreSQL with Row Level Security, Realtime Publication channels, and secure PL/pgSQL stored procedures).
+- **No Simulation Wording**: The customer-facing interface and platform code must completely eliminate all references to "simulator" or "simulation".
+
+---
+
+## 3. Complete Supabase SQL Database Schema & Stored Procedures
+
+Execute the following complete SQL script in your Supabase SQL Editor. It provisions all tables, constraints, indexes, wallets, audit ledgers, default admin credentials, and full PL/pgSQL stored functions for Public, Investor, Marketer, and Admin operations:
