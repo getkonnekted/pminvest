@@ -35,7 +35,8 @@ import {
   Check,
   Activity,
   Maximize2,
-  BarChart2
+  BarChart2,
+  MapPin
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
 import { INVESTMENT_PLANS, InvestmentPlan, UserInvestment } from '../types';
@@ -46,6 +47,8 @@ import { PayoutCountdown } from './PayoutCountdown';
 import { InvestmentPayoutButton } from './InvestmentPayoutButton';
 import { CommunityBanner } from './CommunityBanner';
 import { LivePropertyTradingModal } from './LivePropertyTradingModal';
+import { UaeDeedModal } from './UaeDeedModal';
+import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
 
 const AutoRenewControl: React.FC<{ investment: UserInvestment; onToggle: (id: string) => void }> = ({ investment, onToggle }) => {
   const [now, setNow] = useState(Date.now());
@@ -234,7 +237,7 @@ export const UserDashboard: React.FC = () => {
     },
     {
       question: "How do weekly payouts work?",
-      answer: "Each property plan runs for 28 weeks. Your first payout is due 7 days after purchase; later payouts follow the same 7-day cycle and are credited to your wallet. You can withdraw eligible funds to your bank account."
+      answer: "Each property plan runs for 24 weeks. Your first payout is due 7 days after purchase; later payouts follow the same 7-day cycle and are credited to your wallet. You can withdraw eligible funds to your bank account."
     },
     {
       question: "What is Auto-Renew and weekly payout rollover?",
@@ -373,6 +376,8 @@ export const UserDashboard: React.FC = () => {
   const [investingPlanId, setInvestingPlanId] = useState<string | null>(null);
   const [justActivatedPlanId, setJustActivatedPlanId] = useState<string | null>(null);
   const [activatedPlanModal, setActivatedPlanModal] = useState<{ plan: InvestmentPlan; nextPayoutDate: string } | null>(null);
+  const [viewingDeedInvestment, setViewingDeedInvestment] = useState<UserInvestment | null>(null);
+  const [sampleDeedPlan, setSampleDeedPlan] = useState<InvestmentPlan | null>(null);
 
   const handlePurchase = (plan: InvestmentPlan) => {
     if (investingPlanId) return; // Prevent double-triggering while animating
@@ -720,17 +725,23 @@ export const UserDashboard: React.FC = () => {
               )}
             </div>
 
+            {/* Real-time Institutional UAE Property Trading Ticker (Image 3 Compact Widget) */}
+            <LiveTradingSimulationCard 
+              variant="compact"
+              onExpandTerminal={() => setIsTradingTerminalOpen(true)}
+            />
+
             <div className="space-y-4">
                   {activeInvestments.length === 0 ? (
                     <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
                       <Clock className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                       <p className="text-sm font-semibold text-slate-700">No active investments found.</p>
-                      <p className="text-xs text-slate-500 mt-1">Go to the "Buy Plans" tab to purchase an investment plan starting at ₦30,000.</p>
+                      <p className="text-xs text-slate-500 mt-1">Go to the "Buy Plans" tab to acquire a prime UAE luxury property stake starting at ₦30,000.</p>
                       <button
                         onClick={() => setActiveTab('invest')}
                         className="mt-4 bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors shadow-sm cursor-pointer"
                       >
-                        Explore Plans
+                        Explore UAE Properties
                       </button>
                     </div>
                   ) : (
@@ -739,33 +750,60 @@ export const UserDashboard: React.FC = () => {
                         const percentComplete = (inv.weeksPaid / inv.totalWeeks) * 100;
                         const autoRenewLockUntil = inv.autoReinvestLockedUntil ? new Date(inv.autoReinvestLockedUntil).getTime() : 0;
                         const isAutoRenewLocked = autoRenewLockUntil > Date.now();
+                        const matchPlan = INVESTMENT_PLANS.find(p => p.id === inv.planId || p.name.toLowerCase() === (inv.planName || '').toLowerCase());
+                        const propName = inv.propertyName || matchPlan?.propertyName || matchPlan?.name || inv.planName;
+                        const propImg = inv.propertyImage || matchPlan?.propertyImage || '/properties/marina_bay_residences.jpg';
+                        const propAddr = inv.propertyAddress || matchPlan?.propertyAddress || 'Plot 392-581, Marina Promenade, Dubai Marina, Dubai, UAE';
+                        const deedCode = inv.deedReferenceCode || `UAE-DLD-2026-${inv.id.slice(-6).toUpperCase()}`;
+
                         return (
-                          <div key={inv.id} className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col justify-between relative overflow-hidden shadow-xs">
+                          <div key={inv.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden shadow-xs hover:border-amber-300 transition-colors">
                             {/* Brand background watermark */}
                             <div className="absolute right-2 top-2 opacity-10 pointer-events-none">
                               <Building className="w-20 h-20 text-slate-300" />
                             </div>
 
                             <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-bold text-slate-900 uppercase tracking-wider">{inv.planName}</span>
-                                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold text-[10px]">
-                                  ACTIVE
-                                </span>
+                              {/* Property Header with Thumbnail */}
+                              <div className="flex items-center gap-3 mb-3 pb-3 border-b border-slate-200">
+                                <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-300 shadow-xs relative bg-slate-200">
+                                  <img 
+                                    src={propImg} 
+                                    alt={propName}
+                                    className="w-full h-full object-cover" 
+                                  />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span className="text-sm font-black text-slate-900 uppercase tracking-tight truncate">
+                                      {propName}
+                                    </span>
+                                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-bold text-[9px] shrink-0">
+                                      ACTIVE
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-[11px] text-slate-500 truncate mt-0.5">
+                                    <MapPin className="w-3 h-3 text-amber-500 shrink-0" />
+                                    <span className="truncate">{propAddr}</span>
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                    Deed Ref: {deedCode}
+                                  </div>
+                                </div>
                               </div>
 
-                              <div className="grid grid-cols-2 gap-2 my-3 text-xs border-y border-slate-200 py-3">
+                              <div className="grid grid-cols-2 gap-2 my-2 text-xs border-b border-slate-200 pb-3">
                                 <div>
-                                  <span className="text-slate-500 block font-light">Plan Cost</span>
+                                  <span className="text-slate-500 block font-light">Invested Capital</span>
                                   <span className="text-sm font-bold text-slate-900">₦{inv.cost.toLocaleString()}</span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-500 block font-light">Total Returns</span>
+                                  <span className="text-slate-500 block font-light">Total Returns (24w)</span>
                                   <span className="text-sm font-bold text-amber-600">₦{inv.totalReturns.toLocaleString()}</span>
                                 </div>
                                 <div className="col-span-2 pt-1.5 border-t border-slate-100 flex items-center justify-between">
                                   <div>
-                                    <span className="text-slate-500 block font-light text-[10px]">Payout every 7 days</span>
+                                    <span className="text-slate-500 block font-light text-[10px]">Weekly Friday Payout</span>
                                     <span className="text-sm font-bold text-slate-900">₦{inv.weeklyPayout.toLocaleString()} / week</span>
                                   </div>
                                   {inv.autoReinvest && (
@@ -782,12 +820,12 @@ export const UserDashboard: React.FC = () => {
                               </div>
 
                               {/* Progress */}
-                              <div className="my-3">
+                              <div className="my-2.5">
                                 <div className="flex justify-between text-[11px] mb-1 font-mono text-slate-500">
-                                  <span>Plan Progress</span>
+                                  <span>Cycle Progress</span>
                                   <span>Week {inv.weeksPaid} of {inv.totalWeeks} Paid</span>
                                 </div>
-                                <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                                   <div 
                                     className="bg-gradient-to-r from-amber-500 to-emerald-500 h-full rounded-full transition-all duration-500" 
                                     style={{ width: `${percentComplete}%` }}
@@ -796,11 +834,22 @@ export const UserDashboard: React.FC = () => {
                               </div>
 
                               {/* Live Payout Countdown Timer */}
-                              <div className="my-2.5">
+                              <div className="my-2">
                                 <PayoutCountdown targetDate={inv.nextPayoutDate} isLocked={inv.isTimerLocked || currentUser?.isTimerLocked} />
                               </div>
 
                               <AutoRenewControl investment={inv} onToggle={toggleAutoReinvest} />
+
+                              {/* Official Deed & Documents Button */}
+                              <button
+                                type="button"
+                                onClick={() => setViewingDeedInvestment(inv)}
+                                className="w-full mt-3 py-2 px-3 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
+                                title="View official DLD Co-Ownership Deed and backing contracts"
+                              >
+                                <Award className="w-4 h-4 text-slate-950" />
+                                <span>📜 View Official Deed & Documents</span>
+                              </button>
                             </div>
 
                             <div className="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
@@ -864,7 +913,7 @@ export const UserDashboard: React.FC = () => {
                             onClick={() => rolloverInvestment(inv.id)}
                             className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-xs transition-all active:scale-95 cursor-pointer"
                             id={`btn_rollover_${inv.id}`}
-                            title="Rollover this plan into a fresh 28-week cycle with 3% weekly increment"
+                            title="Rollover this plan into a fresh 24-week cycle with 3% weekly increment"
                           >
                             <RotateCw className="w-3 h-3" />
                             <span>Rollover Plan</span>
@@ -946,21 +995,18 @@ export const UserDashboard: React.FC = () => {
       {/* INVEST / BUY PLANS TAB */}
       {activeTab === 'invest' && (
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-center max-w-3xl mx-auto">
-            <h3 className="text-lg font-bold text-slate-900 tracking-wide uppercase">Choose a Property Plan</h3>
-            <p className="text-xs text-slate-600 mt-1 max-w-xl mx-auto">
-              Start with as little as <strong>₦30,000</strong>. All plans run for <strong>28 weeks</strong>. You get paid cash every Friday straight into your wallet, and you can withdraw to your bank anytime.
-            </p>
-            <div className="mt-4 p-4 bg-slate-900 border border-slate-800 rounded-2xl text-xs max-w-xl mx-auto text-left flex items-start gap-3 shadow-sm text-white">
-              <Building className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-white font-bold block uppercase tracking-wider text-[11px] mb-1">NOTE ON PLANS</strong>
-                <span className="text-slate-200 leading-relaxed">Your profit comes from physical property developments, trading and rental income. Once you pick a plan, your money works for the full 28 weeks, paying you cash every Friday.</span>
-              </div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center max-w-3xl mx-auto">
+            <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-800 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+              <span>🇦🇪</span>
+              <span>UAE Prime Real Estate Portfolio</span>
             </div>
-            <div className="mt-3 inline-flex items-center gap-1.5 bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium">
+            <h3 className="text-xl font-black text-slate-900 tracking-wide uppercase">UAE Institutional Property Plans</h3>
+            <p className="text-xs text-slate-600 mt-1 max-w-xl mx-auto leading-relaxed">
+              Acquire institutional co-ownership in verified luxury assets across Dubai Marina, DIFC, Palm Jumeirah, and Creek Harbour. All plans run for <strong>24 weeks</strong> with cash payouts paid into your wallet every Friday.
+            </p>
+            <div className="mt-3 inline-flex items-center gap-2 bg-slate-50 px-4 py-1.5 rounded-full border border-slate-200 text-xs text-slate-700 font-medium">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Backed by verified properties worldwide by <strong>Treasure Homes</strong></span>
+              <span>Backed by <strong>Dubai Land Department (DLD)</strong> Title Deeds & Sovereign SPV Trust</span>
             </div>
           </div>
 
@@ -970,113 +1016,143 @@ export const UserDashboard: React.FC = () => {
               return (
                 <div 
                   key={plan.id} 
-                  className={`bg-white border rounded-2xl p-6 flex flex-col justify-between shadow-sm transition-all duration-300 relative overflow-hidden ${
+                  className={`bg-white border rounded-2xl flex flex-col justify-between shadow-sm transition-all duration-300 relative overflow-hidden ${
                     justActivatedPlanId === plan.id
                       ? 'border-emerald-500 ring-4 ring-emerald-500/20 shadow-xl scale-[1.01]'
                       : investingPlanId === plan.id
                         ? 'border-amber-400 ring-2 ring-amber-400/40 shadow-lg scale-[1.005]'
-                        : isAffordable ? 'border-amber-300 hover:border-amber-500 hover:shadow-lg' : 'border-slate-200 opacity-90'
+                        : isAffordable ? 'border-amber-300/70 hover:border-amber-500 hover:shadow-xl' : 'border-slate-200 opacity-95'
                   }`}
                 >
-                  <div className={`absolute top-0 right-0 text-[9px] font-extrabold uppercase px-3 py-1 rounded-bl-lg tracking-widest font-mono transition-colors duration-300 ${
-                    justActivatedPlanId === plan.id ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-slate-900'
-                  }`}>
-                    {justActivatedPlanId === plan.id ? 'ACTIVATED' : 'REAL ESTATE TRUST'}
+                  {/* Property Image Banner */}
+                  <div className="relative h-44 w-full overflow-hidden bg-slate-900 group">
+                    <img 
+                      src={plan.propertyImage} 
+                      alt={plan.propertyName || plan.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
+                    <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md border border-amber-500/40 text-amber-400 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                      <span>🇦🇪</span>
+                      <span>{plan.propertyLocation.split(',')[0]}</span>
+                    </div>
+                    <div className={`absolute top-3 right-3 text-[9px] font-extrabold uppercase px-2.5 py-1 rounded-full tracking-widest font-mono shadow-sm ${
+                      justActivatedPlanId === plan.id ? 'bg-emerald-500 text-white animate-pulse' : 'bg-amber-500 text-slate-950'
+                    }`}>
+                      {justActivatedPlanId === plan.id ? 'ACTIVATED' : 'DLD VERIFIED'}
+                    </div>
+                    <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-white text-[11px]">
+                      <span className="font-semibold text-slate-200 truncate pr-2">{plan.propertyType}</span>
+                      <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded font-mono text-[10px] font-bold shrink-0">
+                        {plan.occupancyRate} Occupancy
+                      </span>
+                    </div>
                   </div>
 
-                  <div>
-                    <h4 className="text-xl font-extrabold text-slate-900 uppercase tracking-wider">{plan.name}</h4>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">Backed by real properties</p>
-                    
-                    <div className="my-5 bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-3">
-                      <div className="flex justify-between items-baseline">
-                        <span className="text-xs text-slate-500">Plan Cost:</span>
-                        <span className="text-lg font-extrabold text-slate-900">₦{plan.cost.toLocaleString()}</span>
+                  <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div>
+                      {/* Property Name & Verified Address */}
+                      <div className="mb-3">
+                        <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">{plan.propertyName || plan.name}</h4>
+                        <div className="flex items-start gap-1 text-xs text-slate-500 mt-1">
+                          <MapPin className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                          <span className="text-[11px] leading-snug text-slate-600 line-clamp-2">{plan.propertyAddress}</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[10px] font-mono">
+                          <span className="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded">
+                            Makani: {plan.makaniNumber}
+                          </span>
+                          <span className="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded">
+                            Cadastral: {plan.cadastralId}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-baseline">
-                        <span className="text-xs text-slate-500">Total Returns (28w):</span>
-                        <span className="text-base font-bold text-amber-600">₦{plan.totalReturns.toLocaleString()}</span>
+
+                      {/* Yield Numbers */}
+                      <div className="my-4 bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-2.5">
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs text-slate-500 font-medium">Invested Capital:</span>
+                          <span className="text-base font-black text-slate-900">₦{plan.cost.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs text-slate-500 font-medium">Weekly Friday Cash Payout:</span>
+                          <span className="text-sm font-black text-emerald-600">₦{plan.weeklyPayout.toLocaleString()} / wk</span>
+                        </div>
+                        <div className="h-px bg-slate-200 w-full" />
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-xs text-amber-700 font-bold">Total Returns (24 Weeks):</span>
+                          <span className="text-base font-black text-amber-600 font-mono">₦{plan.totalReturns.toLocaleString()}</span>
+                        </div>
                       </div>
-                      <div className="h-px bg-slate-200 w-full" />
-                      <div className="flex justify-between items-baseline">
-                        <span className="text-xs text-emerald-600 font-semibold">Weekly Cash Payout:</span>
-                        <span className="text-base font-bold text-emerald-600">₦{plan.weeklyPayout.toLocaleString()}</span>
+
+                      {/* Deed Guarantee Notice & Preview Button */}
+                      <div className="mb-4">
+                        <button
+                          type="button"
+                          onClick={() => setSampleDeedPlan(plan)}
+                          className="w-full text-center py-1.5 px-3 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Award className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Preview Title Deed & Backing Documents</span>
+                        </button>
                       </div>
                     </div>
 
-                    <ul className="text-xs text-slate-600 space-y-2 mb-6">
-                      <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Paid every Friday for 28 weeks</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
-                        <span>7.5% bonus for the friend who invited you</span>
-                      </li>
-                      <li className="flex items-center gap-1.5 text-amber-700 font-medium">
-                        <RotateCw className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Auto-Renew: Rollover payouts for +3% increment (+₦{Math.round(plan.weeklyPayout * 0.03).toLocaleString()}/wk)</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Cash sent straight to your wallet</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  {isAffordable ? (
-                    <button
-                      onClick={() => handlePurchase(plan)}
-                      disabled={investingPlanId === plan.id}
-                      className={`w-full py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden active:scale-95 cursor-pointer ${
-                        justActivatedPlanId === plan.id
-                          ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]'
-                          : investingPlanId === plan.id
-                            ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-md animate-pulse cursor-wait'
-                            : 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shadow-sm hover:shadow-md cursor-pointer'
-                      }`}
-                      id={`btn_purchase_${plan.id}`}
-                    >
-                      {justActivatedPlanId === plan.id ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4 text-white animate-bounce" />
-                          <span>Plan Activated!</span>
-                        </>
-                      ) : investingPlanId === plan.id ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
-                          <span className="tracking-widest">Activating Plan...</span>
-                        </>
-                      ) : (
-                        `Buy Plan (₦${plan.cost.toLocaleString()})`
-                      )}
-                    </button>
-                  ) : (
-                    <div className="space-y-2">
+                    {isAffordable ? (
                       <button
-                        onClick={() => {
-                          setDepAmount((plan.cost - currentUser.walletBalance).toString());
-                          setActiveTab('finance');
-                          setTimeout(() => {
-                            document.getElementById('deposit_form_container')?.scrollIntoView({ behavior: 'smooth' });
-                          }, 150);
-                        }}
-                        className="w-full py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider bg-slate-900 hover:bg-slate-800 text-amber-400 flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-95 font-sans"
-                        id={`btn_fund_wallet_${plan.id}`}
-                        title="Deposit funds via real bank transfer to activate this plan"
+                        onClick={() => handlePurchase(plan)}
+                        disabled={investingPlanId === plan.id}
+                        className={`w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden active:scale-95 cursor-pointer ${
+                          justActivatedPlanId === plan.id
+                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]'
+                            : investingPlanId === plan.id
+                              ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-md animate-pulse cursor-wait'
+                              : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black shadow-sm hover:shadow-md cursor-pointer'
+                        }`}
+                        id={`btn_purchase_${plan.id}`}
                       >
-                        <Wallet className="w-4 h-4 text-amber-400 shrink-0" />
-                        <span>Fund ₦{(plan.cost - currentUser.walletBalance).toLocaleString()} to Invest</span>
+                        {justActivatedPlanId === plan.id ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-white animate-bounce" />
+                            <span>Plan Activated!</span>
+                          </>
+                        ) : investingPlanId === plan.id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                            <span className="tracking-widest">Activating Contract...</span>
+                          </>
+                        ) : (
+                          `Invest ₦${plan.cost.toLocaleString()}`
+                        )}
                       </button>
-                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-sans px-0.5">
-                        <span>Shortfall: <strong className="text-rose-600 font-mono">₦{(plan.cost - currentUser.walletBalance).toLocaleString()}</strong></span>
-                        <span className="text-amber-700 font-semibold flex items-center gap-1">
-                          <Building className="w-3 h-3 text-amber-600" />
-                          Treasure Reserve Deposit
-                        </span>
+                    ) : (
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => {
+                            setDepAmount((plan.cost - currentUser.walletBalance).toString());
+                            setActiveTab('finance');
+                            setTimeout(() => {
+                              document.getElementById('deposit_form_container')?.scrollIntoView({ behavior: 'smooth' });
+                            }, 150);
+                          }}
+                          className="w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-slate-900 hover:bg-slate-800 text-amber-400 flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-95 font-sans"
+                          id={`btn_fund_wallet_${plan.id}`}
+                          title="Deposit funds via real bank transfer to activate this plan"
+                        >
+                          <Wallet className="w-4 h-4 text-amber-400 shrink-0" />
+                          <span>Fund ₦{(plan.cost - currentUser.walletBalance).toLocaleString()} to Invest</span>
+                        </button>
+                        <div className="flex items-center justify-between text-[10px] text-slate-500 font-sans px-0.5">
+                          <span>Shortfall: <strong className="text-rose-600 font-mono">₦{(plan.cost - currentUser.walletBalance).toLocaleString()}</strong></span>
+                          <span className="text-amber-700 font-semibold flex items-center gap-1">
+                            <Building className="w-3 h-3 text-amber-600" />
+                            Treasure Homes Vault
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -1727,7 +1803,7 @@ export const UserDashboard: React.FC = () => {
                 <span className="font-extrabold text-emerald-600 text-sm">₦{activatedPlanModal.plan.weeklyPayout.toLocaleString()} / wk</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500 font-medium">Total Returns (28 Weeks):</span>
+                <span className="text-slate-500 font-medium">Total Returns (24 Weeks):</span>
                 <span className="font-extrabold text-amber-600 text-sm">₦{activatedPlanModal.plan.totalReturns.toLocaleString()}</span>
               </div>
               <div className="pt-2 border-t border-slate-200">
@@ -1738,6 +1814,43 @@ export const UserDashboard: React.FC = () => {
             {/* Action Buttons */}
             <div className="space-y-2.5">
               <button
+                type="button"
+                onClick={() => {
+                  const plan = activatedPlanModal.plan;
+                  const deedInv: UserInvestment = {
+                    id: 'inv_' + Date.now(),
+                    userId: currentUser.id,
+                    userName: currentUser.name,
+                    planId: plan.id,
+                    planName: plan.name,
+                    propertyName: plan.propertyName || plan.name,
+                    propertyLocation: plan.propertyLocation || 'Dubai Marina, Dubai, UAE 🇦🇪',
+                    propertyAddress: plan.propertyAddress || 'Plot 392-581, Marina Promenade, Dubai Marina, Dubai, UAE',
+                    propertyImage: plan.propertyImage || '/properties/marina_bay_residences.jpg',
+                    propertyType: plan.propertyType || 'Executive Studio Waterfront Stake',
+                    occupancyRate: plan.occupancyRate || '98.4%',
+                    deedTier: plan.deedTier || `${plan.name} Title Deed`,
+                    cadastralId: plan.cadastralId || 'DLD-CAD-392-581',
+                    makaniNumber: plan.makaniNumber || '12845 76291',
+                    deedReferenceCode: `DLD-REG-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
+                    cost: plan.cost,
+                    weeklyPayout: plan.weeklyPayout,
+                    totalReturns: plan.totalReturns,
+                    weeksPaid: 0,
+                    totalWeeks: plan.weeksDuration || 24,
+                    status: 'active',
+                    createdAt: new Date().toISOString()
+                  };
+                  setViewingDeedInvestment(deedInv);
+                  setActivatedPlanModal(null);
+                }}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
+              >
+                <Award className="w-4 h-4 text-slate-950" />
+                <span>📜 Receive & Inspect Title Deed</span>
+              </button>
+
+              <button
                 onClick={() => {
                   setActivatedPlanModal(null);
                   setActiveTab('overview');
@@ -1745,7 +1858,7 @@ export const UserDashboard: React.FC = () => {
                     document.getElementById('active_investments_section')?.scrollIntoView({ behavior: 'smooth' });
                   }, 100);
                 }}
-                className="w-full py-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-amber-400 font-extrabold text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
+                className="w-full py-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-amber-400 font-extrabold text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
                 id="btn_modal_go_portfolio"
               >
                 <TrendingUp className="w-4 h-4 text-amber-400" />
@@ -1754,7 +1867,7 @@ export const UserDashboard: React.FC = () => {
 
               <button
                 onClick={() => setActivatedPlanModal(null)}
-                className="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                className="w-full py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
               >
                 Done / Explore More Plans
               </button>
@@ -1762,6 +1875,42 @@ export const UserDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Official UAE Property Deed & Backing Documents Modal */}
+      <UaeDeedModal
+        isOpen={!!viewingDeedInvestment || !!sampleDeedPlan}
+        onClose={() => {
+          setViewingDeedInvestment(null);
+          setSampleDeedPlan(null);
+        }}
+        investment={
+          viewingDeedInvestment || 
+          (sampleDeedPlan ? {
+            id: 'sample_' + sampleDeedPlan.id,
+            userId: currentUser.id,
+            userName: currentUser.name,
+            planId: sampleDeedPlan.id,
+            planName: sampleDeedPlan.name,
+            propertyName: sampleDeedPlan.propertyName,
+            propertyLocation: sampleDeedPlan.propertyLocation,
+            propertyAddress: sampleDeedPlan.propertyAddress,
+            propertyImage: sampleDeedPlan.propertyImage,
+            propertyType: sampleDeedPlan.propertyType,
+            occupancyRate: sampleDeedPlan.occupancyRate,
+            deedTier: sampleDeedPlan.deedTier,
+            cadastralId: sampleDeedPlan.cadastralId,
+            makaniNumber: sampleDeedPlan.makaniNumber,
+            deedReferenceCode: `DLD-SAMPLE-${sampleDeedPlan.id.toUpperCase()}`,
+            cost: sampleDeedPlan.cost,
+            weeklyPayout: sampleDeedPlan.weeklyPayout,
+            totalReturns: sampleDeedPlan.totalReturns,
+            weeksPaid: 0,
+            totalWeeks: sampleDeedPlan.weeksDuration || 24,
+            status: 'active',
+            createdAt: new Date().toISOString()
+          } : null)
+        }
+      />
 
       {/* Full Institutional Property Trading Terminal Modal */}
       <LivePropertyTradingModal

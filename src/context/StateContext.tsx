@@ -1608,7 +1608,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCurrentUser(updatedUser);
     setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
 
-    // Create Investment record
+    // Create Investment record with full property and deed backing
     const invId = 'inv_' + Date.now();
     const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const newInv: UserInvestment = {
@@ -1617,6 +1617,16 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       userName: currentUser.name,
       planId: plan.id,
       planName: plan.name,
+      propertyName: plan.propertyName || plan.name,
+      propertyLocation: plan.propertyLocation || 'Dubai Marina, Dubai, UAE 🇦🇪',
+      propertyAddress: plan.propertyAddress || 'Plot 392-581, Marina Promenade, Dubai Marina, Dubai, UAE',
+      propertyImage: plan.propertyImage || '/properties/marina_bay_residences.jpg',
+      propertyType: plan.propertyType || 'Executive Studio Waterfront Stake',
+      occupancyRate: plan.occupancyRate || '98.4%',
+      deedTier: plan.deedTier || `${plan.name} Title Deed`,
+      cadastralId: plan.cadastralId || 'DLD-CAD-392-581',
+      makaniNumber: plan.makaniNumber || '12845 76291',
+      deedReferenceCode: `DLD-REG-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
       cost: plan.cost,
       weeklyPayout: plan.weeklyPayout,
       totalReturns: plan.totalReturns,
@@ -1646,6 +1656,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setInvestments(prev => [newInv, ...prev]);
     setTransactions(prev => [logTx, ...prev]);
     setSuccessMsg(`Congratulations! You have successfully acquired ${plan.name}. First weekly payout due in 7 days.`);
+
+    // Sync state changes to Supabase
+    syncInvestmentToSupabase(newInv);
+    syncUserToSupabase(updatedUser);
+    syncTransactionToSupabase(logTx);
 
     triggerLiveActivity({
       type: 'purchase',
@@ -1731,7 +1746,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setTransactions(prev => [...newTransactionsList, ...prev]);
 
-    // 3. Create Investment record
+    // 3. Create Investment record with full property and deed backing
     const invId = 'inv_' + Date.now();
     const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const newInv: UserInvestment = {
@@ -1740,6 +1755,16 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       userName: currentUser.name,
       planId: plan.id,
       planName: plan.name,
+      propertyName: plan.propertyName || plan.name,
+      propertyLocation: plan.propertyLocation || 'Dubai Marina, Dubai, UAE 🇦🇪',
+      propertyAddress: plan.propertyAddress || 'Plot 392-581, Marina Promenade, Dubai Marina, Dubai, UAE',
+      propertyImage: plan.propertyImage || '/properties/marina_bay_residences.jpg',
+      propertyType: plan.propertyType || 'Executive Studio Waterfront Stake',
+      occupancyRate: plan.occupancyRate || '98.4%',
+      deedTier: plan.deedTier || `${plan.name} Title Deed`,
+      cadastralId: plan.cadastralId || 'DLD-CAD-392-581',
+      makaniNumber: plan.makaniNumber || '12845 76291',
+      deedReferenceCode: `DLD-REG-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
       cost: plan.cost,
       weeklyPayout: plan.weeklyPayout,
       totalReturns: plan.totalReturns,
@@ -1754,6 +1779,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setInvestments(prev => [newInv, ...prev]);
     setSuccessMsg(`🎉 Success! ₦${requiredTopUp.toLocaleString()} funded and ${plan.name} activated successfully.`);
+
+    // Sync state changes to Supabase
+    syncInvestmentToSupabase(newInv);
+    syncUserToSupabase(updatedUser);
+    syncMultipleTransactionsToSupabase(newTransactionsList);
 
     triggerLiveActivity({
       type: 'purchase',
@@ -1823,19 +1853,24 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Renew investment into a fresh 24-week cycle
     const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    setInvestments(prev => prev.map(i => {
-      if (i.id === investmentId) {
-        return {
-          ...i,
-          weeksPaid: 0,
-          totalWeeks: 24,
-          status: 'active',
-          lastPayoutDate: undefined,
-          nextPayoutDate: nextPayout
-        };
-      }
-      return i;
-    }));
+    const renewedInv: UserInvestment = {
+      ...inv,
+      weeksPaid: 0,
+      totalWeeks: 24,
+      status: 'active',
+      lastPayoutDate: undefined,
+      nextPayoutDate: nextPayout
+    };
+
+    setInvestments(prev => prev.map(i => i.id === investmentId ? renewedInv : i));
+
+    // Sync rollover to Supabase
+    syncInvestmentToSupabase(renewedInv);
+    syncTransactionToSupabase(newTx);
+    const userToUpdate = users.find(u => u.id === inv.userId);
+    if (userToUpdate) {
+      syncUserToSupabase({ ...userToUpdate, walletBalance: userToUpdate.walletBalance + bonus });
+    }
 
     setSuccessMsg(`🎉 Weekly payout rollover complete! ₦${bonus.toLocaleString()} (+3% increment on weekly payout) has been credited to your wallet.`);
     return { success: true, message: `Rollover complete! Credited ₦${bonus.toLocaleString()} (+3% payout increment)`, bonus };

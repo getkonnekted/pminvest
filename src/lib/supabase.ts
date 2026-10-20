@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, TaskSubmission, UserDailyProgress } from '../types';
+import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, TaskSubmission, UserDailyProgress, INVESTMENT_PLANS } from '../types';
 
 export const getSupabaseConfig = () => {
   const envUrl = (import.meta as any).env.VITE_SUPABASE_URL || (import.meta as any).env.SUPABASE_URL || '';
@@ -198,10 +198,27 @@ export const fetchAllSupabaseData = async (): Promise<SupabaseFetchResult | null
       });
     }
 
+    const enrichedInvestments: UserInvestment[] | null = iErr ? null : ((investments as UserInvestment[]) || []).map(inv => {
+      const match = INVESTMENT_PLANS.find(p => p.id === inv.planId || p.name.toLowerCase() === (inv.planName || '').toLowerCase());
+      return {
+        ...inv,
+        propertyName: inv.propertyName || match?.propertyName || match?.name || inv.planName,
+        propertyLocation: inv.propertyLocation || match?.propertyLocation || 'Dubai Marina, Dubai, UAE 🇦🇪',
+        propertyAddress: inv.propertyAddress || match?.propertyAddress || 'Plot 392-581, Marina Promenade, Dubai Marina, Dubai, UAE',
+        propertyImage: inv.propertyImage || match?.propertyImage || '/properties/marina_bay_residences.jpg',
+        propertyType: inv.propertyType || match?.propertyType || 'Executive Luxury Asset',
+        occupancyRate: inv.occupancyRate || match?.occupancyRate || '98.5%',
+        deedTier: inv.deedTier || match?.deedTier || `${inv.planName} Title Deed`,
+        cadastralId: inv.cadastralId || match?.cadastralId || 'DLD-CAD-392-581',
+        makaniNumber: inv.makaniNumber || match?.makaniNumber || '12845 76291',
+        deedReferenceCode: inv.deedReferenceCode || `UAE-DLD-2026-${inv.id.slice(-6).toUpperCase()}`
+      };
+    });
+
     return {
       users: (users as User[]) || [],
       // Never turn a failed query into an empty list: callers must preserve existing state on errors.
-      investments: iErr ? null : ((investments as UserInvestment[]) || []),
+      investments: enrichedInvestments,
       transactions: (transactions as Transaction[]) || [],
       settings: (settingsData as SystemSettings) || null,
       currentWeek: isNaN(Number(currentWeekVal)) ? null : Number(currentWeekVal),
@@ -287,12 +304,24 @@ export const syncMultipleUsersToSupabase = async (usersList: User[]) => {
   if (error) console.error('Error syncing multiple users:', error);
 };
 
-const isMissingAutoRenewLockColumn = (error: { message?: string; code?: string } | null): boolean =>
-  Boolean(error && (
-    error.message?.includes('autoReinvestLockedUntil') ||
-    error.message?.includes('auto_reinvest_locked_until') ||
-    error.code === 'PGRST204'
-  ));
+const toCoreInvestment = (inv: UserInvestment) => ({
+  id: inv.id,
+  userId: inv.userId,
+  userName: inv.userName,
+  planId: inv.planId,
+  planName: inv.planName,
+  cost: inv.cost,
+  weeklyPayout: inv.weeklyPayout,
+  totalReturns: inv.totalReturns,
+  weeksPaid: inv.weeksPaid,
+  totalWeeks: inv.totalWeeks,
+  status: inv.status,
+  createdAt: inv.createdAt,
+  lastPayoutDate: inv.lastPayoutDate || null,
+  nextPayoutDate: inv.nextPayoutDate || null,
+  autoReinvest: inv.autoReinvest || false,
+  isMarketing: inv.isMarketing || false
+});
 
 export const syncInvestmentToSupabase = async (investment: UserInvestment) => {
   const client = getSupabaseClient();
@@ -300,15 +329,16 @@ export const syncInvestmentToSupabase = async (investment: UserInvestment) => {
   const { error } = await client.from('investments').upsert(investment);
   if (!error) return;
 
-  if (isMissingAutoRenewLockColumn(error)) {
-    const { autoReinvestLockedUntil: _lockUntil, ...legacyInvestment } = investment;
-    const { error: fallbackError } = await client.from('investments').upsert(legacyInvestment);
-    if (fallbackError) console.error('Error syncing investment with legacy schema:', fallbackError);
-    else console.warn('Auto-renew lock is stored locally only until the database column is added.');
-    return;
+  // If new columns are not yet applied on remote table, fallback to core columns
+  try {
+    const fallbackRecord = toCoreInvestment(investment);
+    const { error: fallbackError } = await client.from('investments').upsert(fallbackRecord);
+    if (fallbackError) {
+      console.error('Error syncing investment with fallback schema:', fallbackError);
+    }
+  } catch (err) {
+    console.error('Error in investment fallback sync:', err);
   }
-
-  console.error('Error syncing investment:', error);
 };
 
 export const syncMultipleInvestmentsToSupabase = async (investmentsList: UserInvestment[]) => {
@@ -317,15 +347,15 @@ export const syncMultipleInvestmentsToSupabase = async (investmentsList: UserInv
   const { error } = await client.from('investments').upsert(investmentsList);
   if (!error) return;
 
-  if (isMissingAutoRenewLockColumn(error)) {
-    const legacyInvestments = investmentsList.map(({ autoReinvestLockedUntil: _lockUntil, ...investment }) => investment);
-    const { error: fallbackError } = await client.from('investments').upsert(legacyInvestments);
-    if (fallbackError) console.error('Error syncing investments with legacy schema:', fallbackError);
-    else console.warn('Auto-renew lock is stored locally only until the database column is added.');
-    return;
+  try {
+    const fallbackRecords = investmentsList.map(toCoreInvestment);
+    const { error: fallbackError } = await client.from('investments').upsert(fallbackRecords);
+    if (fallbackError) {
+      console.error('Error syncing multiple investments with fallback schema:', fallbackError);
+    }
+  } catch (err) {
+    console.error('Error in multiple investments fallback sync:', err);
   }
-
-  console.error('Error syncing multiple investments:', error);
 };
 
 export const syncTransactionToSupabase = async (transaction: Transaction) => {

@@ -14,6 +14,32 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS phone TEXT;
 
 ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "isTimerLocked" BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "isMarketing" BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyName" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyLocation" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyAddress" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyImage" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyType" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "occupancyRate" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "deedTier" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "cadastralId" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "makaniNumber" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "deedReferenceCode" TEXT;
+
+-- Update UAE 24-Week Investment Plans
+INSERT INTO public.investment_plans (id, name, cost, "weeklyPayout", "totalReturns", "weeksDuration")
+VALUES
+    ('plan_1', 'Marina Bay Residences', 30000, 6500, 156000, 24),
+    ('plan_2', 'Creek Horizon Suites', 60000, 13000, 312000, 24),
+    ('plan_3', 'Downtown Sky Vista', 120000, 26000, 624000, 24),
+    ('plan_4', 'Sobha Sanctuary Estates', 250000, 54166, 1300000, 24),
+    ('plan_5', 'Palm Azure Ocean Villa', 600000, 130000, 3120000, 24),
+    ('plan_6', 'Emirates Financial Tower', 1500000, 325000, 7800000, 24)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    cost = EXCLUDED.cost,
+    "weeklyPayout" = EXCLUDED."weeklyPayout",
+    "totalReturns" = EXCLUDED."totalReturns",
+    "weeksDuration" = EXCLUDED."weeksDuration";
 
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS "hourlyLiquidityGrowth" DOUBLE PRECISION NOT NULL DEFAULT 175000;
 ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS "dailyLiquidityGrowth" DOUBLE PRECISION NOT NULL DEFAULT 4200000;
