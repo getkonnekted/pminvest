@@ -18,43 +18,43 @@ export const BrandingHeader: React.FC = () => {
   const { currentUser, logout } = useAppState();
 
   return (
-    <header className="w-full bg-[#0f172a] border-b border-slate-700 text-white shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <header className="w-full bg-[#070a12] border-b border-amber-500/20 text-white shadow-xl backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Brand logo & tagline */}
         <div className="flex items-center gap-3">
-          <PmLogo className="w-11 h-11" />
+          <PmLogo className="w-11 h-11 drop-shadow-md" />
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xl font-extrabold tracking-tight uppercase font-sans text-white">PM <span className="text-amber-400">Invest</span></span>
-              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-mono font-bold leading-none">By Treasure Homes</span>
+              <span className="text-xl font-black tracking-tight uppercase font-sans text-white">PM <span className="text-amber-400">Invest</span></span>
+              <span className="text-[10px] uppercase tracking-widest text-amber-500/80 font-mono font-bold leading-none">By Treasure Homes</span>
             </div>
-            <p className="text-xs text-slate-300 font-normal mt-0.5">Earn steady cash returns backed by verified properties worldwide</p>
+            <p className="text-xs text-slate-300 font-normal mt-0.5">Sovereign UAE Luxury Property Wealth &amp; Steady Friday Payouts</p>
           </div>
         </div>
 
         {/* Current logged in user view / actions */}
         <div className="flex items-center gap-3 flex-wrap justify-end">
           {currentUser && (
-            <div className="flex items-center gap-4 bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+            <div className="flex items-center gap-4 bg-[#0d1222] p-2.5 rounded-xl border border-amber-500/25 shadow-md">
               <div className="text-right">
                 <p className="text-sm font-bold text-white flex items-center justify-end gap-1">
                   {currentUser.name}
                   {currentUser.role === 'admin' && (
-                    <span className="text-[9px] bg-amber-500 text-slate-900 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Admin</span>
+                    <span className="text-[9px] bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 px-2 py-0.5 rounded font-black uppercase tracking-wider">Admin</span>
                   )}
                 </p>
               </div>
-              <div className="h-8 w-px bg-slate-700" />
+              <div className="h-8 w-px bg-slate-800" />
               
               {/* Wallet display */}
               <div className="flex flex-col text-left">
-                <span className="text-[10px] text-slate-400 flex items-center gap-1"><Wallet className="w-3 h-3 text-amber-400" /> Wallet</span>
-                <span className="text-sm font-bold text-emerald-400 font-mono">₦{currentUser.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="text-[10px] text-amber-400/80 font-mono flex items-center gap-1"><Wallet className="w-3 h-3 text-amber-400" /> Wallet</span>
+                <span className="text-sm font-extrabold text-emerald-400 font-mono tabular-nums">₦{currentUser.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
 
               <button 
                 onClick={logout}
-                className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded transition-colors cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800/80 rounded transition-colors cursor-pointer"
                 title="Logout"
                 id="btn_logout_header"
               >
@@ -70,21 +70,21 @@ export const BrandingHeader: React.FC = () => {
 
 export const LegalDisclosures: React.FC = () => {
   return (
-    <footer className="w-full bg-[#0f172a] text-slate-400 py-10 px-4 text-xs font-sans">
+    <footer className="w-full bg-[#06080e] border-t border-amber-500/20 text-slate-400 py-12 px-4 text-xs font-sans">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-          <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">TREASURE HOMES GROUP</h4>
+          <h4 className="text-sm font-bold text-[#f7ecd5] uppercase tracking-wider mb-3">TREASURE HOMES GROUP</h4>
           <p className="leading-relaxed mb-4 text-slate-300">
             PM Invest is backed by real estate developed and managed by Treasure Homes Ltd. We put money into real building projects and verified rental properties worldwide to pay steady weekly returns to our investors.
           </p>
-          <div className="flex items-center gap-2 text-white/80">
+          <div className="flex items-center gap-2 text-white/90">
             <ShieldCheck className="w-5 h-5 text-amber-400" />
-            <span className="font-mono text-[10px] tracking-wider font-semibold">100% ASSET-BACKED CASH RESERVE</span>
+            <span className="font-mono text-[10px] tracking-wider font-semibold text-amber-400">100% ASSET-BACKED CASH RESERVE</span>
           </div>
         </div>
 
         <div>
-          <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">OFFICIAL INVESTOR COMMUNITY</h4>
+          <h4 className="text-sm font-bold text-[#f7ecd5] uppercase tracking-wider mb-3">OFFICIAL INVESTOR COMMUNITY</h4>
           <p className="leading-relaxed mb-3 text-slate-300">
             Join our verified groups for daily payout alerts, announcements, land allocations, and 24/7 friendly support.
           </p>
@@ -93,7 +93,7 @@ export const LegalDisclosures: React.FC = () => {
               href={WHATSAPP_COMMUNITY_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between p-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-700 text-slate-200 transition-colors group"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-[#0c101c] hover:bg-[#111728] border border-amber-500/20 text-slate-200 transition-colors group"
             >
               <div className="flex items-center gap-2">
                 <WhatsAppGoldIcon className="w-5 h-5" />
@@ -105,7 +105,7 @@ export const LegalDisclosures: React.FC = () => {
               href={TELEGRAM_COMMUNITY_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between p-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-700 text-slate-200 transition-colors group"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-[#0c101c] hover:bg-[#111728] border border-amber-500/20 text-slate-200 transition-colors group"
             >
               <div className="flex items-center gap-2">
                 <TelegramGoldIcon className="w-5 h-5" />
@@ -117,7 +117,7 @@ export const LegalDisclosures: React.FC = () => {
         </div>
 
         <div>
-          <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">CASH RESERVE & SAFETY</h4>
+          <h4 className="text-sm font-bold text-[#f7ecd5] uppercase tracking-wider mb-3">CASH RESERVE &amp; SAFETY</h4>
           <p className="leading-relaxed mb-3 text-slate-300">
             To guarantee your weekly payouts, PM Invest keeps a dedicated <strong>cash reserve</strong> of over <LiveReserveCounter precision={0} showLivePulse={true} className="text-amber-400 font-bold" /> in bank reserve. This ensures every investor gets paid on time, every Friday.
           </p>
@@ -125,7 +125,7 @@ export const LegalDisclosures: React.FC = () => {
 
         <div>
           {/* Obvious Note on Plans Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm space-y-2">
+          <div className="bg-[#0c101c] border border-amber-500/25 rounded-2xl p-4 shadow-lg space-y-2">
             <h4 className="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
               <Building2 className="w-4 h-4 text-amber-400 shrink-0" />
               <span>NOTE ON PLANS</span>

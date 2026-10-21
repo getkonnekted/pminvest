@@ -116,23 +116,23 @@ export const DailyGamesHub: React.FC = () => {
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm space-y-6">
+    <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-6 backdrop-blur-md text-slate-200">
       
       {/* Header with Points and Streaks */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-500/20 pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-600">
+            <div className="p-2 bg-amber-500/15 border border-amber-500/30 rounded-xl text-amber-400 shadow-inner">
               <Gift className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base text-slate-900 tracking-wide uppercase flex items-center gap-2">
+              <h3 className="font-extrabold text-base text-[#f7ecd5] tracking-wide uppercase flex items-center gap-2 font-mono">
                 Daily Property Rewards & Mini-Games
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full font-mono font-bold">
+                <span className="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono font-bold">
                   FREE DAILY CASH
                 </span>
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-400">
                 Spin the Lucky Wheel and unlock daily Property Chests to collect Points that convert into real wallet money.
               </p>
             </div>
@@ -141,22 +141,22 @@ export const DailyGamesHub: React.FC = () => {
 
         {/* User Points Badge */}
         <div className="flex items-center gap-3">
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2 text-right">
-            <span className="text-[10px] font-mono text-amber-800 uppercase font-bold block">
+          <div className="bg-[#070a13] border border-amber-500/25 rounded-xl px-3.5 py-2 text-right shadow-inner">
+            <span className="text-[10px] font-mono text-amber-400 uppercase font-bold block">
               Property Points
             </span>
-            <div className="text-base font-black font-mono text-amber-900 flex items-center justify-end gap-1">
-              <Coins className="w-4 h-4 text-amber-600" />
+            <div className="text-base font-black font-mono text-amber-300 flex items-center justify-end gap-1">
+              <Coins className="w-4 h-4 text-amber-400" />
               <span>{userPoints.toLocaleString()}</span>
             </div>
           </div>
 
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2 text-right">
-            <span className="text-[10px] font-mono text-emerald-800 uppercase font-bold block">
+          <div className="bg-[#070a13] border border-emerald-500/25 rounded-xl px-3.5 py-2 text-right shadow-inner">
+            <span className="text-[10px] font-mono text-emerald-400 uppercase font-bold block">
               Daily Streak
             </span>
-            <div className="text-base font-black font-mono text-emerald-700 flex items-center justify-end gap-1">
-              <Flame className="w-4 h-4 text-amber-500" />
+            <div className="text-base font-black font-mono text-emerald-300 flex items-center justify-end gap-1">
+              <Flame className="w-4 h-4 text-amber-400" />
               <span>{userHistory.streak || 1} Days</span>
             </div>
           </div>
@@ -164,13 +164,13 @@ export const DailyGamesHub: React.FC = () => {
       </div>
 
       {/* Points to Cash Conversion Bar */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm border border-slate-700">
+      <div className="bg-gradient-to-r from-[#0d1322] via-[#090d18] to-[#070a12] text-white rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl border border-amber-500/30">
         <div>
           <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider block">
             Points to Cash Conversion (500 Pts = ₦500 Wallet Cash)
           </span>
           <div className="text-xs text-slate-300 mt-0.5">
-            You currently have <strong className="text-white font-mono">{userPoints} Points</strong> ({Math.floor(userPoints / 500) * 500} Points redeemable).
+            You currently have <strong className="text-[#f7ecd5] font-mono">{userPoints} Points</strong> ({Math.floor(userPoints / 500) * 500} Points redeemable).
           </div>
         </div>
 
@@ -178,38 +178,38 @@ export const DailyGamesHub: React.FC = () => {
           type="button"
           onClick={handleConvertPoints}
           disabled={userPoints < 500}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md ${
             userPoints >= 500
-              ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold cursor-pointer active:scale-95'
-              : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black cursor-pointer active:scale-95'
+              : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed opacity-60'
           }`}
         >
-          <Coins className="w-4 h-4 text-slate-900" />
+          <Coins className="w-4 h-4 text-slate-950" />
           <span>Convert {Math.floor(userPoints / 500) * 500} Pts to ₦{Math.floor(userPoints / 500) * 500}</span>
         </button>
       </div>
 
       {convertSuccessMsg && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="p-3 bg-[#061811] border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{convertSuccessMsg}</span>
         </div>
       )}
 
       {/* Game Selector Tabs */}
-      <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/80 max-w-md mx-auto">
+      <div className="flex bg-[#06080e] p-1 rounded-xl border border-amber-500/25 max-w-md mx-auto shadow-inner">
         <button
           type="button"
           onClick={() => setActiveTab('wheel')}
           className={`flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'wheel'
-              ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-              : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-md'
+              : 'text-slate-400 hover:text-amber-200'
           }`}
         >
-          <RotateCw className="w-3.5 h-3.5 text-amber-500" />
+          <RotateCw className="w-3.5 h-3.5" />
           <span>Lucky Spin Wheel</span>
-          {hasSpunToday && <span className="text-[9px] bg-slate-200 px-1.5 py-0.2 rounded text-slate-600">Done</span>}
+          {hasSpunToday && <span className="text-[9px] bg-black/40 px-1.5 py-0.2 rounded text-slate-300">Done</span>}
         </button>
 
         <button
@@ -217,13 +217,13 @@ export const DailyGamesHub: React.FC = () => {
           onClick={() => setActiveTab('chest')}
           className={`flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'chest'
-              ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-              : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-md'
+              : 'text-slate-400 hover:text-amber-200'
           }`}
         >
-          <Gift className="w-3.5 h-3.5 text-purple-500" />
+          <Gift className="w-3.5 h-3.5" />
           <span>Property Prize Chests</span>
-          {hasOpenedChestToday && <span className="text-[9px] bg-slate-200 px-1.5 py-0.2 rounded text-slate-600">Done</span>}
+          {hasOpenedChestToday && <span className="text-[9px] bg-black/40 px-1.5 py-0.2 rounded text-slate-300">Done</span>}
         </button>
       </div>
 
@@ -232,11 +232,11 @@ export const DailyGamesHub: React.FC = () => {
         <div className="flex flex-col items-center justify-center py-4 space-y-6">
           <div className="relative w-64 h-64 sm:w-72 sm:h-72">
             {/* Center Pointer */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-2 z-20 w-0 h-0 border-x-8 border-x-transparent border-t-[18px] border-t-amber-500 drop-shadow-md" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-2 z-20 w-0 h-0 border-x-8 border-x-transparent border-t-[18px] border-t-amber-400 drop-shadow-md" />
 
             {/* SVG Wheel */}
             <div 
-              className="w-full h-full rounded-full border-4 border-slate-900 shadow-xl overflow-hidden transition-transform ease-out"
+              className="w-full h-full rounded-full border-4 border-amber-500/40 shadow-2xl overflow-hidden transition-transform ease-out"
               style={{
                 transform: `rotate(${spinRotation}deg)`,
                 transitionDuration: isSpinning ? '4000ms' : '0ms'
@@ -260,7 +260,7 @@ export const DailyGamesHub: React.FC = () => {
 
                   return (
                     <g key={i}>
-                      <path d={pathData} fill={seg.color} stroke="#0f172a" strokeWidth="0.8" />
+                      <path d={pathData} fill={seg.color} stroke="#070a12" strokeWidth="0.8" />
                       <text
                         x={textX}
                         y={textY}
@@ -281,7 +281,7 @@ export const DailyGamesHub: React.FC = () => {
 
             {/* Center Hub */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-12 h-12 rounded-full bg-slate-900 border-2 border-amber-400 flex items-center justify-center text-amber-400 font-extrabold text-[10px] shadow-lg">
+              <div className="w-12 h-12 rounded-full bg-[#06080e] border-2 border-amber-400 flex items-center justify-center text-amber-300 font-extrabold text-[10px] shadow-2xl">
                 SPIN
               </div>
             </div>
@@ -289,7 +289,7 @@ export const DailyGamesHub: React.FC = () => {
 
           {/* Wheel Result Toast */}
           {wheelResult && (
-            <div className="bg-amber-100 border border-amber-300 text-amber-900 px-4 py-2 rounded-xl text-xs font-extrabold animate-bounce">
+            <div className="bg-[#121626] border border-amber-400/40 text-amber-300 px-4 py-2 rounded-xl text-xs font-extrabold animate-bounce shadow-lg">
               🎉 Congratulations! You won: {wheelResult}!
             </div>
           )}
@@ -297,8 +297,8 @@ export const DailyGamesHub: React.FC = () => {
           {/* Spin Trigger Button */}
           <div>
             {hasSpunToday ? (
-              <div className="flex items-center gap-2 text-slate-500 text-xs font-bold bg-slate-100 px-4 py-2.5 rounded-xl border border-slate-200">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-bold bg-[#070a13] px-4 py-2.5 rounded-xl border border-amber-500/20">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span>Daily Spin Completed! Return tomorrow for another free turn.</span>
               </div>
             ) : (
@@ -306,10 +306,10 @@ export const DailyGamesHub: React.FC = () => {
                 type="button"
                 onClick={handleSpinWheel}
                 disabled={isSpinning}
-                className={`px-8 py-3 rounded-xl font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 ${
+                className={`px-8 py-3 rounded-xl font-extrabold text-xs uppercase tracking-wider transition-all shadow-xl flex items-center gap-2 ${
                   isSpinning
-                    ? 'bg-slate-200 text-slate-500 cursor-wait'
-                    : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 shadow-amber-500/20 active:scale-95 cursor-pointer'
+                    ? 'bg-slate-800 text-slate-500 cursor-wait'
+                    : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-500/20 active:scale-95 cursor-pointer'
                 }`}
               >
                 <RotateCw className={`w-4 h-4 ${isSpinning ? 'animate-spin' : ''}`} />
@@ -324,8 +324,8 @@ export const DailyGamesHub: React.FC = () => {
       {activeTab === 'chest' && (
         <div className="py-4 space-y-6">
           <div className="text-center max-w-md mx-auto">
-            <h4 className="font-bold text-sm text-slate-900">Choose One Mystery Property Chest</h4>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h4 className="font-bold text-sm text-[#f7ecd5] font-mono">Choose One Mystery Property Chest</h4>
+            <p className="text-xs text-slate-400 mt-0.5">
               Unlock a random treasure chest every day to uncover deed bonuses, points, and surprise mini-dividends.
             </p>
           </div>
@@ -344,16 +344,16 @@ export const DailyGamesHub: React.FC = () => {
                   onClick={() => !hasOpenedChestToday && handleOpenChest(c.id)}
                   className={`border-2 rounded-2xl p-5 text-center transition-all cursor-pointer ${
                     hasOpenedChestToday
-                      ? 'opacity-60 cursor-not-allowed bg-slate-50 border-slate-200'
+                      ? 'opacity-50 cursor-not-allowed bg-[#070a13] border-slate-800'
                       : isSelected
-                      ? 'border-amber-500 bg-amber-50/50 scale-105 shadow-md'
-                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      ? 'border-amber-400 bg-amber-500/10 scale-105 shadow-xl'
+                      : 'border-amber-500/20 hover:border-amber-400/50 hover:bg-[#0c101c] bg-[#070a13]'
                   }`}
                 >
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${c.color} text-white flex items-center justify-center mx-auto mb-3 shadow-md`}>
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${c.color} text-white flex items-center justify-center mx-auto mb-3 shadow-lg`}>
                     <Gift className={`w-7 h-7 ${isSelected && isOpeningChest ? 'animate-bounce' : ''}`} />
                   </div>
-                  <h5 className="font-bold text-slate-900 text-xs">{c.title}</h5>
+                  <h5 className="font-bold text-[#f7ecd5] text-xs font-mono">{c.title}</h5>
                   <p className="text-[10px] text-slate-400 mt-1">
                     {hasOpenedChestToday ? 'Chest Locked' : 'Tap to Unlock'}
                   </p>
@@ -364,17 +364,17 @@ export const DailyGamesHub: React.FC = () => {
 
           {/* Chest Result */}
           {chestReward && (
-            <div className="bg-purple-50 border border-purple-200 text-purple-900 p-4 rounded-xl text-xs max-w-md mx-auto text-center space-y-1">
-              <span className="font-black text-sm block">🎉 Chest Unlocked: {chestReward.name}!</span>
-              <p className="text-purple-700">
-                You collected <strong className="font-mono text-purple-900">+{chestReward.points} Points</strong>
-                {chestReward.cash > 0 && <span> and <strong className="font-mono text-emerald-700">+₦{chestReward.cash} Instant Cash</strong></span>}!
+            <div className="bg-[#121626] border border-amber-500/30 text-amber-200 p-4 rounded-xl text-xs max-w-md mx-auto text-center space-y-1 shadow-xl">
+              <span className="font-black text-sm block text-amber-300">🎉 Chest Unlocked: {chestReward.name}!</span>
+              <p className="text-slate-300">
+                You collected <strong className="font-mono text-amber-300">+{chestReward.points} Points</strong>
+                {chestReward.cash > 0 && <span> and <strong className="font-mono text-emerald-400">+₦{chestReward.cash} Instant Cash</strong></span>}!
               </p>
             </div>
           )}
 
           {hasOpenedChestToday && !chestReward && (
-            <div className="text-center text-xs text-slate-500">
+            <div className="text-center text-xs text-slate-400">
               ✓ You have opened your daily property chest today. New chests refresh at midnight!
             </div>
           )}

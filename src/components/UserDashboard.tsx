@@ -49,6 +49,7 @@ import { CommunityBanner } from './CommunityBanner';
 import { LivePropertyTradingModal } from './LivePropertyTradingModal';
 import { UaeDeedModal } from './UaeDeedModal';
 import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
+import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 
 const AutoRenewControl: React.FC<{ investment: UserInvestment; onToggle: (id: string) => void }> = ({ investment, onToggle }) => {
   const [now, setNow] = useState(Date.now());
@@ -63,13 +64,13 @@ const AutoRenewControl: React.FC<{ investment: UserInvestment; onToggle: (id: st
   const increment = Math.round(investment.weeklyPayout * 0.03);
 
   return (
-    <div className="flex items-center justify-between bg-white border border-slate-200/90 rounded-xl p-2.5 my-2">
+    <div className="flex items-center justify-between bg-[#06080e]/90 border border-amber-500/20 rounded-xl p-2.5 my-2">
       <div className="flex items-center gap-2">
-        <RotateCw className={`w-3.5 h-3.5 ${investment.autoReinvest ? 'text-amber-500 animate-spin-slow' : 'text-slate-400'}`} />
+        <RotateCw className={`w-3.5 h-3.5 ${investment.autoReinvest ? 'text-amber-400 animate-spin-slow' : 'text-slate-500'}`} />
         <div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-slate-800 block leading-tight">Auto-Renew</span>
-            <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full border border-amber-200">+3% on Payout</span>
+            <span className="text-[11px] font-bold text-[#f7ecd5] block leading-tight">Auto-Renew</span>
+            <span className="text-[9px] font-bold bg-amber-500/10 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-500/30">+3% on Payout</span>
           </div>
           <span className="text-[9px] text-slate-400 block mt-0.5">
             {isLocked
@@ -85,7 +86,7 @@ const AutoRenewControl: React.FC<{ investment: UserInvestment; onToggle: (id: st
         onClick={() => onToggle(investment.id)}
         disabled={isLocked}
         aria-pressed={Boolean(investment.autoReinvest)}
-        className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isLocked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${investment.autoReinvest ? 'bg-amber-500' : 'bg-slate-300'}`}
+        className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isLocked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${investment.autoReinvest ? 'bg-amber-500' : 'bg-slate-700'}`}
         id={`toggle_autoreinvest_${investment.id}`}
         title={isLocked ? `Auto-Renew locked until ${new Date(lockUntil).toLocaleString()}` : 'Toggle Auto-Renew to rollover weekly payouts with 3% increment'}
       >
@@ -118,11 +119,28 @@ export const UserDashboard: React.FC = () => {
     successMsg,
     errorMsg,
     clearMessages,
-    formatLiquidityReserve
+    formatLiquidityReserve,
+    isDbLoaded,
+    supabaseStatus,
+    refreshFromSupabase
   } = useAppState();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'trading' | 'tasks' | 'finance' | 'referrals' | 'kyc'>('overview');
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [isRefreshingInvestments, setIsRefreshingInvestments] = useState<boolean>(false);
+
+  const handleRefreshInvestments = async () => {
+    setIsRefreshingInvestments(true);
+    try {
+      if (refreshFromSupabase) {
+        await refreshFromSupabase();
+      }
+    } catch {
+      // Handled in context
+    } finally {
+      setTimeout(() => setIsRefreshingInvestments(false), 900);
+    }
+  };
 
   // Dashboard Menu Items for Hamburger & Tab Navigation
   const menuItems: {
@@ -398,37 +416,37 @@ export const UserDashboard: React.FC = () => {
   };
 
   return (
-    <div className="w-full text-slate-800 p-1" id="user_dashboard_container">
+    <div className="w-full text-slate-100 p-1 selection:bg-amber-500/30 selection:text-amber-200" id="user_dashboard_container">
       {/* Alert Banner for Global messages */}
       {successMsg && (
-        <div className="mb-5 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center justify-between text-sm shadow-sm animate-fadeIn">
+        <div className="mb-5 bg-[#061811] border border-emerald-500/40 text-emerald-200 px-4 py-3 rounded-2xl flex items-center justify-between text-sm shadow-xl shadow-emerald-950/20 animate-fadeIn">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span>{successMsg}</span>
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            <span className="font-medium">{successMsg}</span>
           </div>
-          <button onClick={clearMessages} className="text-emerald-600 hover:text-emerald-800 text-xs font-mono px-2">Dismiss</button>
+          <button onClick={clearMessages} className="text-emerald-400 hover:text-emerald-300 text-xs font-mono px-2 cursor-pointer">Dismiss</button>
         </div>
       )}
 
       {errorMsg && (
-        <div className="mb-5 bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl flex items-center justify-between text-sm shadow-sm animate-fadeIn">
+        <div className="mb-5 bg-[#180a0c] border border-rose-500/40 text-rose-200 px-4 py-3 rounded-2xl flex items-center justify-between text-sm shadow-xl shadow-rose-950/20 animate-fadeIn">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
-            <span>{errorMsg}</span>
+            <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+            <span className="font-medium">{errorMsg}</span>
           </div>
-          <button onClick={clearMessages} className="text-rose-600 hover:text-rose-800 text-xs font-mono px-2">Dismiss</button>
+          <button onClick={clearMessages} className="text-rose-400 hover:text-rose-300 text-xs font-mono px-2 cursor-pointer">Dismiss</button>
         </div>
       )}
 
       {/* Deactivated Notice Banner */}
       {currentUser.isDeactivated && (
-        <div className="mb-5 bg-rose-50 border-2 border-rose-300 text-rose-950 p-4 rounded-2xl flex items-start gap-3 text-xs shadow-sm animate-fadeIn">
-          <ShieldAlert className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+        <div className="mb-5 bg-[#180a0c] border border-rose-500/50 text-rose-200 p-4 rounded-2xl flex items-start gap-3 text-xs shadow-2xl animate-fadeIn">
+          <ShieldAlert className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <h4 className="font-extrabold text-sm uppercase tracking-wider text-rose-900">
+            <h4 className="font-extrabold text-sm uppercase tracking-wider text-rose-300">
               Account Deactivated by Administration
             </h4>
-            <p className="text-rose-700 leading-relaxed font-medium">
+            <p className="text-rose-200/90 leading-relaxed font-normal">
               Your account has been placed on administrative hold. New plan purchases, deposit credits, and withdrawal requests are temporarily paused. Existing capital and recorded payouts remain intact. Please contact compliance or platform administration to resolve this hold.
             </p>
           </div>
@@ -437,17 +455,17 @@ export const UserDashboard: React.FC = () => {
 
       {/* KYC Alert banner if unverified */}
       {currentUser.kycStatus === 'unverified' && (
-        <div className="mb-5 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm">
+        <div className="mb-5 bg-gradient-to-r from-[#141006] via-[#0d0f17] to-[#0c101c] border border-amber-500/35 text-amber-200 px-4 py-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xl">
           <div className="flex items-start gap-2.5">
-            <ShieldCheck className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-slate-900">Please Verify Your ID</p>
-              <p className="text-slate-600 mt-0.5">Verify your ID so you can withdraw money to your bank account anytime without delays.</p>
+              <p className="font-bold text-[#f7ecd5] text-sm">Please Verify Your ID</p>
+              <p className="text-slate-400 mt-0.5">Verify your ID so you can withdraw money to your bank account anytime without clearance delays.</p>
             </div>
           </div>
           <button 
             onClick={() => setActiveTab('kyc')}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-1.5 rounded-lg transition-colors self-start sm:self-auto shrink-0 text-xs shadow-sm"
+            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-4 py-2 rounded-xl transition-all self-start sm:self-auto shrink-0 text-xs shadow-md shadow-amber-500/10 cursor-pointer active:scale-95"
             id="btn_kyc_alert_action"
           >
             Verify Now
@@ -457,32 +475,36 @@ export const UserDashboard: React.FC = () => {
 
       {/* Real Investor vs Unfunded Lead Status Callout */}
       {isRealInvestor ? (
-        <div className="mb-5 bg-emerald-50/80 border border-emerald-200 text-emerald-900 px-4 py-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs shadow-xs">
+        <div className="mb-5 bg-gradient-to-r from-[#071710] via-[#091b14] to-[#06120c] border border-emerald-500/35 text-emerald-200 px-4 py-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs shadow-xl">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 shrink-0"><CheckCircle2 className="w-4 h-4" /></div>
+            <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 shadow-inner">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold uppercase font-mono tracking-wider text-emerald-800">VERIFIED REAL INVESTOR</span>
-                <span className="bg-emerald-200/80 text-emerald-900 font-mono font-bold text-[10px] px-2 py-0.5 rounded-full">₦{totalPaidTopup.toLocaleString()} Paid Top-Up</span>
+                <span className="font-extrabold uppercase font-mono tracking-wider text-emerald-300">VERIFIED REAL INVESTOR</span>
+                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono font-bold text-[10px] px-2 py-0.5 rounded-full">₦{totalPaidTopup.toLocaleString()} Paid Top-Up</span>
               </div>
-              <p className="text-slate-600 text-[11px] mt-0.5">Your wallet is backed by completed real funds. Every Friday property yield will be credited to this balance.</p>
+              <p className="text-slate-300 text-[11px] mt-0.5">Your wallet is backed by completed real funds. Every Friday property yield will be credited to this balance.</p>
             </div>
           </div>
-          <span className="text-[10px] text-emerald-700 bg-white border border-emerald-200 px-2.5 py-1 rounded-lg font-mono font-semibold self-start sm:self-auto shrink-0">TREASURE HOMES SECURED</span>
+          <span className="text-[10px] text-amber-300 bg-[#06080e] border border-amber-500/30 px-3 py-1 rounded-xl font-mono font-semibold self-start sm:self-auto shrink-0 shadow-sm">
+            TREASURE HOMES SECURED
+          </span>
         </div>
       ) : currentUser.walletBalance > 0 ? null : (
-        <div className="mb-5 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200 text-amber-950 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
+        <div className="mb-5 bg-gradient-to-r from-[#171206] via-[#10141f] to-[#0a0d16] border border-amber-500/35 text-amber-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xl">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 shrink-0 font-bold font-mono">⚡</div>
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 font-bold font-mono">⚡</div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold uppercase tracking-wide text-amber-900">UNFUNDED LEAD ACCOUNT</span>
-                <span className="bg-amber-200/80 text-amber-900 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">Awaiting First Deposit</span>
+                <span className="font-extrabold uppercase tracking-wide text-amber-300">UNFUNDED LEAD ACCOUNT</span>
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">Awaiting First Deposit</span>
               </div>
-              <p className="text-slate-600 mt-0.5 text-[11px] leading-relaxed">Add money to your wallet to become a <strong className="text-emerald-700">Verified Real Investor</strong> and start receiving cash payouts in your bank every Friday.</p>
+              <p className="text-slate-300 mt-0.5 text-[11px] leading-relaxed">Add money to your wallet to become a <strong className="text-emerald-400">Verified Real Investor</strong> and start receiving cash payouts in your bank every Friday.</p>
             </div>
           </div>
-          <button type="button" onClick={() => setActiveTab('finance')} className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-all self-start sm:self-auto shrink-0 shadow-sm cursor-pointer whitespace-nowrap active:scale-95" id="btn_unfunded_lead_topup">Top Up Wallet Now →</button>
+          <button type="button" onClick={() => setActiveTab('finance')} className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-all self-start sm:self-auto shrink-0 shadow-md cursor-pointer whitespace-nowrap active:scale-95" id="btn_unfunded_lead_topup">Top Up Wallet Now →</button>
         </div>
       )}
 
@@ -490,12 +512,12 @@ export const UserDashboard: React.FC = () => {
       <CommunityBanner />
 
       {/* Responsive Hamburger Navigation Bar & Dropdown Drawer */}
-      <div className="mb-6 bg-white border border-slate-200 rounded-2xl p-2.5 sm:p-3 shadow-xs">
+      <div className="mb-6 bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-2.5 sm:p-3 shadow-xl backdrop-blur-md">
         <div className="flex items-center justify-between gap-3">
           {/* Hamburger Menu Toggle Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm shrink-0"
+            className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#06080e] hover:bg-[#111728] border border-amber-500/30 active:scale-95 text-[#f7ecd5] font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md shrink-0"
             id="btn_dashboard_hamburger"
             aria-label="Toggle navigation menu"
           >
@@ -505,22 +527,22 @@ export const UserDashboard: React.FC = () => {
           </button>
 
           {/* Current Active Section Badge */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-slate-800 text-xs font-bold truncate">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono hidden sm:inline">Active:</span>
+          <div className="flex items-center gap-1.5 bg-[#06080e] border border-amber-500/25 px-3 py-1.5 rounded-xl text-slate-200 text-xs font-bold truncate">
+            <span className="text-[10px] text-amber-400/80 uppercase tracking-wider font-mono hidden sm:inline">Active:</span>
             {(() => {
               const currentItem = menuItems.find(m => m.id === activeTab) || menuItems[0];
               const CurrentIcon = currentItem.icon;
               return (
                 <div className="flex items-center gap-1.5 truncate">
-                  <CurrentIcon className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  <span className="text-slate-900 font-extrabold truncate">{currentItem.label}</span>
+                  <CurrentIcon className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="text-[#f7ecd5] font-extrabold truncate">{currentItem.label}</span>
                 </div>
               );
             })()}
           </div>
 
           {/* Desktop Navigation Tabs (visible on wide screens) */}
-          <div className="hidden lg:flex items-center gap-1 border-l border-slate-200 pl-3 overflow-x-auto">
+          <div className="hidden lg:flex items-center gap-1 border-l border-amber-500/20 pl-3 overflow-x-auto">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -528,14 +550,14 @@ export const UserDashboard: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => { setActiveTab(item.id); clearMessages(); setIsMenuOpen(false); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                     isActive 
-                      ? 'bg-slate-100 text-slate-950 font-bold border border-slate-200 shadow-xs' 
-                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold border border-amber-400 shadow-md shadow-amber-500/15' 
+                      : 'text-slate-400 hover:text-amber-200 hover:bg-amber-500/10'
                   }`}
                   id={`tab_desktop_${item.id}`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-500' : 'text-slate-400'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-slate-950 font-bold' : 'text-amber-400'}`} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -545,13 +567,13 @@ export const UserDashboard: React.FC = () => {
 
         {/* Mobile / Expanded Hamburger Drawer with clean quick-navigation cards */}
         {isMenuOpen && (
-          <div className="mt-3 pt-3 border-t border-slate-100 animate-fadeIn">
+          <div className="mt-3 pt-3 border-t border-amber-500/15 animate-fadeIn">
             <div className="px-1 mb-2.5 flex items-center justify-between text-[11px] font-mono text-slate-400">
               <div className="flex items-center gap-2">
                 <PmLogo className="w-5 h-5" />
-                <span className="font-bold text-slate-700 uppercase tracking-wider">PM Invest Menus</span>
+                <span className="font-bold text-amber-300 uppercase tracking-wider">PM Invest Menus</span>
               </div>
-              <span className="text-amber-600 font-semibold">{menuItems.length} Available</span>
+              <span className="text-amber-400 font-semibold">{menuItems.length} Available</span>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
@@ -568,26 +590,26 @@ export const UserDashboard: React.FC = () => {
                     }}
                     className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-3 cursor-pointer group ${
                       isActive 
-                        ? 'bg-amber-50/70 border-amber-400 shadow-xs ring-1 ring-amber-400/30' 
-                        : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300'
+                        ? 'bg-gradient-to-b from-[#141b2d] to-[#0c1220] border-amber-400/80 shadow-md ring-1 ring-amber-400/40' 
+                        : 'bg-[#06080e] hover:bg-[#0f1422] border-amber-500/20 hover:border-amber-500/40'
                     }`}
                     id={`menu_item_${item.id}`}
                   >
                     <div className={`p-2 rounded-lg shrink-0 transition-colors ${
                       isActive 
-                        ? 'bg-amber-500 text-slate-950 shadow-xs' 
-                        : 'bg-slate-100 text-slate-700 group-hover:bg-amber-100 group-hover:text-amber-900'
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-sm' 
+                        : 'bg-[#0f1422] text-amber-400 group-hover:bg-amber-500/20'
                     }`}>
                       <Icon className="w-4 h-4" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-1">
-                        <span className={`text-xs font-bold ${isActive ? 'text-slate-950 font-extrabold' : 'text-slate-800'}`}>
+                        <span className={`text-xs font-bold ${isActive ? 'text-[#f7ecd5] font-extrabold' : 'text-slate-200'}`}>
                           {item.label}
                         </span>
                         {item.badge}
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
+                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
                         {item.description}
                       </p>
                     </div>
@@ -596,11 +618,11 @@ export const UserDashboard: React.FC = () => {
               })}
             </div>
 
-            <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>Wallet: <strong className="text-slate-900 font-mono font-bold">₦{currentUser?.walletBalance.toLocaleString()}</strong></span>
+            <div className="mt-3 pt-2.5 border-t border-amber-500/15 flex items-center justify-between text-xs text-slate-400">
+              <span>Wallet: <strong className="text-amber-300 font-mono font-bold">₦{currentUser?.walletBalance.toLocaleString()}</strong></span>
               <button
                 onClick={() => setIsMenuOpen(false)}
-                className="text-slate-500 hover:text-slate-800 font-semibold text-[11px] uppercase tracking-wider"
+                className="text-amber-400 hover:text-amber-300 font-semibold text-[11px] uppercase tracking-wider cursor-pointer"
               >
                 Close Menu ✕
               </button>
@@ -614,50 +636,50 @@ export const UserDashboard: React.FC = () => {
       {/* OVERVIEW TAB */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          {/* Top Quick Stats Grid */}
+          {/* Top Quick Stats Grid in Luxury Obsidian & Brushed Gold */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
+            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 shadow-xl flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Wallet Balance</p>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">₦{currentUser.walletBalance.toLocaleString()}</h3>
-                <span className="text-[10px] text-amber-600 font-medium font-sans">Ready to withdraw to your bank</span>
+                <p className="text-xs text-slate-400 font-medium font-sans uppercase tracking-wider">Wallet Balance</p>
+                <h3 className="text-xl sm:text-2xl font-black text-[#f7ecd5] font-mono mt-1">₦{currentUser.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+                <span className="text-[10px] text-amber-400 font-medium font-sans">Ready to withdraw to your bank</span>
               </div>
-              <div className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700">
+              <div className="w-11 h-11 bg-[#06080e] border border-amber-500/25 rounded-xl flex items-center justify-center text-amber-400 shadow-md">
                 <Wallet className="w-5 h-5" />
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
+            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 shadow-xl flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Money in Properties</p>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">
+                <p className="text-xs text-slate-400 font-medium font-sans uppercase tracking-wider">Money in Properties</p>
+                <h3 className="text-xl sm:text-2xl font-black text-white font-mono mt-1">
                   ₦{activeInvestments.reduce((sum, i) => sum + i.cost, 0).toLocaleString()}
                 </h3>
-                <span className="text-[10px] text-emerald-600 font-semibold font-sans">{activeInvestments.length} Active Plans</span>
+                <span className="text-[10px] text-emerald-400 font-semibold font-sans">{activeInvestments.length} Active UAE Assets</span>
               </div>
-              <div className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-emerald-600">
+              <div className="w-11 h-11 bg-[#06080e] border border-emerald-500/25 rounded-xl flex items-center justify-center text-emerald-400 shadow-md">
                 <TrendingUp className="w-5 h-5" />
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
+            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 shadow-xl flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Total Profit Collected</p>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-amber-600 mt-1">₦{totalEarnedPayouts.toLocaleString()}</h3>
+                <p className="text-xs text-slate-400 font-medium font-sans uppercase tracking-wider">Total Profit Collected</p>
+                <h3 className="text-xl sm:text-2xl font-black text-amber-400 font-mono mt-1">₦{totalEarnedPayouts.toLocaleString()}</h3>
                 <span className="text-[10px] text-slate-400 font-sans">Paid into your wallet</span>
               </div>
-              <div className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-amber-500">
+              <div className="w-11 h-11 bg-[#06080e] border border-amber-500/25 rounded-xl flex items-center justify-center text-amber-400 shadow-md">
                 <ArrowUpRight className="w-5 h-5" />
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
+            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 shadow-xl flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-500 font-medium font-sans uppercase tracking-wider">Referral Bonus</p>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">₦{totalReferralBonus.toLocaleString()}</h3>
-                <span className="text-[10px] text-emerald-600 font-semibold font-sans">7.5% weekly bonus active</span>
+                <p className="text-xs text-slate-400 font-medium font-sans uppercase tracking-wider">Referral Bonus</p>
+                <h3 className="text-xl sm:text-2xl font-black text-[#f7ecd5] font-mono mt-1">₦{totalReferralBonus.toLocaleString()}</h3>
+                <span className="text-[10px] text-emerald-400 font-semibold font-sans">7.5% weekly bonus active</span>
               </div>
-              <div className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700">
+              <div className="w-11 h-11 bg-[#06080e] border border-amber-500/25 rounded-xl flex items-center justify-center text-amber-400 shadow-md">
                 <Users className="w-5 h-5" />
               </div>
             </div>
@@ -665,7 +687,7 @@ export const UserDashboard: React.FC = () => {
 
           {/* Daily Task Quick Quest Snapshot */}
           {currentUser && (
-            <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-800 text-white rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="bg-gradient-to-r from-[#0c101c] via-[#090d18] to-[#0c101c] border border-amber-500/25 text-white rounded-2xl p-5 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
                 <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0">
                   <Flame className="w-6 h-6 fill-amber-400" />
@@ -675,11 +697,11 @@ export const UserDashboard: React.FC = () => {
                     <span className="text-xs font-bold text-amber-400 font-mono">
                       🔥 {getUserProgress(currentUser.id).streakCount}-DAY CONSISTENCY STREAK
                     </span>
-                    <span className="text-[10px] bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded-full font-mono">
+                    <span className="text-[10px] bg-[#06080e] border border-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-mono">
                       {getUserProgress(currentUser.id).completedTaskIds.length}/{dailyTasks.length} Done Today
                     </span>
                   </div>
-                  <h4 className="text-sm font-bold text-white mt-0.5">
+                  <h4 className="text-sm font-bold text-[#f7ecd5] mt-0.5">
                     Daily Cash Rewards &amp; Check-In
                   </h4>
                   <p className="text-xs text-slate-400">
@@ -690,7 +712,7 @@ export const UserDashboard: React.FC = () => {
 
               <button
                 onClick={() => { setActiveTab('tasks'); clearMessages(); }}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 px-4 rounded-xl transition-all shrink-0 flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs py-2.5 px-4 rounded-xl transition-all shrink-0 flex items-center justify-center gap-1.5 shadow-md active:scale-95 cursor-pointer"
                 id="btn_overview_jump_to_tasks"
               >
                 <span>Go to Daily Tasks</span>
@@ -700,184 +722,212 @@ export const UserDashboard: React.FC = () => {
           )}
 
           {/* Active Investments and the single Global Property Markets launcher */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div id="active_investments_section" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-100 pb-3">
+          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#070a12] border border-amber-500/25 rounded-2xl p-6 shadow-2xl relative overflow-hidden backdrop-blur-md">
+            <div id="active_investments_section" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-amber-500/20 pb-3">
               <div>
-                <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 bg-amber-500 rounded-full" />
-                  My Active Investments ({activeInvestments.length})
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Your property plans, payout schedule, and company-managed market overview.
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 bg-amber-400 rounded-full animate-pulse" />
+                  <h3 className="text-base font-black text-[#f7ecd5] uppercase tracking-wider font-mono">
+                    My Active Investments ({activeInvestments.length})
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={handleRefreshInvestments}
+                    disabled={isRefreshingInvestments}
+                    className="p-1 rounded-lg bg-[#06080e] border border-amber-500/20 text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50 cursor-pointer"
+                    title="Refresh investment status from Supabase"
+                  >
+                    <RotateCw className={`w-3.5 h-3.5 ${isRefreshingInvestments ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Verified UAE property deeds, payout schedules, and cadastral co-ownership records.
                 </p>
               </div>
               {userInvestments.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setIsTradingTerminalOpen(true)}
-                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-95"
+                  className="bg-[#06080e] hover:bg-[#111728] border border-amber-500/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-95"
                   title="Open Global Property Markets"
                 >
                   <Activity className="w-4 h-4 text-emerald-400" />
                   <span>Global Property Markets</span>
-                  <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
+                  <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
                 </button>
               )}
             </div>
 
-            {/* Real-time Institutional UAE Property Trading Ticker (Image 3 Compact Widget) */}
+            {/* Real-time Institutional UAE Property Trading Ticker */}
             <LiveTradingSimulationCard 
               variant="compact"
               onExpandTerminal={() => setIsTradingTerminalOpen(true)}
             />
 
-            <div className="space-y-4">
-                  {activeInvestments.length === 0 ? (
-                    <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                      <Clock className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                      <p className="text-sm font-semibold text-slate-700">No active investments found.</p>
-                      <p className="text-xs text-slate-500 mt-1">Go to the "Buy Plans" tab to acquire a prime UAE luxury property stake starting at ₦30,000.</p>
-                      <button
-                        onClick={() => setActiveTab('invest')}
-                        className="mt-4 bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors shadow-sm cursor-pointer"
-                      >
-                        Explore UAE Properties
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {activeInvestments.map((inv) => {
-                        const percentComplete = (inv.weeksPaid / inv.totalWeeks) * 100;
-                        const autoRenewLockUntil = inv.autoReinvestLockedUntil ? new Date(inv.autoReinvestLockedUntil).getTime() : 0;
-                        const isAutoRenewLocked = autoRenewLockUntil > Date.now();
-                        const matchPlan = INVESTMENT_PLANS.find(p => p.id === inv.planId || p.name.toLowerCase() === (inv.planName || '').toLowerCase());
-                        const propName = inv.propertyName || matchPlan?.propertyName || matchPlan?.name || inv.planName;
-                        const propImg = inv.propertyImage || matchPlan?.propertyImage || '/properties/marina_bay_residences.jpg';
-                        const propAddr = inv.propertyAddress || matchPlan?.propertyAddress || 'Plot 392-581, Marina Promenade, Dubai Marina, Dubai, UAE';
-                        const deedCode = inv.deedReferenceCode || `UAE-DLD-2026-${inv.id.slice(-6).toUpperCase()}`;
+            <div className="space-y-4 mt-4">
+              {/* SKELETON SCREEN LOADER: Mimics property card layout while investment data is being fetched/synchronized */}
+              {(!isDbLoaded || supabaseStatus === 'loading' || isRefreshingInvestments) ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs text-amber-400 font-mono px-1">
+                    <span className="flex items-center gap-1.5 animate-pulse">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      Syncing UAE Property Stakes &amp; Title Records...
+                    </span>
+                    <span className="text-[11px] text-slate-500">Dubai Land Department Registry</span>
+                  </div>
+                  <PropertyCardSkeleton count={Math.max(activeInvestments.length, 2)} variant="investment" />
+                </div>
+              ) : activeInvestments.length === 0 ? (
+                <div className="text-center py-12 bg-[#06080e]/90 rounded-2xl border border-dashed border-amber-500/25 p-6">
+                  <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-3 text-amber-400">
+                    <Building className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-bold text-[#f7ecd5]">No active property investments yet.</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                    Acquire your first fractional co-ownership stake in Dubai Marina, DIFC, or Creek Harbour starting from ₦30,000 to receive weekly Friday payouts.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('invest')}
+                    className="mt-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-amber-500/10 cursor-pointer active:scale-95"
+                  >
+                    Explore UAE Properties →
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {activeInvestments.map((inv) => {
+                    const percentComplete = (inv.weeksPaid / inv.totalWeeks) * 100;
+                    const autoRenewLockUntil = inv.autoReinvestLockedUntil ? new Date(inv.autoReinvestLockedUntil).getTime() : 0;
+                    const isAutoRenewLocked = autoRenewLockUntil > Date.now();
+                    const matchPlan = INVESTMENT_PLANS.find(p => p.id === inv.planId || p.name.toLowerCase() === (inv.planName || '').toLowerCase());
+                    const propName = inv.propertyName || matchPlan?.propertyName || matchPlan?.name || inv.planName;
+                    const propImg = inv.propertyImage || matchPlan?.propertyImage || '/properties/marina_bay_residences.jpg';
+                    const propAddr = inv.propertyAddress || matchPlan?.propertyAddress || 'Plot 392-581, Marina Promenade, Dubai Marina, Dubai, UAE';
+                    const deedCode = inv.deedReferenceCode || `UAE-DLD-2026-${inv.id.slice(-6).toUpperCase()}`;
 
-                        return (
-                          <div key={inv.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden shadow-xs hover:border-amber-300 transition-colors">
-                            {/* Brand background watermark */}
-                            <div className="absolute right-2 top-2 opacity-10 pointer-events-none">
-                              <Building className="w-20 h-20 text-slate-300" />
+                    return (
+                      <div key={inv.id} className="bg-gradient-to-b from-[#0e1424] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden shadow-2xl hover:border-amber-400/50 transition-all">
+                        {/* Brand background watermark */}
+                        <div className="absolute right-2 top-2 opacity-5 pointer-events-none">
+                          <Building className="w-24 h-24 text-amber-400" />
+                        </div>
+
+                        <div>
+                          {/* Property Header with Thumbnail */}
+                          <div className="flex items-center gap-3 mb-3 pb-3 border-b border-amber-500/15">
+                            <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-amber-500/30 shadow-md relative bg-slate-900">
+                              <img 
+                                src={propImg} 
+                                alt={propName}
+                                className="w-full h-full object-cover" 
+                              />
                             </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="text-sm font-black text-[#f7ecd5] uppercase tracking-tight truncate">
+                                  {propName}
+                                </span>
+                                <span className="bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold text-[9px] shrink-0 font-mono">
+                                  ACTIVE
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-[11px] text-slate-400 truncate mt-0.5">
+                                <MapPin className="w-3 h-3 text-amber-400 shrink-0" />
+                                <span className="truncate">{propAddr}</span>
+                              </div>
+                              <div className="text-[10px] text-amber-400/70 font-mono mt-0.5">
+                                Deed Ref: {deedCode}
+                              </div>
+                            </div>
+                          </div>
 
+                          <div className="grid grid-cols-2 gap-2 my-2 text-xs border-b border-amber-500/15 pb-3">
                             <div>
-                              {/* Property Header with Thumbnail */}
-                              <div className="flex items-center gap-3 mb-3 pb-3 border-b border-slate-200">
-                                <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-300 shadow-xs relative bg-slate-200">
-                                  <img 
-                                    src={propImg} 
-                                    alt={propName}
-                                    className="w-full h-full object-cover" 
-                                  />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center justify-between gap-1">
-                                    <span className="text-sm font-black text-slate-900 uppercase tracking-tight truncate">
-                                      {propName}
-                                    </span>
-                                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-bold text-[9px] shrink-0">
-                                      ACTIVE
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1 text-[11px] text-slate-500 truncate mt-0.5">
-                                    <MapPin className="w-3 h-3 text-amber-500 shrink-0" />
-                                    <span className="truncate">{propAddr}</span>
-                                  </div>
-                                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                    Deed Ref: {deedCode}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-2 my-2 text-xs border-b border-slate-200 pb-3">
-                                <div>
-                                  <span className="text-slate-500 block font-light">Invested Capital</span>
-                                  <span className="text-sm font-bold text-slate-900">₦{inv.cost.toLocaleString()}</span>
-                                </div>
-                                <div>
-                                  <span className="text-slate-500 block font-light">Total Returns (24w)</span>
-                                  <span className="text-sm font-bold text-amber-600">₦{inv.totalReturns.toLocaleString()}</span>
-                                </div>
-                                <div className="col-span-2 pt-1.5 border-t border-slate-100 flex items-center justify-between">
-                                  <div>
-                                    <span className="text-slate-500 block font-light text-[10px]">Weekly Friday Payout</span>
-                                    <span className="text-sm font-bold text-slate-900">₦{inv.weeklyPayout.toLocaleString()} / week</span>
-                                  </div>
-                                  {inv.autoReinvest && (
-                                    <div className="text-right">
-                                      <span className="text-[10px] text-amber-600 font-bold block flex items-center justify-end gap-1">
-                                        <Sparkles className="w-3 h-3 text-amber-500" /> With +3% Rollover:
-                                      </span>
-                                      <span className="text-xs font-bold text-emerald-700 font-mono">
-                                        ₦{(inv.weeklyPayout + Math.round(inv.weeklyPayout * 0.03)).toLocaleString()} / week
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Progress */}
-                              <div className="my-2.5">
-                                <div className="flex justify-between text-[11px] mb-1 font-mono text-slate-500">
-                                  <span>Cycle Progress</span>
-                                  <span>Week {inv.weeksPaid} of {inv.totalWeeks} Paid</span>
-                                </div>
-                                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                                  <div 
-                                    className="bg-gradient-to-r from-amber-500 to-emerald-500 h-full rounded-full transition-all duration-500" 
-                                    style={{ width: `${percentComplete}%` }}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Live Payout Countdown Timer */}
-                              <div className="my-2">
-                                <PayoutCountdown targetDate={inv.nextPayoutDate} isLocked={inv.isTimerLocked || currentUser?.isTimerLocked} />
-                              </div>
-
-                              <AutoRenewControl investment={inv} onToggle={toggleAutoReinvest} />
-
-                              {/* Official Deed & Documents Button */}
-                              <button
-                                type="button"
-                                onClick={() => setViewingDeedInvestment(inv)}
-                                className="w-full mt-3 py-2 px-3 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
-                                title="View official DLD Co-Ownership Deed and backing contracts"
-                              >
-                                <Award className="w-4 h-4 text-slate-950" />
-                                <span>📜 View Official Deed & Documents</span>
-                              </button>
+                              <span className="text-slate-400 block font-light text-[11px]">Invested Capital</span>
+                              <span className="text-sm font-bold text-white font-mono">₦{inv.cost.toLocaleString()}</span>
                             </div>
-
-                            <div className="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
-                              <div className="text-[10px] text-slate-400 font-mono">
-                                <span>Invested: {new Date(inv.createdAt).toLocaleDateString()}</span>
+                            <div>
+                              <span className="text-slate-400 block font-light text-[11px]">Total Returns (24w)</span>
+                              <span className="text-sm font-bold text-amber-400 font-mono">₦{inv.totalReturns.toLocaleString()}</span>
+                            </div>
+                            <div className="col-span-2 pt-1.5 border-t border-amber-500/10 flex items-center justify-between">
+                              <div>
+                                <span className="text-slate-400 block font-light text-[10px]">Weekly Friday Payout</span>
+                                <span className="text-sm font-extrabold text-emerald-400 font-mono">₦{inv.weeklyPayout.toLocaleString()} / week</span>
                               </div>
-                              <InvestmentPayoutButton
-                                investment={inv}
-                                onPayout={processSingleInvestmentPayout}
+                              {inv.autoReinvest && (
+                                <div className="text-right">
+                                  <span className="text-[10px] text-amber-300 font-bold flex items-center justify-end gap-1">
+                                    <Sparkles className="w-3 h-3 text-amber-400" /> With +3% Rollover:
+                                  </span>
+                                  <span className="text-xs font-bold text-emerald-400 font-mono">
+                                    ₦{(inv.weeklyPayout + Math.round(inv.weeklyPayout * 0.03)).toLocaleString()} / week
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Progress */}
+                          <div className="my-2.5">
+                            <div className="flex justify-between text-[11px] mb-1 font-mono text-slate-400">
+                              <span>Cycle Progress</span>
+                              <span className="text-amber-400">Week {inv.weeksPaid} of {inv.totalWeeks} Paid</span>
+                            </div>
+                            <div className="w-full bg-[#06080e] h-2 rounded-full overflow-hidden border border-amber-500/15">
+                              <div 
+                                className="bg-gradient-to-r from-amber-500 to-emerald-400 h-full rounded-full transition-all duration-500" 
+                                style={{ width: `${percentComplete}%` }}
                               />
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
+
+                          {/* Live Payout Countdown Timer */}
+                          <div className="my-2">
+                            <PayoutCountdown targetDate={inv.nextPayoutDate} isLocked={inv.isTimerLocked || currentUser?.isTimerLocked} />
+                          </div>
+
+                          <AutoRenewControl investment={inv} onToggle={toggleAutoReinvest} />
+
+                          {/* Official Deed & Documents Button */}
+                          <button
+                            type="button"
+                            onClick={() => setViewingDeedInvestment(inv)}
+                            className="w-full mt-3 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-amber-500/10 cursor-pointer active:scale-95"
+                            title="View official DLD Co-Ownership Deed and backing contracts"
+                          >
+                            <Award className="w-4 h-4 text-slate-950" />
+                            <span>📜 View Official Deed &amp; Property Documents</span>
+                          </button>
+                        </div>
+
+                        <div className="mt-3 pt-3 border-t border-amber-500/15 flex flex-wrap items-center justify-between gap-2">
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            <span>Invested: {new Date(inv.createdAt).toLocaleDateString()}</span>
+                          </div>
+                          <InvestmentPayoutButton
+                            investment={inv}
+                            onPayout={processSingleInvestmentPayout}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {/* Completed Plans & Rollover Section */}
             {completedInvestments.length > 0 && (
-              <div className="mt-6 pt-5 border-t border-slate-100">
+              <div className="mt-6 pt-5 border-t border-amber-500/20">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#f7ecd5] font-mono">
                       Completed Plans ({completedInvestments.length})
                     </h4>
                   </div>
-                  <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] text-amber-300 font-semibold bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
                     Eligible for Rollover (+3% Weekly Payout Increment)
                   </span>
                 </div>
@@ -885,22 +935,22 @@ export const UserDashboard: React.FC = () => {
                   {completedInvestments.map(inv => {
                     const rolloverBonus = Math.round(inv.weeklyPayout * 0.03);
                     return (
-                      <div key={inv.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+                      <div key={inv.id} className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-xl p-4 flex flex-col justify-between shadow-lg">
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">{inv.planName}</span>
-                            <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 rounded-full">
+                            <span className="text-xs font-bold text-[#f7ecd5] uppercase tracking-wider">{inv.planName}</span>
+                            <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-bold px-2 py-0.5 rounded-full font-mono">
                               Completed ({inv.totalWeeks} Wks)
                             </span>
                           </div>
-                          <div className="flex items-center justify-between text-xs text-slate-600 my-2 py-2 border-y border-slate-200">
+                          <div className="flex items-center justify-between text-xs text-slate-300 my-2 py-2 border-y border-amber-500/15">
                             <div>
-                              <span className="text-[10px] text-slate-400 block">Weekly Payout</span>
-                              <span className="font-bold text-slate-900">₦{inv.weeklyPayout.toLocaleString()}</span>
+                              <span className="text-[10px] text-slate-400 block font-light">Weekly Payout</span>
+                              <span className="font-bold text-white font-mono">₦{inv.weeklyPayout.toLocaleString()}</span>
                             </div>
                             <div className="text-right">
-                              <span className="text-[10px] text-emerald-600 font-semibold block">Rollover Yield (+3%)</span>
-                              <span className="font-bold text-emerald-700 font-mono">₦{(inv.weeklyPayout + rolloverBonus).toLocaleString()} / wk</span>
+                              <span className="text-[10px] text-emerald-400 font-semibold block">Rollover Yield (+3%)</span>
+                              <span className="font-bold text-emerald-400 font-mono">₦{(inv.weeklyPayout + rolloverBonus).toLocaleString()} / wk</span>
                             </div>
                           </div>
                         </div>
@@ -911,7 +961,7 @@ export const UserDashboard: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => rolloverInvestment(inv.id)}
-                            className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-xs transition-all active:scale-95 cursor-pointer"
+                            className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs px-3 py-1.5 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer"
                             id={`btn_rollover_${inv.id}`}
                             title="Rollover this plan into a fresh 24-week cycle with 3% weekly increment"
                           >
@@ -925,58 +975,57 @@ export const UserDashboard: React.FC = () => {
                 </div>
               </div>
             )}
-            </div>
           </div>
 
           {/* User History List */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
+          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#070a12] border border-amber-500/25 rounded-2xl p-6 shadow-2xl backdrop-blur-md">
+            <h3 className="text-base font-bold text-[#f7ecd5] uppercase tracking-wider mb-4 border-b border-amber-500/20 pb-3 font-mono">
               Recent Transactions
             </h3>
 
             {transactions.filter(t => t.userId === currentUser.id).length === 0 ? (
-              <p className="text-xs text-slate-500 text-center py-6">No transaction history found.</p>
+              <p className="text-xs text-slate-400 text-center py-6">No transaction history found.</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-sans text-slate-700">
+                <table className="w-full text-left text-xs font-sans text-slate-300">
                   <thead>
-                    <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
-                      <th className="pb-2 font-mono">Date</th>
-                      <th className="pb-2">Type</th>
-                      <th className="pb-2">Description</th>
-                      <th className="pb-2 text-right">Amount</th>
-                      <th className="pb-2 text-center">Status</th>
+                    <tr className="border-b border-amber-500/20 text-slate-400 uppercase tracking-wider text-[10px] font-semibold">
+                      <th className="pb-2.5 font-mono">Date</th>
+                      <th className="pb-2.5">Type</th>
+                      <th className="pb-2.5">Description</th>
+                      <th className="pb-2.5 text-right">Amount</th>
+                      <th className="pb-2.5 text-center">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-amber-500/10">
                     {transactions
                       .filter(t => t.userId === currentUser.id)
                       .slice(0, 8)
                       .map((tx) => {
-                        let typeColor = 'text-amber-600';
-                        if (tx.type === 'deposit') typeColor = 'text-emerald-600';
-                        if (tx.type === 'referral_bonus') typeColor = 'text-amber-600';
-                        if (tx.type === 'withdrawal' && tx.status === 'completed') typeColor = 'text-rose-600';
+                        let typeColor = 'text-amber-400';
+                        if (tx.type === 'deposit') typeColor = 'text-emerald-400';
+                        if (tx.type === 'referral_bonus') typeColor = 'text-amber-300';
+                        if (tx.type === 'withdrawal' && tx.status === 'completed') typeColor = 'text-rose-400';
 
                         return (
-                          <tr key={tx.id} className="hover:bg-slate-50/50">
-                            <td className="py-2.5 font-mono text-[11px] text-slate-500">
+                          <tr key={tx.id} className="hover:bg-amber-500/5 transition-colors">
+                            <td className="py-3 font-mono text-[11px] text-slate-400">
                               {new Date(tx.createdAt).toLocaleDateString()}
                             </td>
-                            <td className={`py-2.5 font-semibold capitalize ${typeColor}`}>
+                            <td className={`py-3 font-semibold capitalize ${typeColor}`}>
                               {tx.type.replace('_', ' ')}
                             </td>
-                            <td className="py-2.5 text-slate-600 text-[11px]">
+                            <td className="py-3 text-slate-300 text-[11px]">
                               {tx.description}
                             </td>
-                            <td className="py-2.5 text-right font-bold font-mono text-slate-900">
+                            <td className="py-3 text-right font-bold font-mono text-white">
                               ₦{tx.amount.toLocaleString(undefined, { minimumFractionDigits: 1 })}
                             </td>
-                            <td className="py-2.5 text-center">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium ${
-                                tx.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                                tx.status === 'pending' ? 'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse' :
-                                'bg-rose-50 text-rose-700 border border-rose-200'
+                            <td className="py-3 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-medium ${
+                                tx.status === 'completed' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' :
+                                tx.status === 'pending' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse' :
+                                'bg-rose-500/15 text-rose-300 border border-rose-500/30'
                               }`}>
                                 {tx.status.toUpperCase()}
                               </span>
@@ -995,18 +1044,18 @@ export const UserDashboard: React.FC = () => {
       {/* INVEST / BUY PLANS TAB */}
       {activeTab === 'invest' && (
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-800 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl text-center max-w-3xl mx-auto backdrop-blur-md">
+            <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
               <span>🇦🇪</span>
               <span>UAE Prime Real Estate Portfolio</span>
             </div>
-            <h3 className="text-xl font-black text-slate-900 tracking-wide uppercase">UAE Institutional Property Plans</h3>
-            <p className="text-xs text-slate-600 mt-1 max-w-xl mx-auto leading-relaxed">
-              Acquire institutional co-ownership in verified luxury assets across Dubai Marina, DIFC, Palm Jumeirah, and Creek Harbour. All plans run for <strong>24 weeks</strong> with cash payouts paid into your wallet every Friday.
+            <h3 className="text-xl sm:text-2xl font-black text-[#f7ecd5] tracking-wide uppercase font-mono">UAE Institutional Property Plans</h3>
+            <p className="text-xs text-slate-300 mt-1 max-w-xl mx-auto leading-relaxed">
+              Acquire institutional co-ownership in verified luxury assets across Dubai Marina, DIFC, Palm Jumeirah, and Creek Harbour. All plans run for <strong className="text-amber-400">24 weeks</strong> with cash payouts paid into your wallet every Friday.
             </p>
-            <div className="mt-3 inline-flex items-center gap-2 bg-slate-50 px-4 py-1.5 rounded-full border border-slate-200 text-xs text-slate-700 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Backed by <strong>Dubai Land Department (DLD)</strong> Title Deeds & Sovereign SPV Trust</span>
+            <div className="mt-3 inline-flex items-center gap-2 bg-[#06080e] px-4 py-1.5 rounded-full border border-amber-500/30 text-xs text-slate-300 font-medium">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>Backed by <strong className="text-amber-300">Dubai Land Department (DLD)</strong> Title Deeds &amp; Sovereign SPV Trust</span>
             </div>
           </div>
 
@@ -1016,12 +1065,12 @@ export const UserDashboard: React.FC = () => {
               return (
                 <div 
                   key={plan.id} 
-                  className={`bg-white border rounded-2xl flex flex-col justify-between shadow-sm transition-all duration-300 relative overflow-hidden ${
+                  className={`bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border rounded-2xl flex flex-col justify-between shadow-2xl transition-all duration-300 relative overflow-hidden ${
                     justActivatedPlanId === plan.id
-                      ? 'border-emerald-500 ring-4 ring-emerald-500/20 shadow-xl scale-[1.01]'
+                      ? 'border-emerald-500 ring-4 ring-emerald-500/30 shadow-2xl scale-[1.01]'
                       : investingPlanId === plan.id
-                        ? 'border-amber-400 ring-2 ring-amber-400/40 shadow-lg scale-[1.005]'
-                        : isAffordable ? 'border-amber-300/70 hover:border-amber-500 hover:shadow-xl' : 'border-slate-200 opacity-95'
+                        ? 'border-amber-400 ring-2 ring-amber-400/40 shadow-xl scale-[1.005]'
+                        : isAffordable ? 'border-amber-500/30 hover:border-amber-400 hover:shadow-amber-500/10' : 'border-amber-500/15 opacity-90'
                   }`}
                 >
                   {/* Property Image Banner */}
@@ -1032,13 +1081,13 @@ export const UserDashboard: React.FC = () => {
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
-                    <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md border border-amber-500/40 text-amber-400 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#06080e] via-[#06080e]/40 to-transparent" />
+                    <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
                       <span>🇦🇪</span>
                       <span>{plan.propertyLocation.split(',')[0]}</span>
                     </div>
                     <div className={`absolute top-3 right-3 text-[9px] font-extrabold uppercase px-2.5 py-1 rounded-full tracking-widest font-mono shadow-sm ${
-                      justActivatedPlanId === plan.id ? 'bg-emerald-500 text-white animate-pulse' : 'bg-amber-500 text-slate-950'
+                      justActivatedPlanId === plan.id ? 'bg-emerald-500 text-white animate-pulse' : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black'
                     }`}>
                       {justActivatedPlanId === plan.id ? 'ACTIVATED' : 'DLD VERIFIED'}
                     </div>
@@ -1054,35 +1103,35 @@ export const UserDashboard: React.FC = () => {
                     <div>
                       {/* Property Name & Verified Address */}
                       <div className="mb-3">
-                        <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">{plan.propertyName || plan.name}</h4>
-                        <div className="flex items-start gap-1 text-xs text-slate-500 mt-1">
-                          <MapPin className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                          <span className="text-[11px] leading-snug text-slate-600 line-clamp-2">{plan.propertyAddress}</span>
+                        <h4 className="text-lg font-black text-[#f7ecd5] uppercase tracking-tight">{plan.propertyName || plan.name}</h4>
+                        <div className="flex items-start gap-1 text-xs text-slate-400 mt-1">
+                          <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                          <span className="text-[11px] leading-snug text-slate-400 line-clamp-2">{plan.propertyAddress}</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[10px] font-mono">
-                          <span className="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded">
+                          <span className="bg-[#06080e] border border-amber-500/20 text-slate-300 px-2 py-0.5 rounded">
                             Makani: {plan.makaniNumber}
                           </span>
-                          <span className="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded">
+                          <span className="bg-[#06080e] border border-amber-500/20 text-slate-300 px-2 py-0.5 rounded">
                             Cadastral: {plan.cadastralId}
                           </span>
                         </div>
                       </div>
 
                       {/* Yield Numbers */}
-                      <div className="my-4 bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-2.5">
+                      <div className="my-4 bg-[#06080e]/90 border border-amber-500/20 p-3.5 rounded-xl space-y-2.5 shadow-inner">
                         <div className="flex justify-between items-baseline">
-                          <span className="text-xs text-slate-500 font-medium">Invested Capital:</span>
-                          <span className="text-base font-black text-slate-900">₦{plan.cost.toLocaleString()}</span>
+                          <span className="text-xs text-slate-400 font-medium">Invested Capital:</span>
+                          <span className="text-base font-black text-white font-mono">₦{plan.cost.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between items-baseline">
-                          <span className="text-xs text-slate-500 font-medium">Weekly Friday Cash Payout:</span>
-                          <span className="text-sm font-black text-emerald-600">₦{plan.weeklyPayout.toLocaleString()} / wk</span>
+                          <span className="text-xs text-slate-400 font-medium">Weekly Friday Cash Payout:</span>
+                          <span className="text-sm font-black text-emerald-400 font-mono">₦{plan.weeklyPayout.toLocaleString()} / wk</span>
                         </div>
-                        <div className="h-px bg-slate-200 w-full" />
+                        <div className="h-px bg-amber-500/15 w-full" />
                         <div className="flex justify-between items-baseline">
-                          <span className="text-xs text-amber-700 font-bold">Total Returns (24 Weeks):</span>
-                          <span className="text-base font-black text-amber-600 font-mono">₦{plan.totalReturns.toLocaleString()}</span>
+                          <span className="text-xs text-amber-300 font-bold">Total Returns (24 Weeks):</span>
+                          <span className="text-base font-black text-amber-400 font-mono">₦{plan.totalReturns.toLocaleString()}</span>
                         </div>
                       </div>
 
@@ -1091,10 +1140,10 @@ export const UserDashboard: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setSampleDeedPlan(plan)}
-                          className="w-full text-center py-1.5 px-3 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          className="w-full text-center py-2 px-3 rounded-xl bg-[#06080e] hover:bg-[#111728] border border-amber-500/30 text-amber-300 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm hover:border-amber-400"
                         >
-                          <Award className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Preview Title Deed & Backing Documents</span>
+                          <Award className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Preview Title Deed &amp; Backing Documents</span>
                         </button>
                       </div>
                     </div>
@@ -1108,7 +1157,7 @@ export const UserDashboard: React.FC = () => {
                             ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]'
                             : investingPlanId === plan.id
                               ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-md animate-pulse cursor-wait'
-                              : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black shadow-sm hover:shadow-md cursor-pointer'
+                              : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/10 hover:shadow-amber-500/20 cursor-pointer'
                         }`}
                         id={`btn_purchase_${plan.id}`}
                       >
@@ -1136,17 +1185,17 @@ export const UserDashboard: React.FC = () => {
                               document.getElementById('deposit_form_container')?.scrollIntoView({ behavior: 'smooth' });
                             }, 150);
                           }}
-                          className="w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-slate-900 hover:bg-slate-800 text-amber-400 flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-95 font-sans"
+                          className="w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-[#06080e] hover:bg-[#111728] border border-amber-500/30 text-amber-300 flex items-center justify-center gap-2 shadow-sm hover:border-amber-400 transition-all cursor-pointer active:scale-95 font-sans"
                           id={`btn_fund_wallet_${plan.id}`}
                           title="Deposit funds via real bank transfer to activate this plan"
                         >
                           <Wallet className="w-4 h-4 text-amber-400 shrink-0" />
                           <span>Fund ₦{(plan.cost - currentUser.walletBalance).toLocaleString()} to Invest</span>
                         </button>
-                        <div className="flex items-center justify-between text-[10px] text-slate-500 font-sans px-0.5">
-                          <span>Shortfall: <strong className="text-rose-600 font-mono">₦{(plan.cost - currentUser.walletBalance).toLocaleString()}</strong></span>
-                          <span className="text-amber-700 font-semibold flex items-center gap-1">
-                            <Building className="w-3 h-3 text-amber-600" />
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-sans px-0.5">
+                          <span>Shortfall: <strong className="text-rose-400 font-mono">₦{(plan.cost - currentUser.walletBalance).toLocaleString()}</strong></span>
+                          <span className="text-amber-400 font-semibold flex items-center gap-1">
+                            <Building className="w-3 h-3 text-amber-400" />
                             Treasure Homes Vault
                           </span>
                         </div>
@@ -1164,19 +1213,19 @@ export const UserDashboard: React.FC = () => {
       {activeTab === 'finance' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="deposit_form_container">
           {/* DEPOSIT MODULE (DIRECT BANK TRANSFER & RECEIPT PROOF) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
-            <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl space-y-5 backdrop-blur-md">
+            <div className="border-b border-amber-500/20 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <ArrowDownLeft className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-base font-bold text-[#f7ecd5] uppercase tracking-wider flex items-center gap-2 font-mono">
+                  <ArrowDownLeft className="w-5 h-5 text-emerald-400" />
                   How to Add Money
                 </h3>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   Transfer from your bank app to either of our official accounts below. Enter the amount you sent and upload your receipt screenshot. Your wallet will be funded within 10 to 30 minutes.
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 self-start sm:self-auto bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold text-emerald-800">
-                <Building className="w-3.5 h-3.5 text-emerald-600" />
+              <div className="flex items-center gap-1.5 self-start sm:self-auto bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold text-emerald-300">
+                <Building className="w-3.5 h-3.5 text-emerald-400" />
                 <span>DIRECT BANK TRANSFER</span>
               </div>
             </div>
@@ -1184,31 +1233,31 @@ export const UserDashboard: React.FC = () => {
             <div className="space-y-4">
               {/* Treasure Homes Reserve Accounts */}
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-                    <Building className="w-4 h-4 text-amber-500" />
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-300 font-mono">
+                    <Building className="w-4 h-4 text-amber-400" />
                     <span>OFFICIAL BANK ACCOUNTS FOR PAYMENT</span>
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Account 1: PAGA */}
-                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden shadow-xs">
-                      <div className="absolute top-0 right-0 bg-amber-500/10 text-amber-700 font-mono font-bold text-[9px] uppercase px-2 py-0.5 rounded-bl-lg">
+                    <div className="bg-[#06080e] border border-amber-500/30 p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden shadow-inner">
+                      <div className="absolute top-0 right-0 bg-amber-500/20 text-amber-300 font-mono font-bold text-[9px] uppercase px-2 py-0.5 rounded-bl-lg border-l border-b border-amber-500/30">
                         Account 1
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500">Bank Name:</span>
-                        <span className="font-semibold text-slate-900">PAGA</span>
+                        <span className="text-slate-400">Bank Name:</span>
+                        <span className="font-semibold text-white">PAGA</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500">Account Name:</span>
-                        <span className="font-semibold text-slate-900">EZE JUDE TREASURE</span>
+                        <span className="text-slate-400">Account Name:</span>
+                        <span className="font-semibold text-white">EZE JUDE TREASURE</span>
                       </div>
-                      <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
-                        <span className="text-slate-500">Account No:</span>
+                      <div className="flex justify-between items-center pt-1 border-t border-amber-500/15">
+                        <span className="text-slate-400">Account No:</span>
                         <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-amber-600 font-mono text-sm">0001327256</span>
+                          <span className="font-bold text-amber-400 font-mono text-sm">0001327256</span>
                           {copiedAccount ? (
-                            <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider font-mono">Copied!</span>
+                            <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider font-mono">Copied!</span>
                           ) : (
                             <button 
                               type="button"
@@ -1217,7 +1266,7 @@ export const UserDashboard: React.FC = () => {
                                 setCopiedAccount(true);
                                 setTimeout(() => setCopiedAccount(false), 2000);
                               }}
-                              className="p-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                              className="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer"
                               title="Copy Account Number"
                             >
                               <Copy className="w-3.5 h-3.5" />
@@ -1228,24 +1277,24 @@ export const UserDashboard: React.FC = () => {
                     </div>
 
                     {/* Account 2: Moniepoint */}
-                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden shadow-xs">
-                      <div className="absolute top-0 right-0 bg-emerald-500/10 text-emerald-700 font-mono font-bold text-[9px] uppercase px-2 py-0.5 rounded-bl-lg">
+                    <div className="bg-[#06080e] border border-amber-500/30 p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden shadow-inner">
+                      <div className="absolute top-0 right-0 bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[9px] uppercase px-2 py-0.5 rounded-bl-lg border-l border-b border-emerald-500/30">
                         Account 2
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500">Bank Name:</span>
-                        <span className="font-semibold text-slate-900">Moniepoint</span>
+                        <span className="text-slate-400">Bank Name:</span>
+                        <span className="font-semibold text-white">Moniepoint</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-500">Account Name:</span>
-                        <span className="font-semibold text-slate-900">EZE JUDE TREASURE</span>
+                        <span className="text-slate-400">Account Name:</span>
+                        <span className="font-semibold text-white">EZE JUDE TREASURE</span>
                       </div>
-                      <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
-                        <span className="text-slate-500">Account No:</span>
+                      <div className="flex justify-between items-center pt-1 border-t border-amber-500/15">
+                        <span className="text-slate-400">Account No:</span>
                         <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-emerald-600 font-mono text-sm">6814600103</span>
+                          <span className="font-bold text-emerald-400 font-mono text-sm">6814600103</span>
                           {copiedAccount2 ? (
-                            <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider font-mono">Copied!</span>
+                            <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider font-mono">Copied!</span>
                           ) : (
                             <button 
                               type="button"
@@ -1254,7 +1303,7 @@ export const UserDashboard: React.FC = () => {
                                 setCopiedAccount2(true);
                                 setTimeout(() => setCopiedAccount2(false), 2000);
                               }}
-                              className="p-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                              className="p-1 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer"
                               title="Copy Account Number"
                             >
                               <Copy className="w-3.5 h-3.5" />
@@ -1268,23 +1317,23 @@ export const UserDashboard: React.FC = () => {
 
                 <form onSubmit={handleDepositSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-xs text-slate-500 font-medium mb-1">Transfer Amount (₦)</label>
+                    <label className="block text-xs text-slate-400 font-medium mb-1">Transfer Amount (₦)</label>
                     <input 
                       type="number" 
                       value={depAmount}
                       onChange={(e) => setDepAmount(e.target.value)}
                       placeholder="e.g. 50000"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      className="w-full bg-[#06080e] border border-amber-500/30 rounded-xl py-2 px-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 font-mono"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs text-slate-500 font-medium mb-1">Payment Method</label>
+                    <label className="block text-xs text-slate-400 font-medium mb-1">Payment Method</label>
                     <select 
                       value={depMethod}
                       onChange={(e) => setDepMethod(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      className="w-full bg-[#06080e] border border-amber-500/30 rounded-xl py-2 px-3 text-sm text-slate-100 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
                     >
                       <option>Bank Transfer (Treasure Homes Reserve)</option>
                       <option>USDT-TRC20 Stablecoin Account</option>
@@ -1293,20 +1342,20 @@ export const UserDashboard: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs text-slate-500 font-medium mb-1">Sender Bank & Name / Transaction Reference</label>
+                    <label className="block text-xs text-slate-400 font-medium mb-1">Sender Bank & Name / Transaction Reference</label>
                     <input 
                       type="text" 
                       value={depDetails}
                       onChange={(e) => setDepDetails(e.target.value)}
                       placeholder="e.g. Access Bank - John Doe Transfer"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      className="w-full bg-[#06080e] border border-amber-500/30 rounded-xl py-2 px-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
                       required
                     />
                   </div>
 
                   {/* Receipt Upload with Drag & Drop & Click */}
                   <div className="space-y-2">
-                    <label className="block text-xs text-slate-500 font-medium">Attach Receipt / Payment Proof</label>
+                    <label className="block text-xs text-slate-400 font-medium">Attach Receipt / Payment Proof</label>
                     <div 
                       onDragEnter={handleDrag}
                       onDragOver={handleDrag}
@@ -1314,8 +1363,8 @@ export const UserDashboard: React.FC = () => {
                       onDrop={handleDrop}
                       className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
                         dragActive 
-                          ? 'border-amber-500 bg-amber-50/50' 
-                          : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100/50'
+                          ? 'border-amber-400 bg-amber-500/10' 
+                          : 'border-amber-500/30 bg-[#06080e] hover:border-amber-400 hover:bg-[#0b101c]'
                       }`}
                     >
                       <input 
@@ -1326,24 +1375,24 @@ export const UserDashboard: React.FC = () => {
                         onChange={handleFileChange}
                       />
                       <label htmlFor="receipt-upload-input" className="cursor-pointer block space-y-1.5">
-                        <UploadCloud className="w-6 h-6 text-slate-400 mx-auto animate-bounce-slow" />
-                        <div className="text-xs text-slate-600">
+                        <UploadCloud className="w-6 h-6 text-amber-400 mx-auto animate-bounce-slow" />
+                        <div className="text-xs text-slate-300">
                           {receiptFile ? (
-                            <span className="font-bold text-amber-600 font-mono text-[11px] break-all">
+                            <span className="font-bold text-amber-400 font-mono text-[11px] break-all">
                               Selected: {receiptFile.name}
                             </span>
                           ) : (
-                            <span>Drag and drop your receipt here, or <strong className="text-amber-600 hover:underline">browse files</strong></span>
+                            <span>Drag and drop your receipt here, or <strong className="text-amber-400 hover:underline">browse files</strong></span>
                           )}
                         </div>
-                        <p className="text-[10px] text-slate-400">Supports PNG, JPG, or PDF (Max 5MB)</p>
+                        <p className="text-[10px] text-slate-500">Supports PNG, JPG, or PDF (Max 5MB)</p>
                       </label>
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-sm shadow-emerald-600/10 cursor-pointer"
+                    className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-black py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md shadow-emerald-950/20 cursor-pointer active:scale-95"
                     id="btn_submit_deposit"
                   >
                     I Have Sent The Money (Submit Receipt)
@@ -1353,17 +1402,17 @@ export const UserDashboard: React.FC = () => {
 
             {/* List of User Pending Deposits */}
             {pendingDeposits.length > 0 && (
-              <div className="pt-3 border-t border-slate-100 space-y-2">
-                <h4 className="text-xs font-bold text-amber-600 flex items-center gap-1">
+              <div className="pt-3 border-t border-amber-500/20 space-y-2">
+                <h4 className="text-xs font-bold text-amber-400 flex items-center gap-1 font-mono">
                   <Clock className="w-3.5 h-3.5 animate-spin" /> Pending Deposit Approvals ({pendingDeposits.length})
                 </h4>
                 {pendingDeposits.map(t => (
-                  <div key={t.id} className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs flex justify-between items-center shadow-xs">
+                  <div key={t.id} className="bg-[#06080e] border border-amber-500/20 p-3 rounded-xl text-xs flex justify-between items-center shadow-inner">
                     <div>
-                      <p className="font-bold text-slate-900">₦{t.amount.toLocaleString()}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">{t.paymentMethod} - {new Date(t.createdAt).toLocaleTimeString()}</p>
+                      <p className="font-bold text-white font-mono">₦{t.amount.toLocaleString()}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{t.paymentMethod} - {new Date(t.createdAt).toLocaleTimeString()}</p>
                     </div>
-                    <span className="text-[9px] bg-amber-50 text-amber-700 px-2 py-0.5 border border-amber-200 rounded font-mono uppercase tracking-widest animate-pulse font-bold">
+                    <span className="text-[9px] bg-amber-500/15 text-amber-300 px-2 py-0.5 border border-amber-500/30 rounded-full font-mono uppercase tracking-widest animate-pulse font-bold">
                       Pending
                     </span>
                   </div>
@@ -1373,35 +1422,35 @@ export const UserDashboard: React.FC = () => {
           </div>
 
           {/* WITHDRAWAL MODULE */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
-            <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl space-y-5 backdrop-blur-md">
+            <div className="border-b border-amber-500/20 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <ArrowUpRight className="w-5 h-5 text-rose-600" />
+                <h3 className="text-base font-bold text-[#f7ecd5] uppercase tracking-wider flex items-center gap-2 font-mono">
+                  <ArrowUpRight className="w-5 h-5 text-rose-400" />
                   Send Money to Your Bank
                 </h3>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   Enter how much you want to withdraw and choose your bank. Your money will arrive in your bank account within a few hours.
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold text-slate-700">
-                <Clock className="w-3.5 h-3.5 text-slate-500" />
+              <div className="flex items-center gap-1.5 self-start sm:self-auto bg-[#06080e] border border-amber-500/25 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold text-slate-300">
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
                 <span>BANK WITHDRAWAL</span>
               </div>
             </div>
 
             <form onSubmit={handleWithdrawalSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs text-slate-600 font-semibold mb-1">Withdrawal Amount (₦)</label>
+                <label className="block text-xs text-slate-400 font-semibold mb-1">Withdrawal Amount (₦)</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 font-bold text-slate-400 text-sm">₦</span>
+                  <span className="absolute left-3 top-2.5 font-bold text-amber-400 text-sm">₦</span>
                   <input 
                     type="number" 
                     value={withAmount}
                     onChange={(e) => setWithAmount(e.target.value)}
                     placeholder={`Min ₦${settings.minWithdrawal.toLocaleString()}`}
                     min={settings.minWithdrawal}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 pl-8 text-sm font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                    className="w-full bg-[#06080e] border border-amber-500/30 rounded-xl py-2.5 px-3 pl-8 text-sm font-bold text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 font-mono"
                     required
                   />
                 </div>
@@ -1409,14 +1458,14 @@ export const UserDashboard: React.FC = () => {
 
               {/* Destination Nigerian Bank Selector */}
               <div>
-                <label className="block text-xs text-slate-600 font-semibold mb-1">Select Destination Nigerian Bank</label>
+                <label className="block text-xs text-slate-400 font-semibold mb-1">Select Destination Nigerian Bank</label>
                 <select
                   value={selectedBankCode}
                   onChange={(e) => setSelectedBankCode(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold text-slate-900 focus:outline-none focus:border-rose-500"
+                  className="w-full bg-[#06080e] border border-amber-500/30 rounded-xl py-2.5 px-3 text-xs font-semibold text-slate-100 focus:outline-none focus:border-amber-400"
                 >
                   {NIGERIAN_BANKS.map((bank) => (
-                    <option key={bank.code} value={bank.code}>
+                    <option key={bank.code} value={bank.code} className="bg-slate-900 text-white">
                       {bank.name}
                     </option>
                   ))}
@@ -1425,35 +1474,35 @@ export const UserDashboard: React.FC = () => {
 
               {/* 10-Digit NUBAN Account Number */}
               <div>
-                <label className="block text-xs text-slate-600 font-semibold mb-1">10-Digit NUBAN Account Number</label>
+                <label className="block text-xs text-slate-400 font-semibold mb-1">10-Digit NUBAN Account Number</label>
                 <input 
                   type="text" 
                   maxLength={10}
                   value={bankAccountNumber}
                   onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ''))}
                   placeholder="e.g. 0123456789"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-sm font-mono font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-rose-500"
+                  className="w-full bg-[#06080e] border border-amber-500/30 rounded-xl py-2.5 px-3 text-sm font-mono font-bold text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
                   required
                 />
               </div>
 
               {/* Live NIBSS Account Resolution Indicator */}
               {accountResolution && (
-                <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl flex items-center gap-2 text-xs text-emerald-800">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div className="bg-[#061811] border border-emerald-500/30 p-2.5 rounded-xl flex items-center gap-2 text-xs text-emerald-200">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                   <div>
-                    <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider block">Account Name Verified (NIBSS)</span>
-                    <span className="font-bold text-slate-900">{accountResolution.name}</span>
+                    <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block font-mono">Account Name Verified (NIBSS)</span>
+                    <span className="font-bold text-white">{accountResolution.name}</span>
                   </div>
                 </div>
               )}
 
               <button
                 type="submit"
-                className={`w-full py-3 rounded-xl text-xs uppercase tracking-wider font-bold transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer ${
+                className={`w-full py-3 rounded-xl text-xs uppercase tracking-wider font-black transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer active:scale-95 ${
                   settings.automatedPayouts 
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20' 
-                    : 'bg-[#0f172a] hover:bg-[#1e293b] text-white'
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-emerald-950/20' 
+                    : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-500/10'
                 }`}
                 id="btn_submit_withdrawal"
               >
@@ -1470,20 +1519,20 @@ export const UserDashboard: React.FC = () => {
 
             {/* List of User Pending Withdrawals */}
             {pendingWithdrawals.length > 0 && (
-              <div className="pt-3 border-t border-slate-100 space-y-2">
-                <h4 className="text-xs font-bold text-amber-600 flex items-center gap-1">
+              <div className="pt-3 border-t border-amber-500/20 space-y-2">
+                <h4 className="text-xs font-bold text-amber-400 flex items-center gap-1 font-mono">
                   <Clock className="w-3.5 h-3.5 animate-spin" /> Pending Disbursals ({pendingWithdrawals.length})
                 </h4>
                 {pendingWithdrawals.map(t => (
-                  <div key={t.id} className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-xs flex justify-between items-center shadow-xs">
+                  <div key={t.id} className="bg-[#06080e] border border-amber-500/20 p-3 rounded-xl text-xs flex justify-between items-center shadow-inner">
                     <div>
-                      <p className="font-bold text-slate-900">₦{t.amount.toLocaleString()}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">To: {t.accountDetails}</p>
+                      <p className="font-bold text-white font-mono">₦{t.amount.toLocaleString()}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">To: {t.accountDetails}</p>
                       {t.gatewayReference && (
-                        <p className="text-[9px] font-mono text-emerald-600 mt-0.5">Ref: {t.gatewayReference}</p>
+                        <p className="text-[9px] font-mono text-emerald-400 mt-0.5">Ref: {t.gatewayReference}</p>
                       )}
                     </div>
-                    <span className="text-[9px] bg-amber-50 text-amber-700 px-2 py-0.5 border border-amber-200 rounded font-mono uppercase tracking-widest animate-pulse font-bold">
+                    <span className="text-[9px] bg-amber-500/15 text-amber-300 px-2 py-0.5 border border-amber-500/30 rounded-full font-mono uppercase tracking-widest animate-pulse font-bold">
                       Processing
                     </span>
                   </div>
@@ -1497,21 +1546,21 @@ export const UserDashboard: React.FC = () => {
       {/* REFERRAL TAB */}
       {activeTab === 'referrals' && (
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-center max-w-3xl mx-auto space-y-3">
-            <h3 className="text-lg font-bold text-slate-900 tracking-wide uppercase flex items-center justify-center gap-2">
-              <Users className="w-5 h-5 text-amber-500" />
+          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl text-center max-w-3xl mx-auto space-y-3 backdrop-blur-md">
+            <h3 className="text-lg font-bold text-[#f7ecd5] tracking-wide uppercase flex items-center justify-center gap-2 font-mono">
+              <Users className="w-5 h-5 text-amber-400" />
               Invite Friends, Earn Cash Every Friday
             </h3>
-            <p className="text-xs text-slate-600 max-w-xl mx-auto">
+            <p className="text-xs text-slate-300 max-w-xl mx-auto leading-relaxed">
               Share your invite link with friends. Whenever they get paid their weekly profit, you automatically receive 7.5% cash sent straight to your wallet!
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
-              <div className="bg-slate-50 inline-flex items-center gap-2 border border-slate-200 px-3.5 py-2 rounded-xl text-sm">
-                <span className="text-slate-500 text-xs">My Code:</span>
-                <strong className="text-slate-900 font-mono text-sm tracking-wider font-extrabold">{currentUser.referralCode}</strong>
+              <div className="bg-[#06080e] inline-flex items-center gap-2 border border-amber-500/30 px-3.5 py-2 rounded-xl text-sm shadow-inner">
+                <span className="text-slate-400 text-xs">My Code:</span>
+                <strong className="text-amber-400 font-mono text-sm tracking-wider font-extrabold">{currentUser.referralCode}</strong>
                 <button 
                   onClick={handleCopyCode}
-                  className="bg-slate-200 hover:bg-slate-300 text-slate-800 px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                  className="bg-[#111728] hover:bg-[#1a233a] border border-amber-500/30 text-amber-300 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
                   title="Copy code only"
                 >
                   {copiedCode ? 'Copied!' : <><Copy className="w-3.5 h-3.5" /> Copy Code</>}
@@ -1520,7 +1569,7 @@ export const UserDashboard: React.FC = () => {
 
               <button 
                 onClick={handleCopyLink}
-                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 shadow-xs transition-colors cursor-pointer"
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 shadow-md shadow-amber-500/10 transition-all cursor-pointer active:scale-95"
                 title="Copy direct invite link with referral code attached"
               >
                 {copiedLink ? <><Check className="w-3.5 h-3.5" /> Link Copied!</> : <><Link2 className="w-3.5 h-3.5" /> Copy Direct Invite Link</>}
@@ -1529,51 +1578,51 @@ export const UserDashboard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
-              <p className="text-xs text-slate-500 font-medium">Friends Joined</p>
-              <h3 className="text-3xl font-extrabold text-slate-900 mt-1">{referredUsers.length}</h3>
-              <p className="text-[10px] text-amber-600 font-medium mt-1">Signed up with your link</p>
+            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 text-center shadow-xl">
+              <p className="text-xs text-slate-400 font-medium">Friends Joined</p>
+              <h3 className="text-3xl font-extrabold text-white mt-1 font-mono">{referredUsers.length}</h3>
+              <p className="text-[10px] text-amber-400 font-medium mt-1">Signed up with your link</p>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
-              <p className="text-xs text-slate-500 font-medium">Friends' Active Money</p>
-              <h3 className="text-3xl font-extrabold text-slate-900 mt-1">
+            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 text-center shadow-xl">
+              <p className="text-xs text-slate-400 font-medium">Friends' Active Money</p>
+              <h3 className="text-3xl font-extrabold text-white mt-1 font-mono">
                 ₦{investments
                   .filter(inv => referredUsers.some(ru => ru.id === inv.userId) && inv.status === 'active')
                   .reduce((sum, inv) => sum + inv.cost, 0)
                   .toLocaleString()}
               </h3>
-              <p className="text-[10px] text-slate-500 mt-1">Total working in property plans</p>
+              <p className="text-[10px] text-slate-400 mt-1">Total working in property plans</p>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
-              <p className="text-xs text-slate-500 font-medium">Total Referral Cash Earned</p>
-              <h3 className="text-3xl font-extrabold text-amber-600 mt-1">₦{totalReferralBonus.toLocaleString()}</h3>
-              <p className="text-[10px] text-emerald-600 font-medium mt-1">Paid directly to your wallet</p>
+            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 text-center shadow-xl">
+              <p className="text-xs text-slate-400 font-medium">Total Referral Cash Earned</p>
+              <h3 className="text-3xl font-extrabold text-amber-400 mt-1 font-mono">₦{totalReferralBonus.toLocaleString()}</h3>
+              <p className="text-[10px] text-emerald-400 font-medium mt-1">Paid directly to your wallet</p>
             </div>
           </div>
 
           {/* List of Referred Users */}
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
+          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl backdrop-blur-md">
+            <h3 className="text-sm font-bold text-[#f7ecd5] uppercase tracking-wider mb-4 border-b border-amber-500/20 pb-3 font-mono">
               My Referral Downline ({referredUsers.length})
             </h3>
             {referredUsers.length === 0 ? (
-              <p className="text-xs text-slate-500 text-center py-6">You have not referred any users yet. Share your referral code to start earning!</p>
+              <p className="text-xs text-slate-400 text-center py-6">You have not referred any users yet. Share your referral code to start earning!</p>
             ) : (
               <div className="space-y-3">
                 {referredUsers.map(ru => {
                   const ruInvestments = investments.filter(inv => inv.userId === ru.id && inv.status === 'active');
                   return (
-                    <div key={ru.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs">
+                    <div key={ru.id} className="bg-[#06080e] border border-amber-500/20 p-4 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs shadow-inner">
                       <div>
-                        <p className="font-semibold text-slate-900">{ru.name}</p>
-                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">Signed up on: {new Date(ru.createdAt).toLocaleDateString()}</p>
+                        <p className="font-semibold text-white">{ru.name}</p>
+                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">Signed up on: {new Date(ru.createdAt).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right flex items-center gap-4">
                         <div>
-                          <span className="text-slate-500 block text-[10px]">Active Investments</span>
-                          <span className="font-bold text-amber-600">
+                          <span className="text-slate-400 block text-[10px]">Active Investments</span>
+                          <span className="font-bold text-amber-400 font-mono">
                             {ruInvestments.length > 0 
                               ? `${ruInvestments.length} plan(s) (₦${ruInvestments.reduce((s, i) => s + i.cost, 0).toLocaleString()})`
                               : 'None'
@@ -1581,7 +1630,7 @@ export const UserDashboard: React.FC = () => {
                           </span>
                         </div>
                         {ruInvestments.length > 0 && (
-                          <div className="bg-emerald-50 px-2.5 py-1 rounded-lg text-emerald-700 font-mono text-[9px] border border-emerald-200 font-bold">
+                          <div className="bg-emerald-500/15 px-2.5 py-1 rounded-lg text-emerald-300 font-mono text-[9px] border border-emerald-500/30 font-bold">
                             +₦{(ruInvestments.reduce((s, i) => s + i.weeklyPayout, 0) * 0.5).toLocaleString()}/wk Bonus
                           </div>
                         )}
@@ -1597,40 +1646,40 @@ export const UserDashboard: React.FC = () => {
 
       {/* KYC TAB */}
       {activeTab === 'kyc' && (
-        <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
-          <div className="border-b border-slate-100 pb-3">
-            <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-amber-500" />
+        <div className="max-w-2xl mx-auto bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl space-y-6 backdrop-blur-md">
+          <div className="border-b border-amber-500/20 pb-3">
+            <h3 className="text-base font-bold text-[#f7ecd5] uppercase tracking-wider flex items-center gap-2 font-mono">
+              <ShieldCheck className="w-5 h-5 text-amber-400" />
               Verify Your Identity
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               We verify every investor to protect your money and make sure your bank withdrawals are sent to the right person.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-              <span className="text-[10px] text-slate-500 font-mono block">Status</span>
+            <div className="bg-[#06080e] border border-amber-500/20 p-4 rounded-xl shadow-inner">
+              <span className="text-[10px] text-slate-400 font-mono block">Status</span>
               <span className={`text-xs font-bold uppercase tracking-wider mt-1 block font-mono ${
-                currentUser.kycStatus === 'verified' ? 'text-emerald-600 font-bold' :
-                currentUser.kycStatus === 'pending' ? 'text-amber-600 font-bold animate-pulse' :
-                currentUser.kycStatus === 'rejected' ? 'text-rose-600 font-bold' :
-                'text-slate-500 font-bold'
+                currentUser.kycStatus === 'verified' ? 'text-emerald-400 font-bold' :
+                currentUser.kycStatus === 'pending' ? 'text-amber-400 font-bold animate-pulse' :
+                currentUser.kycStatus === 'rejected' ? 'text-rose-400 font-bold' :
+                'text-slate-400 font-bold'
               }`}>
                 {currentUser.kycStatus}
               </span>
             </div>
 
-            <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-              <span className="text-[10px] text-slate-500 font-mono block">Daily Clearance Limit</span>
-              <span className="text-xs font-bold text-slate-900 mt-1 block font-mono">
+            <div className="bg-[#06080e] border border-amber-500/20 p-4 rounded-xl shadow-inner">
+              <span className="text-[10px] text-slate-400 font-mono block">Daily Clearance Limit</span>
+              <span className="text-xs font-bold text-white mt-1 block font-mono">
                 {currentUser.kycStatus === 'verified' ? '₦1,000,000' : '₦100,000'}
               </span>
             </div>
 
-            <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-              <span className="text-[10px] text-slate-500 font-mono block">Verification Speed</span>
-              <span className="text-xs font-bold text-amber-600 mt-1 block font-sans">
+            <div className="bg-[#06080e] border border-amber-500/20 p-4 rounded-xl shadow-inner">
+              <span className="text-[10px] text-slate-400 font-mono block">Verification Speed</span>
+              <span className="text-xs font-bold text-amber-400 mt-1 block font-sans">
                 {currentUser.kycStatus === 'verified' ? 'Priority 2 Hours' : 'Standard 24-48 Hours'}
               </span>
             </div>
@@ -1640,23 +1689,23 @@ export const UserDashboard: React.FC = () => {
             <form onSubmit={handleKycSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-slate-500 font-medium mb-1">Full Legal Name</label>
+                  <label className="block text-xs text-slate-400 font-medium mb-1">Full Legal Name</label>
                   <input 
                     type="text" 
                     value={kycName}
                     onChange={(e) => setKycName(e.target.value)}
                     placeholder="Same as document"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-[#06080e] border border-amber-500/30 rounded-xl py-2 px-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-500 font-medium mb-1">Identification Document Type</label>
+                  <label className="block text-xs text-slate-400 font-medium mb-1">Identification Document Type</label>
                   <select 
                     value={kycType}
                     onChange={(e) => setKycType(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full bg-[#06080e] border border-amber-500/30 rounded-xl py-2 px-3 text-sm text-slate-100 focus:outline-none focus:border-amber-400"
                   >
                     <option>National ID Card (NIN)</option>
                     <option>International Passport</option>
@@ -1667,47 +1716,47 @@ export const UserDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs text-slate-500 font-medium mb-1">Document Number / Unique ID</label>
+                <label className="block text-xs text-slate-400 font-medium mb-1">Document Number / Unique ID</label>
                 <input 
                   type="text" 
                   value={kycNumber}
                   onChange={(e) => setKycNumber(e.target.value)}
                   placeholder="e.g. NIN-84739284729"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full bg-[#06080e] border border-amber-500/30 rounded-xl py-2 px-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400 font-mono"
                   required
                 />
               </div>
 
-              <div className="bg-slate-50 p-5 rounded-xl border border-dashed border-slate-300 text-center space-y-2">
-                <UploadCloud className="w-7 h-7 text-amber-500 mx-auto" />
-                <p className="text-xs text-slate-800 font-semibold">Upload Photo of ID Document</p>
+              <div className="bg-[#06080e] p-5 rounded-xl border border-dashed border-amber-500/30 text-center space-y-2">
+                <UploadCloud className="w-7 h-7 text-amber-400 mx-auto" />
+                <p className="text-xs text-[#f7ecd5] font-semibold">Upload Photo of ID Document</p>
                 <p className="text-[10px] text-slate-400">Please attach a clear photo or screenshot of your ID card.</p>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-sm cursor-pointer"
+                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md shadow-amber-500/10 cursor-pointer active:scale-95"
                 id="btn_submit_kyc"
               >
                 Submit My ID for Verification
               </button>
             </form>
           ) : currentUser.kycStatus === 'pending' ? (
-            <div className="bg-amber-50/50 border border-amber-200 p-6 rounded-xl text-center space-y-3">
-              <Clock className="w-8 h-8 text-amber-500 mx-auto animate-pulse" />
-              <h4 className="text-sm font-bold text-slate-900">Under Verification Review</h4>
-              <p className="text-xs text-slate-600 max-w-md mx-auto">
+            <div className="bg-[#171206] border border-amber-500/35 p-6 rounded-2xl text-center space-y-3">
+              <Clock className="w-8 h-8 text-amber-400 mx-auto animate-pulse" />
+              <h4 className="text-sm font-bold text-[#f7ecd5]">Under Verification Review</h4>
+              <p className="text-xs text-slate-300 max-w-md mx-auto">
                 Thank you. Your details ({currentUser.kycDetails?.idType}: {currentUser.kycDetails?.idNumber}) are being audited by the Treasure Homes Compliance team.
               </p>
             </div>
           ) : (
-            <div className="bg-emerald-50/50 border border-emerald-100 p-6 rounded-xl text-center space-y-3">
-              <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
-              <h4 className="text-sm font-bold text-slate-900">Identity Verified</h4>
-              <p className="text-xs text-slate-600 max-w-md mx-auto">
+            <div className="bg-[#061811] border border-emerald-500/35 p-6 rounded-2xl text-center space-y-3">
+              <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+              <h4 className="text-sm font-bold text-emerald-300">Identity Verified</h4>
+              <p className="text-xs text-slate-300 max-w-md mx-auto">
                 Excellent. Your account is fully compliant under Treasure Homes regulatory mandates. Standard limit of ₦1,000,000/day is unlocked.
               </p>
-              <div className="text-[11px] font-mono text-slate-800 bg-slate-50 p-4 rounded-xl border border-slate-200 inline-block text-left text-xs">
+              <div className="text-[11px] font-mono text-slate-200 bg-[#06080e] p-4 rounded-xl border border-emerald-500/20 inline-block text-left text-xs">
                 <p>• Verified Legal Name: {currentUser.kycDetails?.fullName}</p>
                 <p>• Verified ID: {currentUser.kycDetails?.idType} ({currentUser.kycDetails?.idNumber})</p>
               </div>
@@ -1722,14 +1771,14 @@ export const UserDashboard: React.FC = () => {
       )}
 
       {/* Investment FAQ Accordion Section */}
-      <div className="mt-12 pt-8 border-t border-slate-200">
+      <div className="mt-12 pt-8 border-t border-amber-500/20">
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="text-center space-y-2">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest flex items-center justify-center gap-2">
-              <HelpCircle className="w-5 h-5 text-amber-500 shrink-0" />
+            <h3 className="text-sm font-bold text-[#f7ecd5] uppercase tracking-widest flex items-center justify-center gap-2 font-mono">
+              <HelpCircle className="w-5 h-5 text-amber-400 shrink-0" />
               <span>Frequently Asked Questions</span>
             </h3>
-            <p className="text-xs text-slate-500 max-w-lg mx-auto">
+            <p className="text-xs text-slate-400 max-w-lg mx-auto">
               Common questions about adding money, seven-day payouts, and bank withdrawals.
             </p>
           </div>
@@ -1740,17 +1789,17 @@ export const UserDashboard: React.FC = () => {
               return (
                 <div 
                   key={idx} 
-                  className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:border-slate-300 transition-colors"
+                  className="bg-gradient-to-b from-[#0c101c] to-[#070a12] border border-amber-500/20 rounded-2xl overflow-hidden shadow-lg hover:border-amber-500/40 transition-colors"
                 >
                   <button
                     onClick={() => setOpenFaqIdx(isOpen ? null : idx)}
-                    className="w-full flex items-center justify-between p-4 text-left font-semibold text-xs sm:text-sm text-slate-800 hover:bg-slate-50/50 transition-colors focus:outline-none"
+                    className="w-full flex items-center justify-between p-4 text-left font-semibold text-xs sm:text-sm text-slate-200 hover:bg-amber-500/5 transition-colors focus:outline-none cursor-pointer"
                   >
                     <span className="pr-4">{faq.question}</span>
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180 text-amber-500' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180 text-amber-400' : ''}`} />
                   </button>
                   {isOpen && (
-                    <div className="px-4 pb-4 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-100 bg-slate-50/30">
+                    <div className="px-4 pb-4 pt-1 text-xs text-slate-300 leading-relaxed border-t border-amber-500/15 bg-[#06080e]/60">
                       {faq.answer}
                     </div>
                   )}
@@ -1763,14 +1812,14 @@ export const UserDashboard: React.FC = () => {
 
       {/* ─── POST-INVESTMENT CELEBRATION MODAL ─── */}
       {activatedPlanModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 border border-amber-300 shadow-2xl relative overflow-hidden animate-scaleUp">
+        <div className="fixed inset-0 z-50 bg-[#06080e]/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-gradient-to-b from-[#0e1424] via-[#0a0f1d] to-[#06080e] rounded-3xl max-w-md w-full p-6 sm:p-8 border border-amber-400/50 shadow-2xl relative overflow-hidden animate-scaleUp">
             {/* Top decorative gradient bar */}
-            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-400 via-amber-500 to-emerald-500" />
+            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-400 via-amber-500 to-emerald-400" />
             
             <button
               onClick={() => setActivatedPlanModal(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1780,33 +1829,33 @@ export const UserDashboard: React.FC = () => {
                 <Sparkles className="w-8 h-8 text-slate-950" />
               </div>
 
-              <span className="text-[10px] font-mono font-extrabold uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+              <span className="text-[10px] font-mono font-extrabold uppercase tracking-widest text-amber-300 bg-amber-500/15 border border-amber-500/30 px-3 py-1 rounded-full">
                 Contract Activated
               </span>
 
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight mt-3">
+              <h3 className="text-xl sm:text-2xl font-black text-[#f7ecd5] uppercase tracking-tight mt-3 font-mono">
                 {activatedPlanModal.plan.name}
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 Your investment is secured and generating structured mortgage yield.
               </p>
             </div>
 
             {/* Contract Highlights */}
-            <div className="my-5 bg-slate-50 border border-slate-200/90 rounded-2xl p-4 space-y-2.5 text-xs">
+            <div className="my-5 bg-[#06080e]/90 border border-amber-500/30 rounded-2xl p-4 space-y-2.5 text-xs shadow-inner">
               <div className="flex justify-between items-center">
-                <span className="text-slate-500 font-medium">Invested Capital:</span>
-                <span className="font-extrabold text-slate-900 text-sm">₦{activatedPlanModal.plan.cost.toLocaleString()}</span>
+                <span className="text-slate-400 font-medium">Invested Capital:</span>
+                <span className="font-extrabold text-white text-sm font-mono">₦{activatedPlanModal.plan.cost.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500 font-medium">Weekly Direct Payout:</span>
-                <span className="font-extrabold text-emerald-600 text-sm">₦{activatedPlanModal.plan.weeklyPayout.toLocaleString()} / wk</span>
+                <span className="text-slate-400 font-medium">Weekly Direct Payout:</span>
+                <span className="font-extrabold text-emerald-400 text-sm font-mono">₦{activatedPlanModal.plan.weeklyPayout.toLocaleString()} / wk</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-500 font-medium">Total Returns (24 Weeks):</span>
-                <span className="font-extrabold text-amber-600 text-sm">₦{activatedPlanModal.plan.totalReturns.toLocaleString()}</span>
+                <span className="text-slate-400 font-medium">Total Returns (24 Weeks):</span>
+                <span className="font-extrabold text-amber-400 text-sm font-mono">₦{activatedPlanModal.plan.totalReturns.toLocaleString()}</span>
               </div>
-              <div className="pt-2 border-t border-slate-200">
+              <div className="pt-2 border-t border-amber-500/20">
                 <PayoutCountdown targetDate={activatedPlanModal.nextPayoutDate} />
               </div>
             </div>
@@ -1844,7 +1893,7 @@ export const UserDashboard: React.FC = () => {
                   setViewingDeedInvestment(deedInv);
                   setActivatedPlanModal(null);
                 }}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
               >
                 <Award className="w-4 h-4 text-slate-950" />
                 <span>📜 Receive & Inspect Title Deed</span>
@@ -1858,7 +1907,7 @@ export const UserDashboard: React.FC = () => {
                     document.getElementById('active_investments_section')?.scrollIntoView({ behavior: 'smooth' });
                   }, 100);
                 }}
-                className="w-full py-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-amber-400 font-extrabold text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
+                className="w-full py-2.5 rounded-xl bg-[#06080e] hover:bg-[#111728] border border-amber-500/30 text-amber-300 font-extrabold text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
                 id="btn_modal_go_portfolio"
               >
                 <TrendingUp className="w-4 h-4 text-amber-400" />
@@ -1867,7 +1916,7 @@ export const UserDashboard: React.FC = () => {
 
               <button
                 onClick={() => setActivatedPlanModal(null)}
-                className="w-full py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                className="w-full py-2 rounded-xl border border-amber-500/20 hover:bg-white/5 text-slate-400 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
               >
                 Done / Explore More Plans
               </button>
