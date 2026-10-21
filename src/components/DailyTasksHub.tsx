@@ -33,6 +33,7 @@ import {
 import { useAppState } from '../context/StateContext';
 import { DailyTask } from '../types';
 import { getWatMillisecondsUntilMidnight, formatWatCountdown, getWatDate } from '../lib/watTime';
+import { MultilingualPitchModal } from './MultilingualPitchModal';
 
 export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRegisterModal?: () => void }> = ({ 
   onNavigateToInvest,
@@ -72,6 +73,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
 
   // KYC Quick Submit Modal State
   const [isKycModalOpen, setIsKycModalOpen] = useState<boolean>(false);
+  const [isPitchModalOpen, setIsPitchModalOpen] = useState<boolean>(false);
   const [kycFullName, setKycFullName] = useState<string>(currentUser?.name || '');
   const [kycIdType, setKycIdType] = useState<string>('National ID (NIN)');
   const [kycIdNumber, setKycIdNumber] = useState<string>('');
@@ -124,8 +126,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
   const sharePitch = `I am earning steady weekly yields backed by physical real estate with PM Invest & Treasure Homes! Join with my referral code: ${referralCode} at ${originUrl}`;
 
   const handleShareWhatsApp = () => {
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(sharePitch)}`;
-    window.open(url, '_blank');
+    setIsPitchModalOpen(true);
   };
 
   const handleShareTelegram = () => {
@@ -1107,6 +1108,15 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
           </div>
         </div>
       )}
+
+      {/* Multilingual Canvassing Pitch Modal */}
+      <MultilingualPitchModal
+        isOpen={isPitchModalOpen}
+        onClose={() => setIsPitchModalOpen(false)}
+        marketerName={currentUser?.name || 'Investor'}
+        referralCode={currentUser?.referralCode || 'PM-INVEST'}
+        referralLink={typeof window !== 'undefined' ? `${window.location.origin}/?ref=${currentUser?.referralCode || 'PM-INVEST'}` : `https://treasurehomes.ng/?ref=${currentUser?.referralCode || 'PM-INVEST'}`}
+      />
     </div>
   );
 };

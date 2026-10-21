@@ -33,6 +33,7 @@ import {
   ArrowRight,
   Link2,
   Check,
+  MessageSquare,
   Activity,
   Maximize2,
   BarChart2,
@@ -51,6 +52,7 @@ import { UaeDeedModal } from './UaeDeedModal';
 import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 import { InsufficientFundsModal } from './InsufficientFundsModal';
+import { MultilingualPitchModal } from './MultilingualPitchModal';
 import { recordInvestorProtectionEvent } from '../lib/supabase';
 import { useSupabaseSync } from '../hooks/useSupabaseSync';
 
@@ -272,6 +274,7 @@ export const UserDashboard: React.FC = () => {
   const [copiedAccount2, setCopiedAccount2] = useState(false);
   const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(null);
   const [isTradingTerminalOpen, setIsTradingTerminalOpen] = useState(false);
+  const [isPitchModalOpen, setIsPitchModalOpen] = useState(false);
 
   const faqItems = [
     {
@@ -1658,6 +1661,17 @@ export const UserDashboard: React.FC = () => {
               >
                 {copiedLink ? <><Check className="w-3.5 h-3.5" /> Link Copied!</> : <><Link2 className="w-3.5 h-3.5" /> Copy Direct Invite Link</>}
               </button>
+
+              <button 
+                type="button"
+                onClick={() => setIsPitchModalOpen(true)}
+                className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 shadow-md transition-all cursor-pointer active:scale-95"
+                title="Share your pitch on WhatsApp in 6 regional languages"
+                id="btn_user_whatsapp_multilingual_pitch"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-slate-950" />
+                <span>Share on WhatsApp (6 Languages)</span>
+              </button>
             </div>
           </div>
 
@@ -2073,6 +2087,15 @@ export const UserDashboard: React.FC = () => {
           }}
         />
       )}
+
+      {/* Multilingual Pitch Modal */}
+      <MultilingualPitchModal
+        isOpen={isPitchModalOpen}
+        onClose={() => setIsPitchModalOpen(false)}
+        marketerName={currentUser.name}
+        referralCode={currentUser.referralCode}
+        referralLink={typeof window !== 'undefined' ? `${window.location.origin}/?ref=${currentUser.referralCode}` : `https://treasurehomes.ng/?ref=${currentUser.referralCode}`}
+      />
     </div>
   );
 };
