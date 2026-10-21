@@ -93,7 +93,10 @@ export function useSupabaseSync() {
         await syncTaskSubmissionToSupabase(sub);
       } else if (currentItem.type === 'referral_attribution') {
         const { sponsorCode, userId } = currentItem.payload;
-        await client.from('users').update({ referred_by_code: sponsorCode }).eq('id', userId);
+        await client.from('users').update({ 
+          "referredByCode": sponsorCode,
+          referred_by_code: sponsorCode 
+        }).eq('id', userId);
       }
 
       // Success: dequeue
@@ -287,14 +290,14 @@ export function useSupabaseSync() {
     const channel = client.channel(`realtime_investor_${currentUser.id}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'user_investments', filter: `user_id=eq.${currentUser.id}` },
+        { event: '*', schema: 'public', table: 'investments', filter: `userId=eq.${currentUser.id}` },
         () => {
           refreshFromSupabase();
         }
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'task_submissions', filter: `user_id=eq.${currentUser.id}` },
+        { event: '*', schema: 'public', table: 'task_submissions', filter: `userId=eq.${currentUser.id}` },
         () => {
           refreshFromSupabase();
         }

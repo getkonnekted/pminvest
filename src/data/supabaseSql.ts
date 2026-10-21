@@ -575,6 +575,25 @@ ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "cadastralId" TEXT;
 ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "makaniNumber" TEXT;
 ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "deedReferenceCode" TEXT;
 ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "autoReinvestLockedUntil" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "isTimerLocked" BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS user_id TEXT;
+UPDATE public.investments SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;
+
+-- 3b. Upgrade users table with gamification, timer locks, and referral alias
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS "points" INTEGER DEFAULT 0;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS "dailyGamesHistory" JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS "isTimerLocked" BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS "referred_by_code" TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS "isMarketingAccount" BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS "marketingAllocatedBalance" DOUBLE PRECISION NOT NULL DEFAULT 0;
+UPDATE public.users SET "referred_by_code" = "referredByCode" WHERE "referred_by_code" IS NULL AND "referredByCode" IS NOT NULL;
+
+-- 3c. Add user_id alias column to transactions & task submissions
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS user_id TEXT;
+UPDATE public.transactions SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;
+
+ALTER TABLE public.task_submissions ADD COLUMN IF NOT EXISTS user_id TEXT;
+UPDATE public.task_submissions SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;
 
 -- 4. Create Investor Protection Ledger Table
 CREATE TABLE IF NOT EXISTS public.investor_protection_logs (
@@ -615,30 +634,54 @@ CREATE INDEX IF NOT EXISTS idx_adm_audit_action ON public.admin_audit_logs(actio
 CREATE INDEX IF NOT EXISTS idx_adm_audit_target ON public.admin_audit_logs(target_user_id);
 CREATE INDEX IF NOT EXISTS idx_adm_audit_date ON public.admin_audit_logs(created_at DESC);
 
--- 6. Grant Permissions
+-- 6. Enable REPLICA IDENTITY FULL for clean realtime diffs
+ALTER TABLE public.users REPLICA IDENTITY FULL;
+ALTER TABLE public.investment_plans REPLICA IDENTITY FULL;
+ALTER TABLE public.investments REPLICA IDENTITY FULL;
+ALTER TABLE public.transactions REPLICA IDENTITY FULL;
+ALTER TABLE public.settings REPLICA IDENTITY FULL;
+ALTER TABLE public.system_state REPLICA IDENTITY FULL;
+ALTER TABLE public.task_submissions REPLICA IDENTITY FULL;
+ALTER TABLE public.user_daily_progress REPLICA IDENTITY FULL;
+ALTER TABLE public.wallets REPLICA IDENTITY FULL;
+ALTER TABLE public.wallet_transactions REPLICA IDENTITY FULL;
+ALTER TABLE public.investor_protection_logs REPLICA IDENTITY FULL;
+ALTER TABLE public.admin_audit_logs REPLICA IDENTITY FULL;
+
+-- 7. Grant Permissions
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
 
--- 7. Realtime WebSockets Subscriptions
+-- 8. Add all 12 tables to Realtime WebSockets publication
 DO $$
+DECLARE
+    tbl text;
+    tables text[] := ARRAY[
+        'users',
+        'investment_plans',
+        'investments',
+        'transactions',
+        'settings',
+        'system_state',
+        'task_submissions',
+        'user_daily_progress',
+        'wallets',
+        'wallet_transactions',
+        'investor_protection_logs',
+        'admin_audit_logs'
+    ];
 BEGIN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.investment_plans;
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
-
-DO $$
-BEGIN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.investor_protection_logs;
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
-
-DO $$
-BEGIN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.admin_audit_logs;
-EXCEPTION WHEN OTHERS THEN NULL;
+    FOREACH tbl IN ARRAY tables LOOP
+        BEGIN
+            EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', tbl);
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+            WHEN OTHERS THEN NULL;
+        END;
+    END LOOP;
 END $$;
 
 COMMIT;
