@@ -144,7 +144,7 @@ export const LegalDisclosures: React.FC = () => {
             </p>
           </div>
           <p className="text-[11px] text-slate-500 font-mono mt-3">
-            © {new Date().getFullYear()} PM Invest Platforms under License of Treasure Homes Ltd. All rights reserved. Corporate office: Treasure Homes Building, Lagos, Nigeria.
+            © {new Date().getFullYear()} PM Invest Platforms under License of Treasure Homes Ltd. All rights reserved. Corporate office: Level 48, Emirates Financial Towers, DIFC, Dubai, United Arab Emirates.
           </p>
         </div>
       </div>
