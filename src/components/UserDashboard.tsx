@@ -50,7 +50,6 @@ import { LivePropertyTradingModal } from './LivePropertyTradingModal';
 import { UaeDeedModal } from './UaeDeedModal';
 import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
-import { ThemeToggle } from './ThemeToggle';
 import { InsufficientFundsModal } from './InsufficientFundsModal';
 import { recordInvestorProtectionEvent } from '../lib/supabase';
 import { useSupabaseSync } from '../hooks/useSupabaseSync';
@@ -629,16 +628,15 @@ export const UserDashboard: React.FC = () => {
             })}
           </div>
 
-          {/* Real-time sync badge & Theme switcher */}
-          <div className="shrink-0 flex items-center gap-2">
-            {(isSyncing || pendingQueueLength > 0) && (
+          {/* Real-time sync badge */}
+          {(isSyncing || pendingQueueLength > 0) && (
+            <div className="shrink-0 flex items-center gap-2">
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono text-amber-300 animate-pulse">
                 <RotateCw className="w-3 h-3 text-amber-400 animate-spin" />
                 <span>{pendingQueueLength > 0 ? `Syncing (${pendingQueueLength})` : 'Cloud Sync...'}</span>
               </span>
-            )}
-            <ThemeToggle compact />
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Mobile / Expanded Hamburger Drawer with clean quick-navigation cards */}
@@ -650,7 +648,6 @@ export const UserDashboard: React.FC = () => {
                 <span className="font-bold text-amber-300 uppercase tracking-wider">PM Invest Menus</span>
               </div>
               <div className="flex items-center gap-2">
-                <ThemeToggle compact />
                 <span className="text-amber-400 font-semibold">{menuItems.length} Available</span>
               </div>
             </div>

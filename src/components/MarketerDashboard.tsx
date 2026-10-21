@@ -37,7 +37,6 @@ import { INVESTMENT_PLANS, InvestmentPlan, UserInvestment } from '../types';
 import { PmLogo } from './PmLogo';
 import { CommunityBanner } from './CommunityBanner';
 import { PayoutCountdown } from './PayoutCountdown';
-import { ThemeToggle } from './ThemeToggle';
 import { UaeDeedModal } from './UaeDeedModal';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 import { InsufficientFundsModal } from './InsufficientFundsModal';
@@ -387,10 +386,6 @@ export const MarketerDashboard: React.FC = () => {
             })}
           </div>
 
-          {/* Theme switcher */}
-          <div className="shrink-0 flex items-center gap-2">
-            <ThemeToggle compact />
-          </div>
         </div>
 
         {/* Mobile Expanded Drawer with Quick-Navigation Cards */}
