@@ -52,6 +52,7 @@ import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 import { ThemeToggle } from './ThemeToggle';
 import { recordInvestorProtectionEvent } from '../lib/supabase';
+import { useSupabaseSync } from '../hooks/useSupabaseSync';
 
 const AutoRenewControl: React.FC<{ investment: UserInvestment; onToggle: (id: string) => void }> = ({ investment, onToggle }) => {
   const [now, setNow] = useState(Date.now());
@@ -126,6 +127,12 @@ export const UserDashboard: React.FC = () => {
     supabaseStatus,
     refreshFromSupabase
   } = useAppState();
+
+  const { 
+    optimisticPurchasePlan, 
+    isSyncing, 
+    pendingQueueLength 
+  } = useSupabaseSync();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'trading' | 'tasks' | 'finance' | 'referrals' | 'kyc'>('overview');
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -426,45 +433,26 @@ export const UserDashboard: React.FC = () => {
   const [viewingDeedInvestment, setViewingDeedInvestment] = useState<UserInvestment | null>(null);
   const [sampleDeedPlan, setSampleDeedPlan] = useState<InvestmentPlan | null>(null);
 
-  const handlePurchase = (plan: InvestmentPlan) => {
+  const handlePurchase = async (plan: InvestmentPlan) => {
     if (investingPlanId) return; // Prevent double-triggering while animating
     setInvestingPlanId(plan.id);
 
-    setTimeout(() => {
-      const success = purchaseInvestment(plan.id);
+    try {
+      // Optimistic instant purchase with background auto-retrying persistence
+      const success = await optimisticPurchasePlan(plan);
       setInvestingPlanId(null);
       if (success) {
         setJustActivatedPlanId(plan.id);
         const nextDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
         setActivatedPlanModal({ plan, nextPayoutDate: nextDate });
 
-        // Non-blocking Investor Protection audit (secures deeds, plan terms & cadastral backing)
-        recordInvestorProtectionEvent({
-          userId: currentUser.id,
-          userName: currentUser.name,
-          userEmail: currentUser.email,
-          eventType: 'plan_purchased',
-          planId: plan.id,
-          planName: plan.propertyName || plan.name,
-          deedReferenceCode: plan.deedReferenceCode || `UAE-DLD-2026-${plan.id.slice(-6).toUpperCase()}`,
-          makaniNumber: plan.makaniNumber || '12845 76291',
-          amount: plan.cost,
-          details: {
-            propertyLocation: plan.propertyLocation,
-            propertyAddress: plan.propertyAddress,
-            weeklyPayout: plan.weeklyPayout,
-            totalReturns: plan.totalReturns,
-            totalWeeks: 24,
-            referralCode: currentUser.referralCode,
-            sponsorCode: currentUser.referredByCode
-          }
-        });
-
         setTimeout(() => {
           setJustActivatedPlanId(null);
         }, 3000);
       }
-    }, 750);
+    } catch {
+      setInvestingPlanId(null);
+    }
   };
 
   return (
@@ -616,8 +604,14 @@ export const UserDashboard: React.FC = () => {
             })}
           </div>
 
-          {/* Theme switcher */}
-          <div className="shrink-0 flex items-center">
+          {/* Real-time sync badge & Theme switcher */}
+          <div className="shrink-0 flex items-center gap-2">
+            {(isSyncing || pendingQueueLength > 0) && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono text-amber-300 animate-pulse">
+                <RotateCw className="w-3 h-3 text-amber-400 animate-spin" />
+                <span>{pendingQueueLength > 0 ? `Syncing (${pendingQueueLength})` : 'Cloud Sync...'}</span>
+              </span>
+            )}
             <ThemeToggle compact />
           </div>
         </div>
@@ -1121,9 +1115,21 @@ export const UserDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {INVESTMENT_PLANS.map((plan) => {
-              const isAffordable = currentUser.walletBalance >= plan.cost;
+          {(!isDbLoaded || supabaseStatus === 'loading' || isRefreshingInvestments) ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs text-amber-400 font-mono px-1">
+                <span className="flex items-center gap-1.5 animate-pulse">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  Synchronizing Dubai Land Department Property Offerings...
+                </span>
+                <span className="text-[11px] text-slate-500 font-mono">DLD Cadastral Registry</span>
+              </div>
+              <PropertyCardSkeleton count={3} variant="plan" className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {INVESTMENT_PLANS.map((plan) => {
+                const isAffordable = currentUser.walletBalance >= plan.cost;
               return (
                 <div 
                   key={plan.id} 
@@ -1269,8 +1275,9 @@ export const UserDashboard: React.FC = () => {
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    )}
 
       {/* FINANCE (DEPOSIT & WITHDRAWAL) TAB */}
       {activeTab === 'finance' && (

@@ -10,7 +10,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
-import { LiveActivityItem } from '../types';
+import { LiveActivityItem, INVESTMENT_PLANS } from '../types';
 
 const NIGERIAN_FIRST_NAMES = [
   'Chinedu', 'Oluwaseun', 'Emeka', 'Damilola', 'Blessing', 'Tunde', 
@@ -33,49 +33,30 @@ const LOCATIONS = [
   'Yaba, Lagos', 'Owerri, Imo', 'Gwarinpa, Abuja'
 ];
 
+// Dynamically generate property purchase FOMO activities mapped directly to current INVESTMENT_PLANS
+const PROPERTY_PURCHASE_ACTIVITIES = INVESTMENT_PLANS.map(plan => ({
+  type: 'purchase' as const,
+  action: `Acquired ${plan.propertyName || plan.name} (₦${plan.cost.toLocaleString()})`,
+  sub: `DLD Title Deed • ${plan.propertyLocation.replace(/🇦🇪/g, '').trim()}`,
+  amount: plan.cost,
+  propertyName: plan.propertyName || plan.name,
+  propertyLocation: plan.propertyLocation,
+  iconType: 'investment' as const
+}));
+
+// Dynamically generate Friday payout FOMO activities mapped directly to verified property yields
+const PROPERTY_PAYOUT_ACTIVITIES = INVESTMENT_PLANS.map(plan => ({
+  type: 'payout' as const,
+  action: `Received ₦${plan.weeklyPayout.toLocaleString()} Friday Payout`,
+  sub: `${plan.propertyName || plan.name} • Direct Bank Settlement`,
+  amount: plan.weeklyPayout,
+  propertyName: plan.propertyName || plan.name,
+  propertyLocation: plan.propertyLocation,
+  iconType: 'payout' as const
+}));
+
 const NON_PAYOUT_ACTIVITIES = [
-  {
-    type: 'purchase' as const,
-    action: 'Acquired Plan 1 (₦30,000)',
-    sub: '24-Week UAE Property Investment Active',
-    amount: 30000,
-    iconType: 'investment' as const
-  },
-  {
-    type: 'purchase' as const,
-    action: 'Acquired Plan 2 (₦60,000)',
-    sub: '24-Week UAE Property Investment Active',
-    amount: 60000,
-    iconType: 'investment' as const
-  },
-  {
-    type: 'purchase' as const,
-    action: 'Acquired Plan 3 (₦120,000)',
-    sub: '24-Week UAE Property Investment Active',
-    amount: 120000,
-    iconType: 'investment' as const
-  },
-  {
-    type: 'purchase' as const,
-    action: 'Acquired Plan 4 (₦250,000)',
-    sub: '24-Week UAE Property Investment Active',
-    amount: 250000,
-    iconType: 'investment' as const
-  },
-  {
-    type: 'purchase' as const,
-    action: 'Acquired Plan 5 (₦600,000)',
-    sub: '24-Week UAE Property Investment Active',
-    amount: 600000,
-    iconType: 'investment' as const
-  },
-  {
-    type: 'purchase' as const,
-    action: 'Acquired Plan 6 (₦1,500,000)',
-    sub: '24-Week UAE Property Investment Active',
-    amount: 1500000,
-    iconType: 'investment' as const
-  },
+  ...PROPERTY_PURCHASE_ACTIVITIES,
   {
     type: 'deposit' as const,
     action: 'Deposited ₦45,000 via Transfer',
@@ -85,63 +66,36 @@ const NON_PAYOUT_ACTIVITIES = [
   },
   {
     type: 'deposit' as const,
-    action: 'Deposited ₦115,000 via Transfer',
+    action: 'Deposited ₦120,000 via Transfer',
     sub: 'Treasury reserve confirmed',
-    amount: 115000,
+    amount: 120000,
     iconType: 'deposit' as const
   },
   {
     type: 'deposit' as const,
-    action: 'Deposited ₦270,000 via Bank Transfer',
+    action: 'Deposited ₦250,000 via Bank Transfer',
     sub: 'Verified investor account',
-    amount: 270000,
+    amount: 250000,
+    iconType: 'deposit' as const
+  },
+  {
+    type: 'deposit' as const,
+    action: 'Deposited ₦600,000 via Bank Transfer',
+    sub: 'Institutional liquidity credited',
+    amount: 600000,
     iconType: 'deposit' as const
   },
   {
     type: 'kyc' as const,
     action: 'Identity Verified & Approved',
-    sub: 'Verified Real Estate Investor',
+    sub: 'Verified UAE Real Estate Investor',
     iconType: 'verified' as const
-  },
-  {
-    type: 'purchase' as const,
-    action: 'Subscribed to Prime Estate Plan',
-    sub: 'Treasure Homes Backed',
-    amount: 45000,
-    iconType: 'investment' as const
   }
 ];
 
 const PAYOUT_DAY_ACTIVITIES = [
   ...NON_PAYOUT_ACTIVITIES,
-  {
-    type: 'payout' as const,
-    action: 'Received ₦17,250 Friday Payout',
-    sub: 'Direct bank settlement completed',
-    amount: 17250,
-    iconType: 'payout' as const
-  },
-  {
-    type: 'payout' as const,
-    action: 'Received ₦44,850 Friday Payout',
-    sub: 'Direct bank settlement completed',
-    amount: 44850,
-    iconType: 'payout' as const
-  },
-  {
-    type: 'payout' as const,
-    action: 'Withdrew ₦105,300 Friday Yield',
-    sub: 'Disbursed to commercial bank',
-    amount: 105300,
-    iconType: 'payout' as const
-  },
-  {
-    type: 'payout' as const,
-    action: 'Received ₦195,000 Friday Payout',
-    sub: 'Cleared into commercial bank account',
-    amount: 195000,
-    iconType: 'payout' as const
-  }
+  ...PROPERTY_PAYOUT_ACTIVITIES
 ];
 
 function isPayoutActivity(item: { type?: string; message?: string; action?: string; sub?: string }): boolean {
@@ -159,6 +113,10 @@ function generateRandomFomoItem(isPayoutDay: boolean = false): LiveActivityItem 
   const eligibleActivities = isPayoutDay ? PAYOUT_DAY_ACTIVITIES : NON_PAYOUT_ACTIVITIES;
   const activity = eligibleActivities[Math.floor(Math.random() * eligibleActivities.length)];
 
+  const displayLocation = (activity as any).propertyName 
+    ? `${location} • ${(activity as any).propertyName}` 
+    : location;
+
   return {
     id: 'fomo_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
     type: activity.type,
@@ -166,7 +124,7 @@ function generateRandomFomoItem(isPayoutDay: boolean = false): LiveActivityItem 
     message: activity.action,
     amount: activity.amount,
     timeAgo: 'Just now',
-    location,
+    location: displayLocation,
     iconType: activity.iconType,
     avatarInitials: `${firstName[0]}${initial[0]}`,
     timestamp: Date.now()

@@ -47,25 +47,62 @@ CREATE INDEX IF NOT EXISTS idx_users_role ON public.users(role);
 -- -------------------------------------------------------------------------
 -- 2. INVESTMENT PLANS REFERENCE TABLE
 -- -------------------------------------------------------------------------
+-- -------------------------------------------------------------------------
+-- 2. INVESTMENT PLANS REFERENCE TABLE (DUBAI LAND DEPARTMENT BACKED)
+-- -------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.investment_plans (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    "propertyName" TEXT,
+    "propertyLocation" TEXT,
+    "propertyAddress" TEXT,
+    "propertyImage" TEXT,
+    "propertyType" TEXT,
+    "occupancyRate" TEXT,
+    "deedTier" TEXT,
+    "cadastralId" TEXT,
+    "makaniNumber" TEXT,
+    "deedReferenceCode" TEXT,
     cost DOUBLE PRECISION NOT NULL,
     "weeklyPayout" DOUBLE PRECISION NOT NULL,
     "totalReturns" DOUBLE PRECISION NOT NULL,
     "weeksDuration" INTEGER NOT NULL DEFAULT 24
 );
 
-INSERT INTO public.investment_plans (id, name, cost, "weeklyPayout", "totalReturns", "weeksDuration")
+-- Safe column additions for properties
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "propertyName" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "propertyLocation" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "propertyAddress" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "propertyImage" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "propertyType" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "occupancyRate" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "deedTier" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "cadastralId" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "makaniNumber" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "deedReferenceCode" TEXT;
+
+INSERT INTO public.investment_plans (
+    id, name, "propertyName", "propertyLocation", "propertyAddress", "propertyImage", "propertyType", 
+    "occupancyRate", "deedTier", "cadastralId", "makaniNumber", cost, "weeklyPayout", "totalReturns", "weeksDuration"
+)
 VALUES
-    ('plan_1', 'Plan 1', 30000, 6500, 156000, 24),
-    ('plan_2', 'Plan 2', 60000, 13000, 312000, 24),
-    ('plan_3', 'Plan 3', 120000, 26000, 624000, 24),
-    ('plan_4', 'Plan 4', 250000, 54166, 1300000, 24),
-    ('plan_5', 'Plan 5', 600000, 130000, 3120000, 24),
-    ('plan_6', 'Plan 6', 1500000, 325000, 7800000, 24)
+    ('plan_1', 'Marina Bay Residences', 'Marina Bay Residences', 'Dubai Marina, Dubai, UAE 🇦🇪', 'Plot 392-581, Marina Promenade, Al Marsa Street, Dubai Marina, Dubai, UAE', '/properties/marina_bay_residences.jpg', 'Executive Studio Waterfront Stake', '98.4%', 'Marina Bay Co-Ownership Deed (₦30,000 Tier)', 'DLD-CAD-392-581', '12845 76291', 30000, 6500, 156000, 24),
+    ('plan_2', 'Creek Horizon Suites', 'Creek Horizon Suites', 'Dubai Creek Harbour, Dubai, UAE 🇦🇪', 'Plot 184-210, Creek Island Boulevard, Dubai Creek Harbour, The Lagoons, Dubai, UAE', '/properties/creek_horizon_suites.jpg', '1-Bedroom Waterfront Apartment', '97.2%', 'Creek Horizon Co-Ownership Deed (₦60,000 Tier)', 'DLD-CAD-184-210', '14592 88201', 60000, 13000, 312000, 24),
+    ('plan_3', 'Downtown Sky Vista', 'Downtown Sky Vista', 'Downtown Burj Khalifa District, Dubai, UAE 🇦🇪', 'Plot 119-969, Sheikh Mohammed bin Rashid Boulevard, Downtown Dubai, Dubai, UAE', '/properties/downtown_sky_vista.jpg', 'Serviced Luxury Residence Stake', '99.1%', 'Downtown Sky Co-Ownership Deed (₦120,000 Tier)', 'DLD-CAD-119-969', '11894 92051', 120000, 26000, 624000, 24),
+    ('plan_4', 'Sobha Sanctuary Estates', 'Sobha Sanctuary Estates', 'Sobha Hartland / MBR City, Dubai, UAE 🇦🇪', 'Plot 440-112, Ras Al Khor Road, Sobha Hartland, Mohammed Bin Rashid Al Maktoum City, Dubai, UAE', '/properties/sobha_sanctuary_estates.jpg', '2-Bedroom Forest Villa Stake', '96.8%', 'Sobha Sanctuary Co-Ownership Deed (₦250,000 Tier)', 'DLD-CAD-440-112', '16402 71830', 250000, 54166, 1300000, 24),
+    ('plan_5', 'Palm Azure Ocean Villa', 'Palm Azure Ocean Villa', 'Palm Jumeirah, Dubai, UAE 🇦🇪', 'Plot 512-404, Crescent Road West, Frond G, Palm Jumeirah, Dubai, UAE', '/properties/palm_azure_villa.jpg', 'Ultra-Luxury Waterfront Residence', '98.9%', 'Palm Azure Co-Ownership Deed (₦600,000 Tier)', 'DLD-CAD-512-404', '10382 64920', 600000, 130000, 3120000, 24),
+    ('plan_6', 'Emirates Financial Tower', 'Emirates Financial Tower', 'DIFC Financial District, Dubai, UAE 🇦🇪', 'Plot 884-219, Al Sa''ada Street, DIFC Gate Precinct 4, Dubai International Financial Centre, Dubai, UAE', '/properties/emirates_tower_difc.jpg', 'Prime Grade-A Commercial Asset', '99.4%', 'Emirates Tower Co-Ownership Deed (₦1,500,000 Tier)', 'DLD-CAD-884-219', '18290 83910', 1500000, 325000, 7800000, 24)
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
+    "propertyName" = EXCLUDED."propertyName",
+    "propertyLocation" = EXCLUDED."propertyLocation",
+    "propertyAddress" = EXCLUDED."propertyAddress",
+    "propertyImage" = EXCLUDED."propertyImage",
+    "propertyType" = EXCLUDED."propertyType",
+    "occupancyRate" = EXCLUDED."occupancyRate",
+    "deedTier" = EXCLUDED."deedTier",
+    "cadastralId" = EXCLUDED."cadastralId",
+    "makaniNumber" = EXCLUDED."makaniNumber",
     cost = EXCLUDED.cost,
     "weeklyPayout" = EXCLUDED."weeklyPayout",
     "totalReturns" = EXCLUDED."totalReturns",
@@ -80,6 +117,16 @@ CREATE TABLE IF NOT EXISTS public.investments (
     "userName" TEXT NOT NULL,
     "planId" TEXT NOT NULL,
     "planName" TEXT NOT NULL,
+    "propertyName" TEXT,
+    "propertyLocation" TEXT,
+    "propertyAddress" TEXT,
+    "propertyImage" TEXT,
+    "propertyType" TEXT,
+    "occupancyRate" TEXT,
+    "deedTier" TEXT,
+    "cadastralId" TEXT,
+    "makaniNumber" TEXT,
+    "deedReferenceCode" TEXT,
     cost DOUBLE PRECISION NOT NULL,
     "weeklyPayout" DOUBLE PRECISION NOT NULL,
     "totalReturns" DOUBLE PRECISION NOT NULL,
@@ -90,8 +137,22 @@ CREATE TABLE IF NOT EXISTS public.investments (
     "lastPayoutDate" TEXT,
     "nextPayoutDate" TEXT,
     "autoReinvest" BOOLEAN NOT NULL DEFAULT FALSE,
+    "autoReinvestLockedUntil" TEXT,
     "isMarketing" BOOLEAN NOT NULL DEFAULT FALSE
 );
+
+-- Safe column additions if table already exists
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyName" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyLocation" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyAddress" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyImage" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyType" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "occupancyRate" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "deedTier" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "cadastralId" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "makaniNumber" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "deedReferenceCode" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "autoReinvestLockedUntil" TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_investments_user ON public.investments("userId");
 CREATE INDEX IF NOT EXISTS idx_investments_status ON public.investments(status);
@@ -395,6 +456,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.investment_plans;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
 -- -------------------------------------------------------------------------
 -- 13. AUTONOMOUS LIVE CONTINUOUS BANK / CASH RESERVE FUNCTION
 -- -------------------------------------------------------------------------
@@ -441,6 +508,138 @@ SELECT
     "pauseInvestments",
     "pauseWithdrawals"
 FROM public.settings;
+
+COMMIT;
+`;
+
+export const UPGRADE_MIGRATION_SQL = `-- =========================================================================
+-- PM INVEST / TREASURE HOMES — 2026 REALTIME UPGRADE MIGRATION SCRIPT
+-- RUN THIS IN SUPABASE SQL EDITOR TO APPLY ALL NEW FEATURES INSTANTLY:
+-- 1. UAE Property Portfolio Schema (Makani, DLD Cadastral, Title Deeds)
+-- 2. Investor Protection Logs & Realtime Subscriptions
+-- 3. Administrator Audit Logs & Compliance Trail
+-- 4. Automatic WebSockets Publication for 0ms Sync
+-- =========================================================================
+
+BEGIN;
+
+-- 1. Upgrade investment_plans with UAE institutional property details
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "propertyName" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "propertyLocation" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "propertyAddress" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "propertyImage" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "propertyType" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "occupancyRate" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "deedTier" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "cadastralId" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "makaniNumber" TEXT;
+ALTER TABLE public.investment_plans ADD COLUMN IF NOT EXISTS "deedReferenceCode" TEXT;
+
+-- 2. Seed / Update the 6 Verified UAE Properties
+INSERT INTO public.investment_plans (
+    id, name, "propertyName", "propertyLocation", "propertyAddress", "propertyImage", "propertyType", 
+    "occupancyRate", "deedTier", "cadastralId", "makaniNumber", cost, "weeklyPayout", "totalReturns", "weeksDuration"
+)
+VALUES
+    ('plan_1', 'Marina Bay Residences', 'Marina Bay Residences', 'Dubai Marina, Dubai, UAE 🇦🇪', 'Plot 392-581, Marina Promenade, Al Marsa Street, Dubai Marina, Dubai, UAE', '/properties/marina_bay_residences.jpg', 'Executive Studio Waterfront Stake', '98.4%', 'Marina Bay Co-Ownership Deed (₦30,000 Tier)', 'DLD-CAD-392-581', '12845 76291', 30000, 6500, 156000, 24),
+    ('plan_2', 'Creek Horizon Suites', 'Creek Horizon Suites', 'Dubai Creek Harbour, Dubai, UAE 🇦🇪', 'Plot 184-210, Creek Island Boulevard, Dubai Creek Harbour, The Lagoons, Dubai, UAE', '/properties/creek_horizon_suites.jpg', '1-Bedroom Waterfront Apartment', '97.2%', 'Creek Horizon Co-Ownership Deed (₦60,000 Tier)', 'DLD-CAD-184-210', '14592 88201', 60000, 13000, 312000, 24),
+    ('plan_3', 'Downtown Sky Vista', 'Downtown Sky Vista', 'Downtown Burj Khalifa District, Dubai, UAE 🇦🇪', 'Plot 119-969, Sheikh Mohammed bin Rashid Boulevard, Downtown Dubai, Dubai, UAE', '/properties/downtown_sky_vista.jpg', 'Serviced Luxury Residence Stake', '99.1%', 'Downtown Sky Co-Ownership Deed (₦120,000 Tier)', 'DLD-CAD-119-969', '11894 92051', 120000, 26000, 624000, 24),
+    ('plan_4', 'Sobha Sanctuary Estates', 'Sobha Sanctuary Estates', 'Sobha Hartland / MBR City, Dubai, UAE 🇦🇪', 'Plot 440-112, Ras Al Khor Road, Sobha Hartland, Mohammed Bin Rashid Al Maktoum City, Dubai, UAE', '/properties/sobha_sanctuary_estates.jpg', '2-Bedroom Forest Villa Stake', '96.8%', 'Sobha Sanctuary Co-Ownership Deed (₦250,000 Tier)', 'DLD-CAD-440-112', '16402 71830', 250000, 54166, 1300000, 24),
+    ('plan_5', 'Palm Azure Ocean Villa', 'Palm Azure Ocean Villa', 'Palm Jumeirah, Dubai, UAE 🇦🇪', 'Plot 512-404, Crescent Road West, Frond G, Palm Jumeirah, Dubai, UAE', '/properties/palm_azure_villa.jpg', 'Ultra-Luxury Waterfront Residence', '98.9%', 'Palm Azure Co-Ownership Deed (₦600,000 Tier)', 'DLD-CAD-512-404', '10382 64920', 600000, 130000, 3120000, 24),
+    ('plan_6', 'Emirates Financial Tower', 'Emirates Financial Tower', 'DIFC Financial District, Dubai, UAE 🇦🇪', 'Plot 884-219, Al Sa''ada Street, DIFC Gate Precinct 4, Dubai International Financial Centre, Dubai, UAE', '/properties/emirates_tower_difc.jpg', 'Prime Grade-A Commercial Asset', '99.4%', 'Emirates Tower Co-Ownership Deed (₦1,500,000 Tier)', 'DLD-CAD-884-219', '18290 83910', 1500000, 325000, 7800000, 24)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    "propertyName" = EXCLUDED."propertyName",
+    "propertyLocation" = EXCLUDED."propertyLocation",
+    "propertyAddress" = EXCLUDED."propertyAddress",
+    "propertyImage" = EXCLUDED."propertyImage",
+    "propertyType" = EXCLUDED."propertyType",
+    "occupancyRate" = EXCLUDED."occupancyRate",
+    "deedTier" = EXCLUDED."deedTier",
+    "cadastralId" = EXCLUDED."cadastralId",
+    "makaniNumber" = EXCLUDED."makaniNumber",
+    cost = EXCLUDED.cost,
+    "weeklyPayout" = EXCLUDED."weeklyPayout",
+    "totalReturns" = EXCLUDED."totalReturns",
+    "weeksDuration" = EXCLUDED."weeksDuration";
+
+-- 3. Upgrade investments table with title deeds & property metadata
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyName" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyLocation" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyAddress" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyImage" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "propertyType" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "occupancyRate" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "deedTier" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "cadastralId" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "makaniNumber" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "deedReferenceCode" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "autoReinvestLockedUntil" TEXT;
+
+-- 4. Create Investor Protection Ledger Table
+CREATE TABLE IF NOT EXISTS public.investor_protection_logs (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    user_name TEXT,
+    user_email TEXT,
+    event_type TEXT NOT NULL,
+    plan_id TEXT,
+    plan_name TEXT,
+    deed_reference_code TEXT,
+    makani_number TEXT,
+    amount DOUBLE PRECISION DEFAULT 0,
+    details JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_inv_prot_user ON public.investor_protection_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_inv_prot_type ON public.investor_protection_logs(event_type);
+CREATE INDEX IF NOT EXISTS idx_inv_prot_date ON public.investor_protection_logs(created_at DESC);
+
+-- 5. Create Administrator Security Audit Trail Table
+CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
+    id TEXT PRIMARY KEY,
+    admin_id TEXT NOT NULL,
+    admin_name TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    target_user_id TEXT,
+    target_user_name TEXT,
+    amount DOUBLE PRECISION DEFAULT 0,
+    notes TEXT,
+    details JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_adm_audit_admin ON public.admin_audit_logs(admin_id);
+CREATE INDEX IF NOT EXISTS idx_adm_audit_action ON public.admin_audit_logs(action_type);
+CREATE INDEX IF NOT EXISTS idx_adm_audit_target ON public.admin_audit_logs(target_user_id);
+CREATE INDEX IF NOT EXISTS idx_adm_audit_date ON public.admin_audit_logs(created_at DESC);
+
+-- 6. Grant Permissions
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+
+-- 7. Realtime WebSockets Subscriptions
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.investment_plans;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.investor_protection_logs;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.admin_audit_logs;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 COMMIT;
 `;

@@ -542,13 +542,16 @@ export const recordInvestorProtectionEvent = async (event: Omit<InvestorProtecti
       created_at: fullEvent.createdAt
     };
 
-    client.from('investor_protection_logs').upsert(dbRecord).then(({ error }) => {
-      if (error && error.code !== '42P01') {
-        console.warn('Investor protection sync notice:', error.message);
+    client.from('investor_protection_logs').upsert(dbRecord).then(
+      ({ error }: any) => {
+        if (error && error.code !== '42P01') {
+          console.warn('Investor protection sync notice:', error.message);
+        }
+      },
+      () => {
+        // Ignore network dropouts
       }
-    }).catch(() => {
-      // Ignore network dropouts
-    });
+    );
   } catch (err) {
     // Non-blocking fire-and-forget
   }
@@ -593,13 +596,16 @@ export const recordAdminSecurityAudit = async (audit: Omit<AdminSecurityAuditLog
       created_at: fullAudit.createdAt
     };
 
-    client.from('admin_audit_logs').upsert(dbRecord).then(({ error }) => {
-      if (error && error.code !== '42P01') {
-        console.warn('Admin audit sync notice:', error.message);
+    client.from('admin_audit_logs').upsert(dbRecord).then(
+      ({ error }: any) => {
+        if (error && error.code !== '42P01') {
+          console.warn('Admin audit sync notice:', error.message);
+        }
+      },
+      () => {
+        // Ignore network dropouts
       }
-    }).catch(() => {
-      // Ignore network dropouts
-    });
+    );
   } catch (err) {
     // Non-blocking fire-and-forget
   }

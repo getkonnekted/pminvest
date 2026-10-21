@@ -642,6 +642,15 @@ export const AdminPanel: React.FC = () => {
                           onClick={() => {
                             const finalToCredit = (!isNaN(currentNum) && currentNum > 0) ? currentNum : tx.amount;
                             approveDeposit(tx.id, finalToCredit);
+                            recordAdminSecurityAudit({
+                              adminId: currentUser?.id || 'usr_admin',
+                              adminName: currentUser?.name || 'Administrator',
+                              actionType: 'approve_deposit',
+                              targetUserId: tx.userId,
+                              targetUserName: tx.userName,
+                              amount: finalToCredit,
+                              notes: `Approved deposit ${tx.id} for ${tx.userName} (${isAdjusted ? `adjusted to ₦${finalToCredit}` : `₦${tx.amount}`})`
+                            });
                           }}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg px-3 py-1.5 transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
                           id={`btn_approve_dep_${tx.id}`}
@@ -651,7 +660,18 @@ export const AdminPanel: React.FC = () => {
                           <span>{isAdjusted ? `Approve ₦${currentNum.toLocaleString()}` : 'Approve'}</span>
                         </button>
                         <button
-                          onClick={() => rejectDeposit(tx.id)}
+                          onClick={() => {
+                            rejectDeposit(tx.id);
+                            recordAdminSecurityAudit({
+                              adminId: currentUser?.id || 'usr_admin',
+                              adminName: currentUser?.name || 'Administrator',
+                              actionType: 'reject_deposit',
+                              targetUserId: tx.userId,
+                              targetUserName: tx.userName,
+                              amount: tx.amount,
+                              notes: `Rejected deposit receipt for ${tx.userName}`
+                            });
+                          }}
                           className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold rounded-lg px-3 py-1.5 transition-colors flex items-center gap-1.5 cursor-pointer"
                           id={`btn_reject_dep_${tx.id}`}
                         >
@@ -705,14 +725,36 @@ export const AdminPanel: React.FC = () => {
 
                     <div className="flex gap-2 shrink-0">
                       <button
-                        onClick={() => approveWithdrawal(tx.id)}
+                        onClick={() => {
+                          approveWithdrawal(tx.id);
+                          recordAdminSecurityAudit({
+                            adminId: currentUser?.id || 'usr_admin',
+                            adminName: currentUser?.name || 'Administrator',
+                            actionType: 'settle_withdrawal',
+                            targetUserId: tx.userId,
+                            targetUserName: tx.userName,
+                            amount: tx.amount,
+                            notes: `Authorized bank cashout for ${tx.userName} to ${tx.accountDetails}`
+                          });
+                        }}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg px-3.5 py-1.5 transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm text-xs"
                         id={`btn_approve_with_${tx.id}`}
                       >
                         <Check className="w-3.5 h-3.5" /> Approve & Mark Disbursed
                       </button>
                       <button
-                        onClick={() => rejectWithdrawal(tx.id)}
+                        onClick={() => {
+                          rejectWithdrawal(tx.id);
+                          recordAdminSecurityAudit({
+                            adminId: currentUser?.id || 'usr_admin',
+                            adminName: currentUser?.name || 'Administrator',
+                            actionType: 'reject_withdrawal',
+                            targetUserId: tx.userId,
+                            targetUserName: tx.userName,
+                            amount: tx.amount,
+                            notes: `Rejected cashout request for ${tx.userName} (${tx.id})`
+                          });
+                        }}
                         className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold rounded-lg px-3 py-1.5 transition-colors flex items-center gap-1.5 cursor-pointer text-xs"
                         id={`btn_reject_with_${tx.id}`}
                       >
@@ -752,15 +794,35 @@ export const AdminPanel: React.FC = () => {
 
                   <div className="flex gap-2 shrink-0">
                     <button
-                      onClick={() => reviewKyc(u.id, true)}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg px-3.5 py-1.5 transition-colors"
+                      onClick={() => {
+                        reviewKyc(u.id, true);
+                        recordAdminSecurityAudit({
+                          adminId: currentUser?.id || 'usr_admin',
+                          adminName: currentUser?.name || 'Administrator',
+                          actionType: 'approve_kyc',
+                          targetUserId: u.id,
+                          targetUserName: u.name,
+                          notes: `Approved KYC documents (${u.kycDetails?.idType || 'ID'} - ${u.kycDetails?.idNumber || 'N/A'}) for ${u.name}`
+                        });
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg px-3.5 py-1.5 transition-colors cursor-pointer"
                       id={`btn_approve_kyc_${u.id}`}
                     >
                       <Check className="w-3.5 h-3.5" /> Accept KYC
                     </button>
                     <button
-                      onClick={() => reviewKyc(u.id, false)}
-                      className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold rounded-lg px-3.5 py-1.5 transition-colors"
+                      onClick={() => {
+                        reviewKyc(u.id, false);
+                        recordAdminSecurityAudit({
+                          adminId: currentUser?.id || 'usr_admin',
+                          adminName: currentUser?.name || 'Administrator',
+                          actionType: 'reject_kyc',
+                          targetUserId: u.id,
+                          targetUserName: u.name,
+                          notes: `Declined KYC documents for ${u.name}`
+                        });
+                      }}
+                      className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold rounded-lg px-3.5 py-1.5 transition-colors cursor-pointer"
                       id={`btn_reject_kyc_${u.id}`}
                     >
                       <X className="w-3.5 h-3.5" /> Decline
@@ -1315,16 +1377,38 @@ export const AdminPanel: React.FC = () => {
                           {sub.status === 'pending' ? (
                             <div className="flex items-center justify-center gap-1.5">
                               <button
-                                onClick={() => approveTaskSubmission(sub.id)}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded text-[11px] flex items-center gap-1 transition-colors shadow-xs"
+                                onClick={() => {
+                                  approveTaskSubmission(sub.id);
+                                  recordAdminSecurityAudit({
+                                    adminId: currentUser?.id || 'usr_admin',
+                                    adminName: currentUser?.name || 'Administrator',
+                                    actionType: 'approve_task_bounty',
+                                    targetUserId: sub.userId,
+                                    targetUserName: sub.userName,
+                                    amount: sub.rewardAmount,
+                                    notes: `Approved bounty for advocacy task: ${sub.taskTitle} for ${sub.userName}`
+                                  });
+                                }}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded text-[11px] flex items-center gap-1 transition-colors shadow-xs cursor-pointer"
                                 id={`btn_approve_sub_${sub.id}`}
                                 title="Approve and credit bounty to user balance"
                               >
                                 <Check className="w-3 h-3" /> Approve (+₦{sub.rewardAmount})
                               </button>
                               <button
-                                onClick={() => rejectTaskSubmission(sub.id)}
-                                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-2.5 py-1 rounded text-[11px] flex items-center gap-1 transition-colors"
+                                onClick={() => {
+                                  rejectTaskSubmission(sub.id);
+                                  recordAdminSecurityAudit({
+                                    adminId: currentUser?.id || 'usr_admin',
+                                    adminName: currentUser?.name || 'Administrator',
+                                    actionType: 'reject_task_bounty',
+                                    targetUserId: sub.userId,
+                                    targetUserName: sub.userName,
+                                    amount: sub.rewardAmount,
+                                    notes: `Rejected task submission (${sub.taskTitle}) for ${sub.userName}`
+                                  });
+                                }}
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-2.5 py-1 rounded text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
                                 id={`btn_reject_sub_${sub.id}`}
                                 title="Reject submission"
                               >
@@ -2185,6 +2269,11 @@ export const AdminPanel: React.FC = () => {
           </div>
         );
       })()}
+
+      {/* REALTIME INVESTOR PROTECTION & SECURITY AUDIT TAB */}
+      {adminTab === 'audit' && (
+        <AdminAuditLogsTab />
+      )}
 
       {/* Admin User & Wallet Editor Modal */}
       {showEditUserModal && selectedEditUser && (

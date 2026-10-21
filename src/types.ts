@@ -27,15 +27,6 @@ export interface User {
   };
 }
 
-export interface InvestmentPlan {
-  id: string;
-  name: string;
-  cost: number;
-  totalReturns: number;
-  weeklyPayout: number;
-  weeksDuration: number;
-}
-
 export interface UserInvestment {
   id: string;
   userId: string;
@@ -207,6 +198,7 @@ export interface InvestmentPlan {
   totalReturns: number;
   weeklyPayout: number;
   weeksDuration: number;
+  deedReferenceCode?: string;
 }
 
 export const INVESTMENT_PLANS: InvestmentPlan[] = [

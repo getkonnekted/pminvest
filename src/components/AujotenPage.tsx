@@ -31,6 +31,7 @@ import {
   ChevronDown,
   Lock
 } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface ContactFormData {
   fullName: string;
@@ -167,8 +168,10 @@ export function AujotenPage({ onBackToPmInvest }: { onBackToPmInvest?: () => voi
             </button>
           </nav>
 
-          {/* Header Action Button */}
+          {/* Header Action Button & Theme Switcher */}
           <div className="hidden sm:flex items-center gap-3">
+            <ThemeToggle compact />
+
             <button
               onClick={() => {
                 setSelectedProspectusCategory('Corporate Group Prospectus');
@@ -208,6 +211,10 @@ export function AujotenPage({ onBackToPmInvest }: { onBackToPmInvest?: () => voi
         {/* Mobile Dropdown Nav */}
         {mobileMenuOpen && (
           <div className="lg:hidden bg-[#071120] border-b border-slate-800 px-6 py-5 space-y-4 animate-fade-in text-sm">
+            <div className="pb-2 mb-2 border-b border-slate-800 flex items-center justify-between">
+              <span className="text-xs text-amber-400 font-mono font-bold uppercase">Appearance</span>
+              <ThemeToggle compact />
+            </div>
             <button onClick={() => scrollToSection('hero')} className="block w-full text-left font-semibold text-slate-300 hover:text-amber-400 py-1">
               Home
             </button>
