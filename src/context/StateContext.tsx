@@ -1591,8 +1591,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return false;
     }
 
-    if (currentUser.walletBalance < plan.cost) {
-      setErrorMsg(`Insufficient balance. Plan cost is ₦${plan.cost.toLocaleString()}. Your balance: ₦${currentUser.walletBalance.toLocaleString()}`);
+    const currentBal = Math.max(0, currentUser.walletBalance || 0);
+    if (currentBal < plan.cost) {
+      const shortfall = plan.cost - currentBal;
+      setErrorMsg(`Insufficient funds in wallet! ${plan.name} requires ₦${plan.cost.toLocaleString()}, but your balance is ₦${currentBal.toLocaleString()}. Please top up ₦${shortfall.toLocaleString()} to acquire this property.`);
       return false;
     }
 

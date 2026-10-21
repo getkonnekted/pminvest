@@ -94,9 +94,17 @@ function MainAppContent() {
     checkRoute();
     window.addEventListener('popstate', checkRoute);
     window.addEventListener('hashchange', checkRoute);
+    const handleAdminViewSwitch = (e: any) => {
+      if (e.detail && (e.detail === 'admin' || e.detail === 'investor' || e.detail === 'marketer')) {
+        setAdminView(e.detail);
+      }
+    };
+    window.addEventListener('switch-admin-view', handleAdminViewSwitch);
+
     return () => {
       window.removeEventListener('popstate', checkRoute);
       window.removeEventListener('hashchange', checkRoute);
+      window.removeEventListener('switch-admin-view', handleAdminViewSwitch);
     };
   }, []);
 

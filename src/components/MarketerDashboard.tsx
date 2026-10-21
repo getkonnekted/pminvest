@@ -40,6 +40,7 @@ import { PayoutCountdown } from './PayoutCountdown';
 import { ThemeToggle } from './ThemeToggle';
 import { UaeDeedModal } from './UaeDeedModal';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
+import { InsufficientFundsModal } from './InsufficientFundsModal';
 
 export const MarketerDashboard: React.FC = () => {
   const { 
@@ -65,6 +66,7 @@ export const MarketerDashboard: React.FC = () => {
   const [selectedPlanCalc, setSelectedPlanCalc] = useState<InvestmentPlan>(INVESTMENT_PLANS[0]);
   const [viewingDeedInvestment, setViewingDeedInvestment] = useState<UserInvestment | null>(null);
   const [justAcquiredPlanId, setJustAcquiredPlanId] = useState<string | null>(null);
+  const [shortfallPlan, setShortfallPlan] = useState<InvestmentPlan | null>(null);
 
   if (!currentUser) return null;
 
@@ -164,14 +166,12 @@ export const MarketerDashboard: React.FC = () => {
   };
 
   const handleAcquireForCanvassing = (plan: InvestmentPlan) => {
-    const totalAvail = (currentUser.marketingAllocatedBalance || 0) + (currentUser.walletBalance || 0);
-    if (totalAvail < plan.cost) return;
-
-    if (currentUser.walletBalance < plan.cost) {
-      const deficit = plan.cost - currentUser.walletBalance;
-      currentUser.walletBalance += deficit;
-      currentUser.marketingAllocatedBalance = Math.max(0, (currentUser.marketingAllocatedBalance || 0) - deficit);
+    const currentBal = Math.max(0, currentUser.walletBalance || 0);
+    if (currentBal < plan.cost) {
+      setShortfallPlan(plan);
+      return;
     }
+
     const success = purchaseInvestment(plan.id);
     if (success) {
       setJustAcquiredPlanId(plan.id);
@@ -526,23 +526,32 @@ export const MarketerDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Available Demo Canvassing Capital */}
+            {/* Active Wallet & Acquisition Funds */}
             <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/25 rounded-2xl p-5 shadow-xl space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider font-mono">Canvassing Budget</span>
-                <span className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center border border-purple-500/30">
-                  <Zap className="w-4 h-4" />
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider font-mono">Wallet Balance</span>
+                <span className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30">
+                  <Wallet className="w-4 h-4 text-amber-400" />
                 </span>
               </div>
               <h3 className="text-2xl font-black text-amber-400 font-mono mt-1">
-                ₦{((currentUser.marketingAllocatedBalance || 0) + (currentUser.walletBalance || 0)).toLocaleString()}
+                ₦{(currentUser.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h3>
               <p className="text-[11px] text-slate-400">
-                Allocated for acquiring demonstration plans
+                {(currentUser.walletBalance || 0) === 0 ? 'Top up required to acquire property plans' : 'Available for property acquisition & cashout'}
               </p>
-              <div className="mt-2 text-[10px] text-purple-300 flex items-center gap-1 font-semibold bg-purple-950/40 border border-purple-500/30 px-2 py-1 rounded-lg">
-                <Flame className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                <span>Untracked Pitch Capital (Zero Risk)</span>
+              <div className="mt-2 text-[10px] flex items-center gap-1 font-semibold">
+                {(currentUser.walletBalance || 0) > 0 ? (
+                  <span className="text-emerald-300 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>Funded Wallet Active</span>
+                  </span>
+                ) : (
+                  <span className="text-rose-300 bg-rose-950/40 border border-rose-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1 font-mono">
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                    <span>Wallet ₦0.00 • Add Money to Acquire</span>
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -667,9 +676,12 @@ export const MarketerDashboard: React.FC = () => {
             </div>
 
             <div className="bg-[#06080e] border border-amber-500/30 px-5 py-3 rounded-xl text-right shrink-0">
-              <span className="text-[10px] text-slate-400 font-mono uppercase block">Canvassing Budget Available</span>
+              <span className="text-[10px] text-slate-400 font-mono uppercase block">Your Wallet Balance</span>
               <span className="text-2xl font-black text-amber-400 font-mono">
-                ₦{((currentUser.marketingAllocatedBalance || 0) + (currentUser.walletBalance || 0)).toLocaleString()}
+                ₦{(currentUser.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className={`text-[10px] font-mono block ${(currentUser.walletBalance || 0) === 0 ? 'text-rose-400 font-bold' : 'text-slate-400'}`}>
+                {(currentUser.walletBalance || 0) === 0 ? '₦0.00 • Top up to acquire plans' : 'Active Available Balance'}
               </span>
             </div>
           </div>
@@ -686,8 +698,9 @@ export const MarketerDashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {INVESTMENT_PLANS.map((plan) => {
-                const totalAvail = (currentUser.marketingAllocatedBalance || 0) + (currentUser.walletBalance || 0);
-                const canAfford = totalAvail >= plan.cost;
+                const currentBal = Math.max(0, currentUser.walletBalance || 0);
+                const canAfford = currentBal >= plan.cost;
+                const shortfall = Math.max(0, plan.cost - currentBal);
 
                 return (
                   <div 
@@ -764,7 +777,7 @@ export const MarketerDashboard: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Action Buttons: View Title Deed & Acquire for Canvassing */}
+                      {/* Action Buttons: View Title Deed & Acquire Property */}
                       <div className="pt-3 border-t border-amber-500/15 space-y-2">
                         <button
                           type="button"
@@ -776,19 +789,34 @@ export const MarketerDashboard: React.FC = () => {
                           <span>📜 View Official Deed (Client Presentation)</span>
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleAcquireForCanvassing(plan)}
-                          disabled={!canAfford}
-                          className={`w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                            canAfford
-                              ? 'bg-[#06080e] hover:bg-[#111728] border border-amber-500/40 text-amber-300 shadow-sm'
-                              : 'bg-slate-900/60 text-slate-500 cursor-not-allowed border border-slate-800'
-                          }`}
-                        >
-                          <ShieldCheck className="w-4 h-4 text-amber-400" />
-                          <span>{canAfford ? `Acquire for Canvassing Portfolio (₦${plan.cost.toLocaleString()})` : 'Insufficient Budget'}</span>
-                        </button>
+                        {canAfford ? (
+                          <button
+                            type="button"
+                            onClick={() => handleAcquireForCanvassing(plan)}
+                            className="w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md active:scale-95"
+                            id={`btn_mkt_acquire_${plan.id}`}
+                          >
+                            <ShieldCheck className="w-4 h-4 text-slate-950" />
+                            <span>Acquire Property (₦{plan.cost.toLocaleString()})</span>
+                          </button>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setShortfallPlan(plan)}
+                              className="w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer bg-[#06080e] hover:bg-[#111728] border border-amber-500/40 text-amber-300 hover:border-amber-400 shadow-sm active:scale-95"
+                              id={`btn_mkt_topup_${plan.id}`}
+                              title="Insufficient wallet balance. Click to top up."
+                            >
+                              <Wallet className="w-4 h-4 text-amber-400 shrink-0" />
+                              <span>Top Up ₦{shortfall.toLocaleString()} to Acquire</span>
+                            </button>
+                            <div className="flex items-center justify-between text-[10px] text-slate-400 px-1 font-mono">
+                              <span>Wallet: <strong className={currentBal === 0 ? "text-rose-400" : "text-white"}>₦{currentBal.toLocaleString()}</strong></span>
+                              <span>Shortfall: <strong className="text-rose-400 font-bold">₦{shortfall.toLocaleString()}</strong></span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1153,6 +1181,27 @@ export const MarketerDashboard: React.FC = () => {
           isOpen={!!viewingDeedInvestment}
           onClose={() => setViewingDeedInvestment(null)}
           investment={viewingDeedInvestment}
+        />
+      )}
+
+      {/* Insufficient Funds & Top-Up Prompt Modal */}
+      {shortfallPlan && (
+        <InsufficientFundsModal
+          isOpen={!!shortfallPlan}
+          onClose={() => setShortfallPlan(null)}
+          plan={shortfallPlan}
+          walletBalance={currentUser.walletBalance || 0}
+          onNavigateToDeposit={(amt) => {
+            setShortfallPlan(null);
+            if (currentUser.role === 'admin') {
+              try {
+                sessionStorage.setItem('pm_prefill_deposit', amt.toString());
+                window.dispatchEvent(new CustomEvent('switch-admin-view', { detail: 'investor' }));
+              } catch {
+                // fallback
+              }
+            }
+          }}
         />
       )}
     </div>

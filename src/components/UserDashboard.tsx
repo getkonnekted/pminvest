@@ -51,6 +51,7 @@ import { UaeDeedModal } from './UaeDeedModal';
 import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 import { ThemeToggle } from './ThemeToggle';
+import { InsufficientFundsModal } from './InsufficientFundsModal';
 import { recordInvestorProtectionEvent } from '../lib/supabase';
 import { useSupabaseSync } from '../hooks/useSupabaseSync';
 
@@ -245,6 +246,22 @@ export const UserDashboard: React.FC = () => {
     }
   }, [bankAccountNumber, selectedBankCode, currentUser?.name]);
 
+  useEffect(() => {
+    try {
+      const prefill = sessionStorage.getItem('pm_prefill_deposit');
+      if (prefill) {
+        setDepAmount(prefill);
+        setActiveTab('finance');
+        sessionStorage.removeItem('pm_prefill_deposit');
+        setTimeout(() => {
+          document.getElementById('deposit_form_container')?.scrollIntoView({ behavior: 'smooth' });
+        }, 200);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // KYC state
   const [kycName, setKycName] = useState<string>(currentUser?.name || '');
   const [kycType, setKycType] = useState<string>('National ID Card');
@@ -432,9 +449,17 @@ export const UserDashboard: React.FC = () => {
   const [activatedPlanModal, setActivatedPlanModal] = useState<{ plan: InvestmentPlan; nextPayoutDate: string } | null>(null);
   const [viewingDeedInvestment, setViewingDeedInvestment] = useState<UserInvestment | null>(null);
   const [sampleDeedPlan, setSampleDeedPlan] = useState<InvestmentPlan | null>(null);
+  const [shortfallPlan, setShortfallPlan] = useState<InvestmentPlan | null>(null);
 
   const handlePurchase = async (plan: InvestmentPlan) => {
     if (investingPlanId) return; // Prevent double-triggering while animating
+
+    const currentBal = Math.max(0, currentUser?.walletBalance || 0);
+    if (currentBal < plan.cost) {
+      setShortfallPlan(plan);
+      return;
+    }
+
     setInvestingPlanId(plan.id);
 
     try {
@@ -1247,26 +1272,18 @@ export const UserDashboard: React.FC = () => {
                     ) : (
                       <div className="space-y-2">
                         <button
-                          onClick={() => {
-                            setDepAmount((plan.cost - currentUser.walletBalance).toString());
-                            setActiveTab('finance');
-                            setTimeout(() => {
-                              document.getElementById('deposit_form_container')?.scrollIntoView({ behavior: 'smooth' });
-                            }, 150);
-                          }}
-                          className="w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-[#06080e] hover:bg-[#111728] border border-amber-500/30 text-amber-300 flex items-center justify-center gap-2 shadow-sm hover:border-amber-400 transition-all cursor-pointer active:scale-95 font-sans"
+                          type="button"
+                          onClick={() => setShortfallPlan(plan)}
+                          className="w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-[#06080e] hover:bg-[#111728] border border-amber-500/40 text-amber-300 flex items-center justify-center gap-2 shadow-sm hover:border-amber-400 transition-all cursor-pointer active:scale-95 font-sans"
                           id={`btn_fund_wallet_${plan.id}`}
-                          title="Deposit funds via real bank transfer to activate this plan"
+                          title="Insufficient funds in wallet. Click to top up."
                         >
                           <Wallet className="w-4 h-4 text-amber-400 shrink-0" />
-                          <span>Fund ₦{(plan.cost - currentUser.walletBalance).toLocaleString()} to Invest</span>
+                          <span>Top Up ₦{(plan.cost - (currentUser.walletBalance || 0)).toLocaleString()} to Invest</span>
                         </button>
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-sans px-0.5">
-                          <span>Shortfall: <strong className="text-rose-400 font-mono">₦{(plan.cost - currentUser.walletBalance).toLocaleString()}</strong></span>
-                          <span className="text-amber-400 font-semibold flex items-center gap-1">
-                            <Building className="w-3 h-3 text-amber-400" />
-                            Treasure Homes Vault
-                          </span>
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono px-0.5">
+                          <span>Wallet: <strong className={currentUser.walletBalance === 0 ? "text-rose-400 font-bold" : "text-white"}>₦{(currentUser.walletBalance || 0).toLocaleString()}</strong></span>
+                          <span>Shortfall: <strong className="text-rose-400 font-bold">₦{(plan.cost - (currentUser.walletBalance || 0)).toLocaleString()}</strong></span>
                         </div>
                       </div>
                     )}
@@ -2041,6 +2058,24 @@ export const UserDashboard: React.FC = () => {
           setActiveTab('invest');
         }}
       />
+
+      {/* Insufficient Funds Modal */}
+      {shortfallPlan && (
+        <InsufficientFundsModal
+          isOpen={!!shortfallPlan}
+          onClose={() => setShortfallPlan(null)}
+          plan={shortfallPlan}
+          walletBalance={currentUser.walletBalance || 0}
+          onNavigateToDeposit={(amount) => {
+            setShortfallPlan(null);
+            setDepAmount(amount.toString());
+            setActiveTab('finance');
+            setTimeout(() => {
+              document.getElementById('deposit_form_container')?.scrollIntoView({ behavior: 'smooth' });
+            }, 150);
+          }}
+        />
+      )}
     </div>
   );
 };
