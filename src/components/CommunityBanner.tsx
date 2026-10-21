@@ -1,8 +1,9 @@
 import React from 'react';
 import { ExternalLink, MessageCircle, Send } from 'lucide-react';
 
-export const WHATSAPP_COMMUNITY_URL = 'https://chat.whatsapp.com/JFQaPQ9gur84iQZtDqvixk';
-export const TELEGRAM_COMMUNITY_URL = 'https://t.me/+Hz6k32s6VmE4NTZk';
+export const WHATSAPP_PHONE_NUMBER = '+19375598074';
+export const WHATSAPP_COMMUNITY_URL = 'https://wa.me/19375598074';
+export const TELEGRAM_COMMUNITY_URL = 'https://t.me/+frJYSXYkeSkwYTEx';
 
 export const CommunityBanner: React.FC = () => {
   return (
@@ -24,6 +25,7 @@ export const CommunityBanner: React.FC = () => {
             rel="noopener noreferrer"
             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#1ebd5a] text-slate-950 font-bold text-xs px-3.5 py-2 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer whitespace-nowrap"
             id="btn_join_whatsapp_community"
+            title="Join Official WhatsApp"
           >
             <MessageCircle className="w-3.5 h-3.5 text-slate-950" />
             <span>Join WhatsApp</span>
@@ -36,6 +38,7 @@ export const CommunityBanner: React.FC = () => {
             rel="noopener noreferrer"
             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 bg-[#229ED9] hover:bg-[#1d8cbf] text-white font-bold text-xs px-3.5 py-2 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer whitespace-nowrap"
             id="btn_join_telegram_community"
+            title="Join Official Telegram"
           >
             <Send className="w-3.5 h-3.5 text-white" />
             <span>Join Telegram</span>

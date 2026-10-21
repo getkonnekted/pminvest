@@ -98,9 +98,12 @@ export const LegalDisclosures: React.FC = () => {
               rel="noopener noreferrer"
               className="flex items-center justify-between p-2.5 rounded-xl bg-[#0c101c] hover:bg-[#111728] border border-amber-500/20 text-slate-200 transition-colors group"
             >
-              <div className="flex items-center gap-2">
-                <WhatsAppGoldIcon className="w-5 h-5" />
-                <span className="font-semibold text-xs text-white">Join WhatsApp Group</span>
+              <div className="flex items-center gap-2.5">
+                <WhatsAppGoldIcon className="w-5 h-5 shrink-0" />
+                <div className="flex flex-col text-left">
+                  <span className="font-semibold text-xs text-white">Join WhatsApp Group</span>
+                  <span className="text-[11px] text-slate-400">Official Community &amp; Updates</span>
+                </div>
               </div>
               <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-400" />
             </a>
@@ -110,9 +113,12 @@ export const LegalDisclosures: React.FC = () => {
               rel="noopener noreferrer"
               className="flex items-center justify-between p-2.5 rounded-xl bg-[#0c101c] hover:bg-[#111728] border border-amber-500/20 text-slate-200 transition-colors group"
             >
-              <div className="flex items-center gap-2">
-                <TelegramGoldIcon className="w-5 h-5" />
-                <span className="font-semibold text-xs text-white">Join Telegram Channel</span>
+              <div className="flex items-center gap-2.5">
+                <TelegramGoldIcon className="w-5 h-5 shrink-0" />
+                <div className="flex flex-col text-left">
+                  <span className="font-semibold text-xs text-white">Join Telegram Channel</span>
+                  <span className="text-[11px] text-slate-400">Official Announcements &amp; Payouts</span>
+                </div>
               </div>
               <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-400" />
             </a>
