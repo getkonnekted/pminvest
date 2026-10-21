@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+/* =========================================================================
+   HARDWARE-ACCELERATED NATIVE SCROLLING & PERF ENGINE
+   ========================================================================= */
+html {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Off-screen card & section paint deferral: renders smoothly on demand */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 550px;
+}
+
 @keyframes shimmer {
   0% {
     transform: translateX(-100%);
@@ -22,6 +43,7 @@
 
 .animate-shimmer {
   animation: shimmer 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: transform;
 }
 
 .animate-gold-pulse {
@@ -41,18 +63,146 @@
   -webkit-text-fill-color: transparent;
 }
 
+/* =========================================================================
+   THEME STYLES: OBSIDIAN GOLD (DEFAULT)
+   ========================================================================= */
+html.theme-obsidian,
+[data-theme="obsidian"] {
+  color-scheme: dark;
+}
+
 /* Obsidian luxury scrollbar */
+html.theme-obsidian ::-webkit-scrollbar,
+[data-theme="obsidian"] ::-webkit-scrollbar,
 ::-webkit-scrollbar {
   width: 7px;
   height: 7px;
 }
+
+html.theme-obsidian ::-webkit-scrollbar-track,
+[data-theme="obsidian"] ::-webkit-scrollbar-track,
 ::-webkit-scrollbar-track {
   background: #06080e;
 }
+
+html.theme-obsidian ::-webkit-scrollbar-thumb,
+[data-theme="obsidian"] ::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-thumb {
-  background: rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.3);
   border-radius: 9999px;
 }
+
+html.theme-obsidian ::-webkit-scrollbar-thumb:hover,
+[data-theme="obsidian"] ::-webkit-scrollbar-thumb:hover,
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.55);
+}
+
+/* =========================================================================
+   THEME STYLES: CHAMPAGNE LIGHT LUXURY
+   ========================================================================= */
+html.theme-champagne,
+[data-theme="champagne"] {
+  color-scheme: light;
+}
+
+html.theme-champagne body,
+[data-theme="champagne"] body {
+  background-color: #f7f4ed !important;
+  color: #1c1917 !important;
+}
+
+/* Champagne luxury scrollbar */
+html.theme-champagne ::-webkit-scrollbar,
+[data-theme="champagne"] ::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+html.theme-champagne ::-webkit-scrollbar-track,
+[data-theme="champagne"] ::-webkit-scrollbar-track {
+  background: #ede6d8;
+}
+
+html.theme-champagne ::-webkit-scrollbar-thumb,
+[data-theme="champagne"] ::-webkit-scrollbar-thumb {
+  background: rgba(197, 160, 89, 0.5);
+  border-radius: 9999px;
+}
+
+html.theme-champagne ::-webkit-scrollbar-thumb:hover,
+[data-theme="champagne"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(179, 143, 70, 0.8);
+}
+
+/* Champagne Light surface overrides */
+html.theme-champagne .bg-slate-950,
+[data-theme="champagne"] .bg-slate-950,
+html.theme-champagne .bg-\[\#06080e\],
+[data-theme="champagne"] .bg-\[\#06080e\] {
+  background-color: #f7f4ed !important;
+}
+
+html.theme-champagne .bg-\[\#070a12\],
+[data-theme="champagne"] .bg-\[\#070a12\],
+html.theme-champagne .bg-\[\#070a13\],
+[data-theme="champagne"] .bg-\[\#070a13\],
+html.theme-champagne .bg-\[\#090d18\],
+[data-theme="champagne"] .bg-\[\#090d18\],
+html.theme-champagne .bg-\[\#0c101c\],
+[data-theme="champagne"] .bg-\[\#0c101c\],
+html.theme-champagne .bg-\[\#0e1424\],
+[data-theme="champagne"] .bg-\[\#0e1424\] {
+  background-color: #ffffff !important;
+}
+
+/* Transform obsidian gradients to warm champagne alabaster gradients */
+html.theme-champagne .from-\[\#0c101c\],
+[data-theme="champagne"] .from-\[\#0c101c\],
+html.theme-champagne .from-\[\#0e1424\],
+[data-theme="champagne"] .from-\[\#0e1424\] {
+  --tw-gradient-from: #fbf9f4 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+html.theme-champagne .via-\[\#090d18\],
+[data-theme="champagne"] .via-\[\#090d18\] {
+  --tw-gradient-via: #f6efe3 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), #f6efe3, var(--tw-gradient-to) !important;
+}
+
+html.theme-champagne .to-\[\#06080e\],
+[data-theme="champagne"] .to-\[\#06080e\],
+html.theme-champagne .to-\[\#070a12\],
+[data-theme="champagne"] .to-\[\#070a12\] {
+  --tw-gradient-to: #ede4d3 !important;
+}
+
+/* In Champagne mode, convert light gold/champagne text to deep high-contrast tones */
+html.theme-champagne .text-\[\#f7ecd5\],
+[data-theme="champagne"] .text-\[\#f7ecd5\] {
+  color: #261f12 !important;
+}
+
+html.theme-champagne .text-slate-100,
+[data-theme="champagne"] .text-slate-100,
+html.theme-champagne .text-slate-200,
+[data-theme="champagne"] .text-slate-200 {
+  color: #1f2937 !important;
+}
+
+html.theme-champagne .text-slate-300,
+[data-theme="champagne"] .text-slate-300,
+html.theme-champagne .text-slate-400,
+[data-theme="champagne"] .text-slate-400 {
+  color: #4b5563 !important;
+}
+
+html.theme-champagne .border-amber-500\/20,
+[data-theme="champagne"] .border-amber-500\/20,
+html.theme-champagne .border-amber-500\/25,
+[data-theme="champagne"] .border-amber-500\/25,
+html.theme-champagne .border-amber-500\/30,
+[data-theme="champagne"] .border-amber-500\/30 {
+  border-color: rgba(197, 160, 89, 0.45) !important;
 }

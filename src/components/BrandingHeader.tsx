@@ -13,6 +13,7 @@ import { PmLogo } from './PmLogo';
 import { WHATSAPP_COMMUNITY_URL, TELEGRAM_COMMUNITY_URL } from './CommunityBanner';
 import { WhatsAppGoldIcon, TelegramGoldIcon } from './CommunityIcons';
 import { LiveReserveCounter } from './LiveReserveCounter';
+import { ThemeToggle } from './ThemeToggle';
 
 export const BrandingHeader: React.FC = () => {
   const { currentUser, logout } = useAppState();
@@ -32,8 +33,10 @@ export const BrandingHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Current logged in user view / actions */}
+        {/* Current logged in user view / actions & Luxury Theme Switcher */}
         <div className="flex items-center gap-3 flex-wrap justify-end">
+          <ThemeToggle />
+
           {currentUser && (
             <div className="flex items-center gap-4 bg-[#0d1222] p-2.5 rounded-xl border border-amber-500/25 shadow-md">
               <div className="text-right">

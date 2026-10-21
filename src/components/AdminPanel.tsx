@@ -49,7 +49,9 @@ import {
 import { User, INVESTMENT_PLANS } from '../types';
 import { PmLogo } from './PmLogo';
 import { LiveReserveCounter } from './LiveReserveCounter';
-import { testSupabaseConnection } from '../lib/supabase';
+import { ThemeToggle } from './ThemeToggle';
+import { AdminAuditLogsTab } from './AdminAuditLogsTab';
+import { testSupabaseConnection, recordAdminSecurityAudit } from '../lib/supabase';
 import { SUPABASE_CORE_SQL, FULL_SUPABASE_SQL } from '../data/supabaseSql';
 
 export const AdminPanel: React.FC = () => {
@@ -92,7 +94,7 @@ export const AdminPanel: React.FC = () => {
     refreshFromSupabase
   } = useAppState();
 
-  const [adminTab, setAdminTab] = useState<'analytics' | 'deposits' | 'withdrawals' | 'tasks' | 'users' | 'referrals' | 'kyc' | 'settings'>('analytics');
+  const [adminTab, setAdminTab] = useState<'analytics' | 'deposits' | 'withdrawals' | 'tasks' | 'users' | 'referrals' | 'kyc' | 'settings' | 'audit'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [referralSearch, setReferralSearch] = useState('');
   const [showResetModal, setShowResetModal] = useState(false);
@@ -313,8 +315,9 @@ export const AdminPanel: React.FC = () => {
           </div>
         </div>
 
-        {/* Live Simulator Quick Trigger & Quick Account Creator */}
+        {/* Live Simulator Quick Trigger, Quick Account Creator & Theme Switcher */}
         <div className="flex flex-wrap items-center gap-2">
+          <ThemeToggle compact />
           <button
             type="button"
             onClick={() => {
@@ -436,6 +439,18 @@ export const AdminPanel: React.FC = () => {
           id="tab_admin_settings"
         >
           Controls
+        </button>
+        <button
+          onClick={() => { setAdminTab('audit'); clearMessages(); }}
+          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
+            adminTab === 'audit'
+              ? 'bg-slate-100 text-slate-900 border-t-2 border-amber-500'
+              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+          }`}
+          id="tab_admin_audit"
+        >
+          <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+          <span>Realtime Protection &amp; Audit</span>
         </button>
       </div>
 

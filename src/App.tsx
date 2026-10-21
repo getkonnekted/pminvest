@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { ThemeProvider } from './context/ThemeContext';
 import { StateProvider, useAppState } from './context/StateContext';
 import { BrandingHeader, LegalDisclosures } from './components/BrandingHeader';
 import { PmLogo } from './components/PmLogo';
@@ -46,25 +47,7 @@ const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(modul
 const AujotenPage = React.lazy(() => import('./components/AujotenPage').then(module => ({ default: module.AujotenPage })));
 
 function MainAppContent() {
-  // Smooth scrolling is loaded on demand and disabled for users who prefer reduced motion.
-  useEffect(() => {
-    if (typeof window === 'undefined' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    let cancelled = false;
-    let lenisInstance: { destroy: () => void } | null = null;
-
-    import('lenis').then(({ default: Lenis }) => {
-      if (cancelled) return;
-      lenisInstance = new Lenis({ autoRaf: true, smoothWheel: true });
-    }).catch((error) => {
-      console.warn('Smooth scrolling could not be initialized:', error);
-    });
-
-    return () => {
-      cancelled = true;
-      lenisInstance?.destroy();
-    };
-  }, []);
+  // Pure lightweight native hardware-accelerated scrolling with zero JS main-thread overhead
   const { 
     currentUser, 
     users, 
@@ -1085,8 +1068,10 @@ function MainAppContent() {
 
 export default function App() {
   return (
-    <StateProvider>
-      <MainAppContent />
-    </StateProvider>
+    <ThemeProvider>
+      <StateProvider>
+        <MainAppContent />
+      </StateProvider>
+    </ThemeProvider>
   );
 }

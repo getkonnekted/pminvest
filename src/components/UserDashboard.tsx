@@ -50,6 +50,8 @@ import { LivePropertyTradingModal } from './LivePropertyTradingModal';
 import { UaeDeedModal } from './UaeDeedModal';
 import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
+import { ThemeToggle } from './ThemeToggle';
+import { recordInvestorProtectionEvent } from '../lib/supabase';
 
 const AutoRenewControl: React.FC<{ investment: UserInvestment; onToggle: (id: string) => void }> = ({ investment, onToggle }) => {
   const [now, setNow] = useState(Date.now());
@@ -361,6 +363,21 @@ export const UserDashboard: React.FC = () => {
     if (isNaN(amt) || amt <= 0) return;
     const proofToSubmit = receiptUrl || 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?w=500&auto=format&fit=crop&q=60';
     submitDeposit(amt, depMethod, depDetails, proofToSubmit);
+
+    // Non-blocking Investor Protection audit
+    recordInvestorProtectionEvent({
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userEmail: currentUser.email,
+      eventType: 'deposit_receipt_uploaded',
+      amount: amt,
+      details: {
+        paymentMethod: depMethod,
+        accountDetails: depDetails,
+        hasProof: !!receiptUrl
+      }
+    });
+
     setDepAmount('');
     setDepDetails('');
     setReceiptFile(null);
@@ -380,6 +397,18 @@ export const UserDashboard: React.FC = () => {
 
     const success = submitWithdrawal(amt, targetDetails);
     if (success) {
+      // Non-blocking Investor Protection audit
+      recordInvestorProtectionEvent({
+        userId: currentUser.id,
+        userName: currentUser.name,
+        userEmail: currentUser.email,
+        eventType: 'withdrawal_requested',
+        amount: amt,
+        details: {
+          accountDetails: targetDetails
+        }
+      });
+
       setWithAmount('');
       setWithDetails('');
       setBankAccountNumber('');
@@ -408,6 +437,29 @@ export const UserDashboard: React.FC = () => {
         setJustActivatedPlanId(plan.id);
         const nextDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
         setActivatedPlanModal({ plan, nextPayoutDate: nextDate });
+
+        // Non-blocking Investor Protection audit (secures deeds, plan terms & cadastral backing)
+        recordInvestorProtectionEvent({
+          userId: currentUser.id,
+          userName: currentUser.name,
+          userEmail: currentUser.email,
+          eventType: 'plan_purchased',
+          planId: plan.id,
+          planName: plan.propertyName || plan.name,
+          deedReferenceCode: plan.deedReferenceCode || `UAE-DLD-2026-${plan.id.slice(-6).toUpperCase()}`,
+          makaniNumber: plan.makaniNumber || '12845 76291',
+          amount: plan.cost,
+          details: {
+            propertyLocation: plan.propertyLocation,
+            propertyAddress: plan.propertyAddress,
+            weeklyPayout: plan.weeklyPayout,
+            totalReturns: plan.totalReturns,
+            totalWeeks: 24,
+            referralCode: currentUser.referralCode,
+            sponsorCode: currentUser.referredByCode
+          }
+        });
+
         setTimeout(() => {
           setJustActivatedPlanId(null);
         }, 3000);
@@ -563,6 +615,11 @@ export const UserDashboard: React.FC = () => {
               );
             })}
           </div>
+
+          {/* Theme switcher */}
+          <div className="shrink-0 flex items-center">
+            <ThemeToggle compact />
+          </div>
         </div>
 
         {/* Mobile / Expanded Hamburger Drawer with clean quick-navigation cards */}
@@ -573,7 +630,10 @@ export const UserDashboard: React.FC = () => {
                 <PmLogo className="w-5 h-5" />
                 <span className="font-bold text-amber-300 uppercase tracking-wider">PM Invest Menus</span>
               </div>
-              <span className="text-amber-400 font-semibold">{menuItems.length} Available</span>
+              <div className="flex items-center gap-2">
+                <ThemeToggle compact />
+                <span className="text-amber-400 font-semibold">{menuItems.length} Available</span>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
@@ -806,7 +866,7 @@ export const UserDashboard: React.FC = () => {
                     const deedCode = inv.deedReferenceCode || `UAE-DLD-2026-${inv.id.slice(-6).toUpperCase()}`;
 
                     return (
-                      <div key={inv.id} className="bg-gradient-to-b from-[#0e1424] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden shadow-2xl hover:border-amber-400/50 transition-all">
+                      <div key={inv.id} className="cv-auto bg-gradient-to-b from-[#0e1424] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden shadow-2xl hover:border-amber-400/50 transition-all">
                         {/* Brand background watermark */}
                         <div className="absolute right-2 top-2 opacity-5 pointer-events-none">
                           <Building className="w-24 h-24 text-amber-400" />
@@ -820,6 +880,8 @@ export const UserDashboard: React.FC = () => {
                                 src={propImg} 
                                 alt={propName}
                                 className="w-full h-full object-cover" 
+                                loading="lazy"
+                                decoding="async"
                               />
                             </div>
                             <div className="min-w-0 flex-1">
@@ -1065,7 +1127,7 @@ export const UserDashboard: React.FC = () => {
               return (
                 <div 
                   key={plan.id} 
-                  className={`bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border rounded-2xl flex flex-col justify-between shadow-2xl transition-all duration-300 relative overflow-hidden ${
+                  className={`cv-auto bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border rounded-2xl flex flex-col justify-between shadow-2xl transition-all duration-300 relative overflow-hidden ${
                     justActivatedPlanId === plan.id
                       ? 'border-emerald-500 ring-4 ring-emerald-500/30 shadow-2xl scale-[1.01]'
                       : investingPlanId === plan.id
@@ -1080,6 +1142,7 @@ export const UserDashboard: React.FC = () => {
                       alt={plan.propertyName || plan.name}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
+                      decoding="async"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#06080e] via-[#06080e]/40 to-transparent" />
                     <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">

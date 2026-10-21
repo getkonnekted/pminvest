@@ -258,7 +258,48 @@ CREATE TABLE IF NOT EXISTS public.wallet_transactions (
 
 CREATE INDEX IF NOT EXISTS idx_wallets_user ON public.wallets(user_id);
 CREATE INDEX IF NOT EXISTS idx_wallet_tx_user ON public.wallet_transactions(user_id);
-CREATE INDEX IF NOT EXISTS idx_wallet_tx_wallet ON public.wallet_transactions(wallet_id);
+-- -------------------------------------------------------------------------
+-- 9b. INVESTOR PROTECTION AUDIT LOG (DEEDS, PLANS, COMMISSIONS, WITHDRAWALS)
+-- -------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.investor_protection_logs (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    user_name TEXT,
+    user_email TEXT,
+    event_type TEXT NOT NULL,
+    plan_id TEXT,
+    plan_name TEXT,
+    deed_reference_code TEXT,
+    makani_number TEXT,
+    amount DOUBLE PRECISION DEFAULT 0,
+    details JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_inv_prot_user ON public.investor_protection_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_inv_prot_type ON public.investor_protection_logs(event_type);
+CREATE INDEX IF NOT EXISTS idx_inv_prot_date ON public.investor_protection_logs(created_at DESC);
+
+-- -------------------------------------------------------------------------
+-- 9c. ADMINISTRATOR SECURITY AUDIT TRAIL
+-- -------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
+    id TEXT PRIMARY KEY,
+    admin_id TEXT NOT NULL,
+    admin_name TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    target_user_id TEXT,
+    target_user_name TEXT,
+    amount DOUBLE PRECISION DEFAULT 0,
+    notes TEXT,
+    details JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_adm_audit_admin ON public.admin_audit_logs(admin_id);
+CREATE INDEX IF NOT EXISTS idx_adm_audit_action ON public.admin_audit_logs(action_type);
+CREATE INDEX IF NOT EXISTS idx_adm_audit_target ON public.admin_audit_logs(target_user_id);
+CREATE INDEX IF NOT EXISTS idx_adm_audit_date ON public.admin_audit_logs(created_at DESC);
 
 -- -------------------------------------------------------------------------
 -- 10. DEFAULT SEED ADMIN USER
@@ -339,6 +380,18 @@ END $$;
 DO $$
 BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.user_daily_progress;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.investor_protection_logs;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.admin_audit_logs;
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 

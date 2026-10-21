@@ -272,6 +272,12 @@ export const subscribeToSupabaseRealtime = (onUpdate: (table: string) => void) =
       .on('postgres_changes', { event: '*', schema: 'public', table: 'wallet_transactions' }, () => {
         onUpdate('wallet_transactions');
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'investor_protection_logs' }, () => {
+        onUpdate('investor_protection_logs');
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'admin_audit_logs' }, () => {
+        onUpdate('admin_audit_logs');
+      })
       .subscribe();
 
     return () => {
@@ -462,5 +468,227 @@ export const recordWalletAuditToSupabase = async (audit: {
     }
   } catch (err) {
     console.warn('Wallet audit log notice:', err);
+  }
+};
+
+export interface InvestorProtectionLog {
+  id: string;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  eventType: 'plan_purchased' | 'deed_issued' | 'task_claimed' | 'referral_linked' | 'withdrawal_requested' | 'payout_claimed' | 'deposit_receipt_uploaded';
+  planId?: string;
+  planName?: string;
+  deedReferenceCode?: string;
+  makaniNumber?: string;
+  amount?: number;
+  details?: Record<string, any>;
+  createdAt: string;
+}
+
+export interface AdminSecurityAuditLog {
+  id: string;
+  adminId: string;
+  adminName: string;
+  actionType: 'approve_deposit' | 'reject_deposit' | 'settle_withdrawal' | 'reject_withdrawal' | 'approve_kyc' | 'reject_kyc' | 'approve_task_bounty' | 'reject_task_bounty' | 'system_override' | 'manual_balance_credit' | 'manual_balance_debit';
+  targetUserId?: string;
+  targetUserName?: string;
+  amount?: number;
+  notes?: string;
+  details?: Record<string, any>;
+  createdAt: string;
+}
+
+/**
+ * Non-blocking realtime event logging for Investor Protection
+ * Stores immediately in local buffer and asynchronously flushes to Supabase
+ */
+export const recordInvestorProtectionEvent = async (event: Omit<InvestorProtectionLog, 'id' | 'createdAt'> & { id?: string; createdAt?: string }): Promise<void> => {
+  const fullEvent: InvestorProtectionLog = {
+    id: event.id || `inv_prot_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    createdAt: event.createdAt || new Date().toISOString(),
+    ...event
+  };
+
+  // Local storage buffer for instant recovery and zero data loss
+  try {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('pm_investor_protection_logs');
+      const list: InvestorProtectionLog[] = stored ? JSON.parse(stored) : [];
+      list.unshift(fullEvent);
+      localStorage.setItem('pm_investor_protection_logs', JSON.stringify(list.slice(0, 500)));
+    }
+  } catch (e) {
+    // storage safety
+  }
+
+  // Non-blocking asynchronous sync to Supabase
+  const client = getSupabaseClient();
+  if (!client) return;
+
+  try {
+    const dbRecord = {
+      id: fullEvent.id,
+      user_id: fullEvent.userId,
+      user_name: fullEvent.userName || null,
+      user_email: fullEvent.userEmail || null,
+      event_type: fullEvent.eventType,
+      plan_id: fullEvent.planId || null,
+      plan_name: fullEvent.planName || null,
+      deed_reference_code: fullEvent.deedReferenceCode || null,
+      makani_number: fullEvent.makaniNumber || null,
+      amount: fullEvent.amount || 0,
+      details: fullEvent.details || {},
+      created_at: fullEvent.createdAt
+    };
+
+    client.from('investor_protection_logs').upsert(dbRecord).then(({ error }) => {
+      if (error && error.code !== '42P01') {
+        console.warn('Investor protection sync notice:', error.message);
+      }
+    }).catch(() => {
+      // Ignore network dropouts
+    });
+  } catch (err) {
+    // Non-blocking fire-and-forget
+  }
+};
+
+/**
+ * Non-blocking realtime logging for Administrator actions & overrides
+ */
+export const recordAdminSecurityAudit = async (audit: Omit<AdminSecurityAuditLog, 'id' | 'createdAt'> & { id?: string; createdAt?: string }): Promise<void> => {
+  const fullAudit: AdminSecurityAuditLog = {
+    id: audit.id || `adm_audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    createdAt: audit.createdAt || new Date().toISOString(),
+    ...audit
+  };
+
+  // Local storage buffer
+  try {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('pm_admin_audit_logs');
+      const list: AdminSecurityAuditLog[] = stored ? JSON.parse(stored) : [];
+      list.unshift(fullAudit);
+      localStorage.setItem('pm_admin_audit_logs', JSON.stringify(list.slice(0, 500)));
+    }
+  } catch (e) {
+    // storage safety
+  }
+
+  const client = getSupabaseClient();
+  if (!client) return;
+
+  try {
+    const dbRecord = {
+      id: fullAudit.id,
+      admin_id: fullAudit.adminId,
+      admin_name: fullAudit.adminName,
+      action_type: fullAudit.actionType,
+      target_user_id: fullAudit.targetUserId || null,
+      target_user_name: fullAudit.targetUserName || null,
+      amount: fullAudit.amount || 0,
+      notes: fullAudit.notes || null,
+      details: fullAudit.details || {},
+      created_at: fullAudit.createdAt
+    };
+
+    client.from('admin_audit_logs').upsert(dbRecord).then(({ error }) => {
+      if (error && error.code !== '42P01') {
+        console.warn('Admin audit sync notice:', error.message);
+      }
+    }).catch(() => {
+      // Ignore network dropouts
+    });
+  } catch (err) {
+    // Non-blocking fire-and-forget
+  }
+};
+
+export const fetchInvestorProtectionLogs = async (userId?: string): Promise<InvestorProtectionLog[]> => {
+  // First try local buffer
+  let localLogs: InvestorProtectionLog[] = [];
+  try {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('pm_investor_protection_logs');
+      if (stored) {
+        localLogs = JSON.parse(stored);
+        if (userId) {
+          localLogs = localLogs.filter(l => l.userId === userId);
+        }
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const client = getSupabaseClient();
+  if (!client) return localLogs;
+
+  try {
+    let query = client.from('investor_protection_logs').select('*').order('created_at', { ascending: false }).limit(100);
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+    const { data, error } = await query;
+    if (error || !data) return localLogs;
+
+    const mapped: InvestorProtectionLog[] = data.map((d: any) => ({
+      id: d.id,
+      userId: d.user_id,
+      userName: d.user_name,
+      userEmail: d.user_email,
+      eventType: d.event_type,
+      planId: d.plan_id,
+      planName: d.plan_name,
+      deedReferenceCode: d.deed_reference_code,
+      makaniNumber: d.makani_number,
+      amount: d.amount,
+      details: d.details,
+      createdAt: d.created_at
+    }));
+
+    return mapped.length > 0 ? mapped : localLogs;
+  } catch (e) {
+    return localLogs;
+  }
+};
+
+export const fetchAdminAuditLogs = async (): Promise<AdminSecurityAuditLog[]> => {
+  let localLogs: AdminSecurityAuditLog[] = [];
+  try {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('pm_admin_audit_logs');
+      if (stored) {
+        localLogs = JSON.parse(stored);
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const client = getSupabaseClient();
+  if (!client) return localLogs;
+
+  try {
+    const { data, error } = await client.from('admin_audit_logs').select('*').order('created_at', { ascending: false }).limit(100);
+    if (error || !data) return localLogs;
+
+    const mapped: AdminSecurityAuditLog[] = data.map((d: any) => ({
+      id: d.id,
+      adminId: d.admin_id,
+      adminName: d.admin_name,
+      actionType: d.action_type,
+      targetUserId: d.target_user_id,
+      targetUserName: d.target_user_name,
+      amount: d.amount,
+      notes: d.notes,
+      details: d.details,
+      createdAt: d.created_at
+    }));
+
+    return mapped.length > 0 ? mapped : localLogs;
+  } catch (e) {
+    return localLogs;
   }
 };
