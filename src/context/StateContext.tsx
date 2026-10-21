@@ -1662,16 +1662,18 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     syncUserToSupabase(updatedUser);
     syncTransactionToSupabase(logTx);
 
-    triggerLiveActivity({
-      type: 'purchase',
-      title: `${currentUser.name}`,
-      message: `Just activated ${plan.name} (₦${plan.cost.toLocaleString()})`,
-      amount: plan.cost,
-      timeAgo: 'Just now',
-      location: 'Verified Investor',
-      iconType: 'investment',
-      avatarInitials: currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
-    });
+    if (!isMkt) {
+      triggerLiveActivity({
+        type: 'purchase',
+        title: `${currentUser.name}`,
+        message: `Just activated ${plan.name} (₦${plan.cost.toLocaleString()})`,
+        amount: plan.cost,
+        timeAgo: 'Just now',
+        location: 'Verified Investor',
+        iconType: 'investment',
+        avatarInitials: currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+      });
+    }
 
     return true;
   };
@@ -1785,16 +1787,18 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     syncUserToSupabase(updatedUser);
     syncMultipleTransactionsToSupabase(newTransactionsList);
 
-    triggerLiveActivity({
-      type: 'purchase',
-      title: `${currentUser.name}`,
-      message: `Funded & activated ${plan.name} (₦${plan.cost.toLocaleString()})`,
-      amount: plan.cost,
-      timeAgo: 'Just now',
-      location: 'Verified Investor',
-      iconType: 'investment',
-      avatarInitials: currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
-    });
+    if (!isMkt) {
+      triggerLiveActivity({
+        type: 'purchase',
+        title: `${currentUser.name}`,
+        message: `Funded & activated ${plan.name} (₦${plan.cost.toLocaleString()})`,
+        amount: plan.cost,
+        timeAgo: 'Just now',
+        location: 'Verified Investor',
+        iconType: 'investment',
+        avatarInitials: currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+      });
+    }
 
     return true;
   };
@@ -3007,18 +3011,45 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.removeItem('pm_prod_task_submissions_v1');
     localStorage.removeItem('pm_prod_daily_progress_v1');
     localStorage.removeItem('pm_prod_virtual_day_v1');
+    localStorage.removeItem('pm_investor_protection_logs');
+    localStorage.removeItem('pm_admin_audit_logs');
+    localStorage.removeItem('pm_supabase_sync_queue');
 
-    setUsers(getSeedUsers());
+    const freshUsers = getSeedUsers().map(u => ({
+      ...u,
+      walletBalance: 0,
+      marketingAllocatedBalance: u.isMarketingAccount ? 500000 : 0
+    }));
+
+    setUsers(freshUsers);
     setCurrentUser(null);
-    setInvestments(SEED_INVESTMENTS);
-    setTransactions(SEED_TRANSACTIONS);
+    setInvestments([]);
+    setTransactions([]);
     setSettings(DEFAULT_SETTINGS);
     setTaskSubmissions([]);
     setUserDailyProgress({});
     setVirtualDayOffset(0);
     setCurrentWeek(1);
     clearMessages();
-    setSuccessMsg('Platform reset to original production database state.');
+    setSuccessMsg('Platform reset to a clean baseline. Old payments and test data purged.');
+
+    // Asynchronously purge remote Supabase test tables if client is configured
+    const client = getSupabaseClient();
+    if (client) {
+      Promise.allSettled([
+        client.from('transactions').delete().neq('id', 'keep_none'),
+        client.from('investments').delete().neq('id', 'keep_none'),
+        client.from('task_submissions').delete().neq('id', 'keep_none'),
+        client.from('wallet_transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        client.from('investor_protection_logs').delete().neq('id', 'keep_none'),
+        client.from('admin_audit_logs').delete().neq('id', 'keep_none'),
+        client.from('user_daily_progress').delete().neq('user_id', 'keep_none'),
+        client.from('users').update({ "walletBalance": 0 }).neq('id', 'usr_admin'),
+        client.from('wallets').update({ balance: 0 }).neq('user_id', 'keep_none'),
+        client.from('system_state').upsert({ key: 'current_week', value: '1' }),
+        client.from('system_state').upsert({ key: 'virtual_day_offset', value: '0' })
+      ]).catch(err => console.warn('Supabase purge notice:', err));
+    }
   };
 
   return (
