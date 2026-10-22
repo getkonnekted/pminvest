@@ -323,6 +323,7 @@ function MainAppContent() {
                         alt={plan.propertyName || plan.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
                         loading="lazy"
+                        decoding="async"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#06080e] via-[#06080e]/40 to-transparent" />
                       

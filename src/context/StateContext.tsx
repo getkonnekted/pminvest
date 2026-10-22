@@ -378,10 +378,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [liveLiquidityReserve, setLiveLiquidityReserve] = useState<number>(() => calculateContinuousLiquidity(virtualDayOffset));
 
   useEffect(() => {
-    // High-resolution real-time ticker: updates every 80ms so the digits continuously increment before user eyes!
+    // Gentle periodic update in root context to avoid unnecessary re-renders across the whole component tree
     const timer = setInterval(() => {
       setLiveLiquidityReserve(calculateContinuousLiquidity(virtualDayOffset));
-    }, 80);
+    }, 3000);
     return () => clearInterval(timer);
   }, [virtualDayOffset]);
 
