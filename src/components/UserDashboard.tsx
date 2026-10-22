@@ -53,7 +53,6 @@ import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 import { InsufficientFundsModal } from './InsufficientFundsModal';
 import { MultilingualPitchModal } from './MultilingualPitchModal';
-import { triggerCelebration } from '../lib/celebration';
 import { recordInvestorProtectionEvent } from '../lib/supabase';
 import { useSupabaseSync } from '../hooks/useSupabaseSync';
 
@@ -470,7 +469,6 @@ export const UserDashboard: React.FC = () => {
       const success = await optimisticPurchasePlan(plan);
       setInvestingPlanId(null);
       if (success) {
-        triggerCelebration('investment');
         setJustActivatedPlanId(plan.id);
         const nextDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
         setActivatedPlanModal({ plan, nextPayoutDate: nextDate });

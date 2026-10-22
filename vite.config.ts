@@ -32,7 +32,6 @@ export default defineConfig(({ mode }) => {
             'vendor-motion': ['motion'],
             'vendor-supabase': ['@supabase/supabase-js'],
             'vendor-icons': ['lucide-react'],
-            'vendor-confetti': ['canvas-confetti'],
           },
         },
       },
