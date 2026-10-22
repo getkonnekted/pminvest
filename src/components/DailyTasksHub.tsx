@@ -34,6 +34,7 @@ import { useAppState } from '../context/StateContext';
 import { DailyTask } from '../types';
 import { getWatMillisecondsUntilMidnight, formatWatCountdown, getWatDate } from '../lib/watTime';
 import { MultilingualPitchModal } from './MultilingualPitchModal';
+import { WHATSAPP_COMMUNITY_URL } from './CommunityBanner';
 
 export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRegisterModal?: () => void }> = ({ 
   onNavigateToInvest,
@@ -675,7 +676,31 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
         </div>
 
         {/* NATIVE ONE-TAP SHARING TOOLS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 my-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 my-4">
+          {/* Join Official WhatsApp Group */}
+          <a
+            href={WHATSAPP_COMMUNITY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-[#081310] hover:bg-[#0c1f19] border border-emerald-500/50 text-emerald-200 p-4 rounded-xl flex items-center justify-between transition-all cursor-pointer group text-left shadow-lg hover:border-emerald-400"
+            id="btn_join_whatsapp_group_tasks"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#25D366] text-slate-950 flex items-center justify-center font-bold text-sm shadow-xs">
+                WA
+              </div>
+              <div>
+                <span className="font-bold text-xs text-white block group-hover:text-emerald-300">
+                  Join WhatsApp Group
+                </span>
+                <span className="text-[10px] text-slate-400 block">
+                  Official community &amp; alerts
+                </span>
+              </div>
+            </div>
+            <ExternalLink className="w-4 h-4 text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
+          </a>
+
           {/* WhatsApp Share */}
           <button
             onClick={handleShareWhatsApp}
@@ -688,10 +713,10 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
               </div>
               <div>
                 <span className="font-bold text-xs text-slate-100 block group-hover:text-emerald-300">
-                  Share to WhatsApp
+                  Share on WhatsApp
                 </span>
                 <span className="text-[10px] text-slate-400 block">
-                  Broadcast to status or investor groups
+                  Broadcast pitch in 6 languages
                 </span>
               </div>
             </div>

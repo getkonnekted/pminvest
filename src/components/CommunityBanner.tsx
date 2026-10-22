@@ -2,7 +2,8 @@ import React from 'react';
 import { ExternalLink, MessageCircle, Send } from 'lucide-react';
 
 export const WHATSAPP_PHONE_NUMBER = '+19375598074';
-export const WHATSAPP_COMMUNITY_URL = 'https://wa.me/19375598074';
+export const WHATSAPP_SUPPORT_URL = 'https://wa.me/19375598074';
+export const WHATSAPP_COMMUNITY_URL = 'https://chat.whatsapp.com/GR83MZOLso4LtclK9xj0yN?s=sh&p=a&mlu=4&ilr=4';
 export const TELEGRAM_COMMUNITY_URL = 'https://t.me/+frJYSXYkeSkwYTEx';
 
 export const CommunityBanner: React.FC = () => {
@@ -28,7 +29,7 @@ export const CommunityBanner: React.FC = () => {
             title="Join Official WhatsApp"
           >
             <MessageCircle className="w-3.5 h-3.5 text-slate-950" />
-            <span>Join WhatsApp</span>
+            <span>Join WhatsApp Group</span>
             <ExternalLink className="w-3 h-3 opacity-70" />
           </a>
 

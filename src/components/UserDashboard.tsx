@@ -46,7 +46,7 @@ import { NIGERIAN_BANKS, resolveNigerianAccount } from '../lib/paystack';
 import { PmLogo } from './PmLogo';
 import { PayoutCountdown } from './PayoutCountdown';
 import { InvestmentPayoutButton } from './InvestmentPayoutButton';
-import { CommunityBanner } from './CommunityBanner';
+import { CommunityBanner, WHATSAPP_COMMUNITY_URL } from './CommunityBanner';
 import { LivePropertyTradingModal } from './LivePropertyTradingModal';
 import { UaeDeedModal } from './UaeDeedModal';
 import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
@@ -1672,6 +1672,18 @@ export const UserDashboard: React.FC = () => {
                 <MessageSquare className="w-3.5 h-3.5 text-slate-950" />
                 <span>Share on WhatsApp (6 Languages)</span>
               </button>
+
+              <a 
+                href={WHATSAPP_COMMUNITY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/40 text-emerald-300 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 shadow-sm transition-all cursor-pointer active:scale-95"
+                title="Join Official WhatsApp Group for live daily updates"
+                id="btn_user_join_whatsapp_group"
+              >
+                <span>Join Official WhatsApp Group</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </div>
           </div>
 
