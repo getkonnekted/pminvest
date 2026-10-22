@@ -40,6 +40,8 @@ import { INVESTMENT_PLANS } from './types';
 import { PayoutToastContainer } from './components/PayoutToast';
 import { LiveActivityToast } from './components/LiveActivityToast';
 import { LiveReserveCounter } from './components/LiveReserveCounter';
+import { CelebrationGlowOverlay } from './components/CelebrationGlowOverlay';
+import { triggerCelebration } from './lib/celebration';
 
 const UserDashboard = React.lazy(() => import('./components/UserDashboard').then(module => ({ default: module.UserDashboard })));
 const MarketerDashboard = React.lazy(() => import('./components/MarketerDashboard').then(module => ({ default: module.MarketerDashboard })));
@@ -164,6 +166,7 @@ function MainAppContent() {
     e.preventDefault();
     const success = register(regName, regEmail, regRef, regPassword, regPhone);
     if (success) {
+      triggerCelebration('registration');
       setRegName('');
       setRegEmail('');
       setRegPhone('');
@@ -1069,6 +1072,7 @@ function MainAppContent() {
         </main>
       </div>
 
+      <CelebrationGlowOverlay />
       <LegalDisclosures />
     </div>
   );

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS, DailyTask, TaskSubmission, UserDailyProgress, PayoutToastData, LiveActivityItem } from '../types';
 import { DEFAULT_DAILY_TASKS } from '../data/dailyTasks';
 import { playPayoutChime } from '../lib/sound';
+import { triggerCelebration } from '../lib/celebration';
 import { getWatDate, getWatDateString, getWatYesterdayString } from '../lib/watTime';
 import { 
   isSupabaseConfigured, 
@@ -773,6 +774,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCurrentUser(newUser);
     syncUserToSupabase(newUser);
     setSuccessMsg(`Account created successfully! Welcome to PM Invest, ${trimmedName}.`);
+    triggerCelebration('registration');
     return true;
   };
 
@@ -1658,6 +1660,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setInvestments(prev => [newInv, ...prev]);
     setTransactions(prev => [logTx, ...prev]);
     setSuccessMsg(`Congratulations! You have successfully acquired ${plan.name}. First weekly payout due in 7 days.`);
+    triggerCelebration('investment');
 
     // Sync state changes to Supabase
     syncInvestmentToSupabase(newInv);
@@ -1783,6 +1786,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setInvestments(prev => [newInv, ...prev]);
     setSuccessMsg(`🎉 Success! ₦${requiredTopUp.toLocaleString()} funded and ${plan.name} activated successfully.`);
+    triggerCelebration('investment');
 
     // Sync state changes to Supabase
     syncInvestmentToSupabase(newInv);
