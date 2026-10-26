@@ -71,12 +71,12 @@ INSERT INTO public.investment_plans (
     "occupancyRate", "deedTier", "cadastralId", "makaniNumber", cost, "weeklyPayout", "totalReturns", "weeksDuration"
 )
 VALUES
-    ('plan_1', 'Marina Bay Residences', 'Marina Bay Residences', 'Dubai Marina, Dubai, UAE 🇦🇪', 'Plot 392-581, Marina Promenade, Al Marsa Street, Dubai Marina, Dubai, UAE', '/properties/marina_bay_residences.jpg', 'Executive Studio Waterfront Stake', '98.4%', 'Marina Bay Co-Ownership Deed (₦30,000 Tier)', 'DLD-CAD-392-581', '12845 76291', 30000, 6500, 156000, 24),
-    ('plan_2', 'Creek Horizon Suites', 'Creek Horizon Suites', 'Dubai Creek Harbour, Dubai, UAE 🇦🇪', 'Plot 184-210, Creek Island Boulevard, Dubai Creek Harbour, The Lagoons, Dubai, UAE', '/properties/creek_horizon_suites.jpg', '1-Bedroom Waterfront Apartment', '97.2%', 'Creek Horizon Co-Ownership Deed (₦60,000 Tier)', 'DLD-CAD-184-210', '14592 88201', 60000, 13000, 312000, 24),
-    ('plan_3', 'Downtown Sky Vista', 'Downtown Sky Vista', 'Downtown Burj Khalifa District, Dubai, UAE 🇦🇪', 'Plot 119-969, Sheikh Mohammed bin Rashid Boulevard, Downtown Dubai, Dubai, UAE', '/properties/downtown_sky_vista.jpg', 'Serviced Luxury Residence Stake', '99.1%', 'Downtown Sky Co-Ownership Deed (₦120,000 Tier)', 'DLD-CAD-119-969', '11894 92051', 120000, 26000, 624000, 24),
-    ('plan_4', 'Sobha Sanctuary Estates', 'Sobha Sanctuary Estates', 'Sobha Hartland / MBR City, Dubai, UAE 🇦🇪', 'Plot 440-112, Ras Al Khor Road, Sobha Hartland, Mohammed Bin Rashid Al Maktoum City, Dubai, UAE', '/properties/sobha_sanctuary_estates.jpg', '2-Bedroom Forest Villa Stake', '96.8%', 'Sobha Sanctuary Co-Ownership Deed (₦250,000 Tier)', 'DLD-CAD-440-112', '16402 71830', 250000, 54166, 1300000, 24),
-    ('plan_5', 'Palm Azure Ocean Villa', 'Palm Azure Ocean Villa', 'Palm Jumeirah, Dubai, UAE 🇦🇪', 'Plot 512-404, Crescent Road West, Frond G, Palm Jumeirah, Dubai, UAE', '/properties/palm_azure_villa.jpg', 'Ultra-Luxury Waterfront Residence', '98.9%', 'Palm Azure Co-Ownership Deed (₦600,000 Tier)', 'DLD-CAD-512-404', '10382 64920', 600000, 130000, 3120000, 24),
-    ('plan_6', 'Emirates Financial Tower', 'Emirates Financial Tower', 'DIFC Financial District, Dubai, UAE 🇦🇪', 'Plot 884-219, Al Sa''ada Street, DIFC Gate Precinct 4, Dubai International Financial Centre, Dubai, UAE', '/properties/emirates_tower_difc.jpg', 'Prime Grade-A Commercial Asset', '99.4%', 'Emirates Tower Co-Ownership Deed (₦1,500,000 Tier)', 'DLD-CAD-884-219', '18290 83910', 1500000, 325000, 7800000, 24)
+    ('plan_1', 'Marina Bay Residences', 'Marina Bay Residences', 'Dubai Marina, Dubai, UAE', 'Plot 392-581, Marina Promenade, Al Marsa Street, Dubai Marina, Dubai, UAE', '/properties/marina_bay_residences.jpg', 'Executive Studio Waterfront Stake', '98.4%', 'Marina Bay Co-Ownership Deed (₦30,000 Tier)', 'DLD-CAD-392-581', '12845 76291', 30000, 6500, 156000, 24),
+    ('plan_2', 'Creek Horizon Suites', 'Creek Horizon Suites', 'Dubai Creek Harbour, Dubai, UAE', 'Plot 184-210, Creek Island Boulevard, Dubai Creek Harbour, The Lagoons, Dubai, UAE', '/properties/creek_horizon_suites.jpg', '1-Bedroom Waterfront Apartment', '97.2%', 'Creek Horizon Co-Ownership Deed (₦60,000 Tier)', 'DLD-CAD-184-210', '14592 88201', 60000, 13000, 312000, 24),
+    ('plan_3', 'Downtown Sky Vista', 'Downtown Sky Vista', 'Downtown Burj Khalifa District, Dubai, UAE', 'Plot 119-969, Sheikh Mohammed bin Rashid Boulevard, Downtown Dubai, Dubai, UAE', '/properties/downtown_sky_vista.jpg', 'Serviced Luxury Residence Stake', '99.1%', 'Downtown Sky Co-Ownership Deed (₦120,000 Tier)', 'DLD-CAD-119-969', '11894 92051', 120000, 26000, 624000, 24),
+    ('plan_4', 'Sobha Sanctuary Estates', 'Sobha Sanctuary Estates', 'Sobha Hartland / MBR City, Dubai, UAE', 'Plot 440-112, Ras Al Khor Road, Sobha Hartland, Mohammed Bin Rashid Al Maktoum City, Dubai, UAE', '/properties/sobha_sanctuary_estates.jpg', '2-Bedroom Forest Villa Stake', '96.8%', 'Sobha Sanctuary Co-Ownership Deed (₦250,000 Tier)', 'DLD-CAD-440-112', '16402 71830', 250000, 54166, 1300000, 24),
+    ('plan_5', 'Palm Azure Ocean Villa', 'Palm Azure Ocean Villa', 'Palm Jumeirah, Dubai, UAE', 'Plot 512-404, Crescent Road West, Frond G, Palm Jumeirah, Dubai, UAE', '/properties/palm_azure_villa.jpg', 'Ultra-Luxury Waterfront Residence', '98.9%', 'Palm Azure Co-Ownership Deed (₦600,000 Tier)', 'DLD-CAD-512-404', '10382 64920', 600000, 130000, 3120000, 24),
+    ('plan_6', 'Emirates Financial Tower', 'Emirates Financial Tower', 'DIFC Financial District, Dubai, UAE', 'Plot 884-219, Al Sa''ada Street, DIFC Gate Precinct 4, Dubai International Financial Centre, Dubai, UAE', '/properties/emirates_tower_difc.jpg', 'Prime Grade-A Commercial Asset', '99.4%', 'Emirates Tower Co-Ownership Deed (₦1,500,000 Tier)', 'DLD-CAD-884-219', '18290 83910', 1500000, 325000, 7800000, 24)
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     "propertyName" = EXCLUDED."propertyName",
@@ -93,12 +93,12 @@ ON CONFLICT (id) DO UPDATE SET
     "totalReturns" = EXCLUDED."totalReturns",
     "weeksDuration" = EXCLUDED."weeksDuration";
 
--- 6. Ensure default system settings
+-- 6. Ensure default system settings (₦3.418B Reserve Backing)
 INSERT INTO public.settings (id, "liquidityReserve", "dailyLiquidityGrowth", "hourlyLiquidityGrowth", "riskAlertLevel", "minWithdrawal", "maxWithdrawal", "autoApproveDeposits", "automatedPayouts", "dailyTaskEnabled")
-VALUES ('system_settings', 92066059.975, 240000, 10000, 'low', 5000, 1000000, FALSE, TRUE, TRUE)
+VALUES ('system_settings', 3418520000, 4200000, 175000, 'low', 5000, 1000000, FALSE, TRUE, TRUE)
 ON CONFLICT (id) DO UPDATE SET
-    "liquidityReserve" = 92066059.975,
-    "dailyLiquidityGrowth" = 240000,
-    "hourlyLiquidityGrowth" = 10000;
+    "liquidityReserve" = 3418520000,
+    "dailyLiquidityGrowth" = 4200000,
+    "hourlyLiquidityGrowth" = 175000;
 
 COMMIT;

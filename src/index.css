@@ -138,8 +138,14 @@ html.theme-champagne ::-webkit-scrollbar-thumb:hover,
 /* Champagne Light surface overrides */
 html.theme-champagne .bg-slate-950,
 [data-theme="champagne"] .bg-slate-950,
+html.theme-champagne .bg-slate-900,
+[data-theme="champagne"] .bg-slate-900,
 html.theme-champagne .bg-\[\#06080e\],
-[data-theme="champagne"] .bg-\[\#06080e\] {
+[data-theme="champagne"] .bg-\[\#06080e\],
+html.theme-champagne .bg-\[\#06080e\]\/90,
+[data-theme="champagne"] .bg-\[\#06080e\]\/90,
+html.theme-champagne .bg-\[\#06080e\]\/85,
+[data-theme="champagne"] .bg-\[\#06080e\]\/85 {
   background-color: #f7f4ed !important;
 }
 
@@ -151,9 +157,37 @@ html.theme-champagne .bg-\[\#090d18\],
 [data-theme="champagne"] .bg-\[\#090d18\],
 html.theme-champagne .bg-\[\#0c101c\],
 [data-theme="champagne"] .bg-\[\#0c101c\],
+html.theme-champagne .bg-\[\#0d1222\],
+[data-theme="champagne"] .bg-\[\#0d1222\],
 html.theme-champagne .bg-\[\#0e1424\],
-[data-theme="champagne"] .bg-\[\#0e1424\] {
+[data-theme="champagne"] .bg-\[\#0e1424\],
+html.theme-champagne .bg-\[\#10172a\],
+[data-theme="champagne"] .bg-\[\#10172a\],
+html.theme-champagne .bg-\[\#111728\],
+[data-theme="champagne"] .bg-\[\#111728\],
+html.theme-champagne .bg-\[\#131b2e\],
+[data-theme="champagne"] .bg-\[\#131b2e\],
+html.theme-champagne .bg-\[\#141b2e\],
+[data-theme="champagne"] .bg-\[\#141b2e\] {
   background-color: #ffffff !important;
+}
+
+/* Admin sub-bar styling */
+html.theme-champagne .bg-\[\#1e293b\],
+[data-theme="champagne"] .bg-\[\#1e293b\] {
+  background-color: #ede5d8 !important;
+}
+
+html.theme-champagne .bg-\[\#0f172a\],
+[data-theme="champagne"] .bg-\[\#0f172a\] {
+  background-color: #dfd5c2 !important;
+}
+
+html.theme-champagne .border-slate-700,
+[data-theme="champagne"] .border-slate-700,
+html.theme-champagne .border-slate-700\/80,
+[data-theme="champagne"] .border-slate-700\/80 {
+  border-color: rgba(197, 160, 89, 0.35) !important;
 }
 
 /* Transform obsidian gradients to warm champagne alabaster gradients */
@@ -174,28 +208,67 @@ html.theme-champagne .via-\[\#090d18\],
 html.theme-champagne .to-\[\#06080e\],
 [data-theme="champagne"] .to-\[\#06080e\],
 html.theme-champagne .to-\[\#070a12\],
-[data-theme="champagne"] .to-\[\#070a12\] {
+[data-theme="champagne"] .to-\[\#070a12\],
+html.theme-champagne .to-\[\#120a24\],
+[data-theme="champagne"] .to-\[\#120a24\] {
   --tw-gradient-to: #ede4d3 !important;
+}
+
+/* Gold text gradient in light mode */
+html.theme-champagne .gold-gradient-text,
+[data-theme="champagne"] .gold-gradient-text {
+  background: linear-gradient(135deg, #78350f 0%, #b45309 45%, #92400e 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
 }
 
 /* In Champagne mode, convert light gold/champagne text to deep high-contrast tones */
 html.theme-champagne .text-\[\#f7ecd5\],
 [data-theme="champagne"] .text-\[\#f7ecd5\] {
-  color: #261f12 !important;
+  color: #0f172a !important;
 }
 
 html.theme-champagne .text-slate-100,
 [data-theme="champagne"] .text-slate-100,
 html.theme-champagne .text-slate-200,
 [data-theme="champagne"] .text-slate-200 {
-  color: #1f2937 !important;
+  color: #1e293b !important;
 }
 
 html.theme-champagne .text-slate-300,
 [data-theme="champagne"] .text-slate-300,
 html.theme-champagne .text-slate-400,
 [data-theme="champagne"] .text-slate-400 {
-  color: #4b5563 !important;
+  color: #475569 !important;
+}
+
+/* High-contrast amber/yellow text in light mode */
+html.theme-champagne .text-amber-400,
+[data-theme="champagne"] .text-amber-400,
+html.theme-champagne .text-amber-300,
+[data-theme="champagne"] .text-amber-300,
+html.theme-champagne .text-yellow-400,
+[data-theme="champagne"] .text-yellow-400 {
+  color: #92400e !important;
+}
+
+html.theme-champagne .text-amber-500,
+[data-theme="champagne"] .text-amber-500 {
+  color: #b45309 !important;
+}
+
+/* High-contrast emerald text in light mode */
+html.theme-champagne .text-emerald-400,
+[data-theme="champagne"] .text-emerald-400,
+html.theme-champagne .text-emerald-300,
+[data-theme="champagne"] .text-emerald-300 {
+  color: #047857 !important;
+}
+
+/* Ensure text-white on light surfaces turns dark, except on colored action buttons */
+html.theme-champagne .text-white:not([class*="bg-emerald-"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-blue-"]):not([class*="bg-amber-"]):not([class*="bg-slate-9"]):not([class*="bg-black"]):not([class*="from-"]):not(button.bg-emerald-600):not(button.bg-purple-600),
+[data-theme="champagne"] .text-white:not([class*="bg-emerald-"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-blue-"]):not([class*="bg-amber-"]):not([class*="bg-slate-9"]):not([class*="bg-black"]):not([class*="from-"]):not(button.bg-emerald-600):not(button.bg-purple-600) {
+  color: #0f172a !important;
 }
 
 html.theme-champagne .border-amber-500\/20,
@@ -203,6 +276,27 @@ html.theme-champagne .border-amber-500\/20,
 html.theme-champagne .border-amber-500\/25,
 [data-theme="champagne"] .border-amber-500\/25,
 html.theme-champagne .border-amber-500\/30,
-[data-theme="champagne"] .border-amber-500\/30 {
+[data-theme="champagne"] .border-amber-500\/30,
+html.theme-champagne .border-amber-500\/40,
+[data-theme="champagne"] .border-amber-500\/40 {
   border-color: rgba(197, 160, 89, 0.45) !important;
+}
+
+/* Form controls in light mode */
+html.theme-champagne input,
+[data-theme="champagne"] input,
+html.theme-champagne select,
+[data-theme="champagne"] select,
+html.theme-champagne textarea,
+[data-theme="champagne"] textarea {
+  background-color: #faf7f2 !important;
+  color: #0f172a !important;
+  border-color: #d8c8ae !important;
+}
+
+html.theme-champagne input::placeholder,
+[data-theme="champagne"] input::placeholder,
+html.theme-champagne textarea::placeholder,
+[data-theme="champagne"] textarea::placeholder {
+  color: #94a3b8 !important;
 }

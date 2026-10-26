@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { StateProvider, useAppState } from './context/StateContext';
 import { BrandingHeader, LegalDisclosures } from './components/BrandingHeader';
 import { PmLogo } from './components/PmLogo';
@@ -54,6 +54,7 @@ const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(modul
 const AujotenPage = React.lazy(() => import('./components/AujotenPage').then(module => ({ default: module.AujotenPage })));
 
 function MainAppContent() {
+  const { isChampagne } = useTheme();
   // Pure lightweight native hardware-accelerated scrolling with zero JS main-thread overhead
   const { 
     currentUser, 
@@ -258,10 +259,10 @@ function MainAppContent() {
   // Unauthenticated Landing Page
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-[#06080e] text-slate-100 flex flex-col justify-between font-sans selection:bg-amber-500/30 selection:text-amber-200 relative overflow-x-hidden">
+      <div className={`min-h-screen ${isChampagne ? 'bg-[#f7f4ed] text-slate-900' : 'bg-[#06080e] text-slate-100'} flex flex-col justify-between font-sans selection:bg-amber-500/30 selection:text-amber-200 relative overflow-x-hidden`}>
         {/* Ambient warm gold lighting blur */}
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute top-1/3 right-10 w-[450px] h-[450px] bg-amber-600/5 rounded-full blur-[130px] pointer-events-none" />
+        <div className={`absolute top-0 left-1/4 w-[500px] h-[500px] ${isChampagne ? 'bg-amber-500/5' : 'bg-amber-500/5'} rounded-full blur-[140px] pointer-events-none`} />
+        <div className={`absolute top-1/3 right-10 w-[450px] h-[450px] ${isChampagne ? 'bg-amber-600/5' : 'bg-amber-600/5'} rounded-full blur-[130px] pointer-events-none`} />
 
         <PayoutToastContainer
           toasts={payoutToasts}
@@ -270,16 +271,16 @@ function MainAppContent() {
         <LiveActivityToast />
 
         {/* Affiliation & Live Accreting Reserve Header bar */}
-        <div className="bg-[#070a12] px-4 py-2.5 text-center text-xs text-slate-300 border-b border-amber-500/20 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 shadow-md">
+        <div className={`${isChampagne ? 'bg-[#ede5d8] border-b border-[#c5a059]/35 text-slate-700 shadow-sm' : 'bg-[#070a12] border-b border-amber-500/20 text-slate-300 shadow-md'} px-4 py-2.5 text-center text-xs flex flex-wrap items-center justify-between gap-x-4 gap-y-2`}>
           <div className="flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            <span>PM Invest is certified under <strong className="text-white">TREASURE HOMES LTD</strong></span>
+            <Sparkles className={`w-3.5 h-3.5 ${isChampagne ? 'text-amber-700' : 'text-amber-400'} animate-pulse`} />
+            <span>PM Invest is certified under <strong className={isChampagne ? 'text-slate-950 font-black' : 'text-white'}>TREASURE HOMES LTD</strong></span>
           </div>
           <div className="flex items-center gap-3">
             <PWAInstallButton />
             <div className="hidden sm:flex items-center gap-1.5 text-[11px]">
-              <span className="text-amber-400 font-medium">Reserve Collateral:</span>
-              <LiveReserveCounter precision={0} showLivePulse={true} showRateBadge={false} className="text-white font-bold font-mono" />
+              <span className={`${isChampagne ? 'text-amber-800 font-bold' : 'text-amber-400'} font-medium`}>Reserve Collateral:</span>
+              <LiveReserveCounter precision={0} showLivePulse={true} showRateBadge={false} className={`${isChampagne ? 'text-slate-950' : 'text-white'} font-bold font-mono`} />
             </div>
           </div>
         </div>
@@ -290,60 +291,60 @@ function MainAppContent() {
             <div className="flex items-center gap-3.5 sm:gap-4">
               <PmLogo className="w-14 h-14 sm:w-18 sm:h-18 drop-shadow-[0_8px_20px_rgba(245,158,11,0.25)] shrink-0" />
               <div>
-                <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-widest font-mono mb-1">
+                <div className={`inline-flex items-center gap-1.5 ${isChampagne ? 'bg-amber-100/90 border-amber-300 text-amber-900 font-bold' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'} border text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full uppercase tracking-widest font-mono mb-1`}>
                   <UaeFlag size="xs" />
                   <span>Treasure Homes Sovereign Real Estate SPV</span>
                 </div>
-                <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight uppercase font-sans">
+                <h1 className={`text-2xl sm:text-4xl font-black ${isChampagne ? 'text-slate-950' : 'text-white'} tracking-tight uppercase font-sans`}>
                   PM <span className="gold-gradient-text">Invest</span> Platform
                 </h1>
-                <p className="text-xs text-amber-400/90 font-mono mt-0.5">
+                <p className={`text-xs ${isChampagne ? 'text-amber-800 font-semibold' : 'text-amber-400/90 font-mono'} mt-0.5`}>
                   Physical UAE Luxury Real Estate · Verified DLD Deeds · Friday Cash Yields
                 </p>
               </div>
             </div>
 
             <div className="space-y-3">
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#f7ecd5] leading-snug">
+              <h2 className={`text-xl sm:text-2xl lg:text-3xl font-extrabold ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} leading-snug`}>
                 Co-Own Prime Dubai Real Estate · Earn Direct Friday Cash Rental Payouts
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
+              <p className={`text-xs sm:text-sm ${isChampagne ? 'text-slate-700' : 'text-slate-300'} leading-relaxed max-w-2xl`}>
                 Acquire fractional institutional stakes in Dubai Marina, DIFC, and Palm Jumeirah starting from ₦30,000. Rental profits collected from verified tenants are credited directly into your Nigerian bank account or digital wallet every Friday at 12:00 PM.
               </p>
             </div>
 
             {/* 4 Hero Institutional Metric Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-              <div className="bg-[#0c101c] border border-amber-500/25 p-3 rounded-xl shadow-md">
-                <span className="text-[10px] font-mono text-slate-400 uppercase block">Liquid Backing</span>
-                <span className="text-sm sm:text-base font-extrabold text-amber-400 font-mono block mt-0.5">
+              <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-900 shadow-sm' : 'bg-[#0c101c] border-amber-500/25 text-white shadow-md'} border p-3 rounded-xl`}>
+                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500 font-semibold' : 'text-slate-400'} uppercase block`}>Liquid Backing</span>
+                <span className={`text-sm sm:text-base font-extrabold ${isChampagne ? 'text-amber-800' : 'text-amber-400'} font-mono block mt-0.5`}>
                   ₦{(liveLiquidityReserve / 1000000000).toFixed(2)}B+
                 </span>
-                <span className="text-[9px] text-emerald-400 font-mono">Treasure Homes SPV</span>
+                <span className={`text-[9px] ${isChampagne ? 'text-emerald-700 font-semibold' : 'text-emerald-400'} font-mono`}>Treasure Homes SPV</span>
               </div>
 
-              <div className="bg-[#0c101c] border border-amber-500/25 p-3 rounded-xl shadow-md">
-                <span className="text-[10px] font-mono text-slate-400 uppercase block">Dubai Assets</span>
-                <span className="text-sm sm:text-base font-extrabold text-white font-mono block mt-0.5">
+              <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-900 shadow-sm' : 'bg-[#0c101c] border-amber-500/25 text-white shadow-md'} border p-3 rounded-xl`}>
+                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500 font-semibold' : 'text-slate-400'} uppercase block`}>Dubai Assets</span>
+                <span className={`text-sm sm:text-base font-extrabold ${isChampagne ? 'text-slate-950' : 'text-white'} font-mono block mt-0.5`}>
                   6 Verified
                 </span>
-                <span className="text-[9px] text-slate-400 font-mono">DLD Recorded</span>
+                <span className={`text-[9px] ${isChampagne ? 'text-slate-500' : 'text-slate-400'} font-mono`}>DLD Recorded</span>
               </div>
 
-              <div className="bg-[#0c101c] border border-amber-500/25 p-3 rounded-xl shadow-md">
-                <span className="text-[10px] font-mono text-slate-400 uppercase block">Payout Day</span>
-                <span className="text-sm sm:text-base font-extrabold text-emerald-400 font-mono block mt-0.5">
+              <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-900 shadow-sm' : 'bg-[#0c101c] border-amber-500/25 text-white shadow-md'} border p-3 rounded-xl`}>
+                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500 font-semibold' : 'text-slate-400'} uppercase block`}>Payout Day</span>
+                <span className={`text-sm sm:text-base font-extrabold ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'} font-mono block mt-0.5`}>
                   Every Friday
                 </span>
-                <span className="text-[9px] text-slate-400 font-mono">12:00 PM Auto-Bank</span>
+                <span className={`text-[9px] ${isChampagne ? 'text-slate-500' : 'text-slate-400'} font-mono`}>12:00 PM Auto-Bank</span>
               </div>
 
-              <div className="bg-[#0c101c] border border-amber-500/25 p-3 rounded-xl shadow-md">
-                <span className="text-[10px] font-mono text-slate-400 uppercase block">Partner Share</span>
-                <span className="text-sm sm:text-base font-extrabold text-amber-300 font-mono block mt-0.5">
+              <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-900 shadow-sm' : 'bg-[#0c101c] border-amber-500/25 text-white shadow-md'} border p-3 rounded-xl`}>
+                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500 font-semibold' : 'text-slate-400'} uppercase block`}>Partner Share</span>
+                <span className={`text-sm sm:text-base font-extrabold ${isChampagne ? 'text-amber-800' : 'text-amber-300'} font-mono block mt-0.5`}>
                   7.5% Weekly
                 </span>
-                <span className="text-[9px] text-emerald-400 font-mono">Liquid Override</span>
+                <span className={`text-[9px] ${isChampagne ? 'text-emerald-700 font-semibold' : 'text-emerald-400'} font-mono`}>Liquid Override</span>
               </div>
             </div>
 
@@ -353,15 +354,15 @@ function MainAppContent() {
                 href={WHATSAPP_COMMUNITY_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm cursor-pointer"
+                className={`inline-flex items-center gap-2 ${isChampagne ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/40 text-emerald-300'} border text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm cursor-pointer`}
               >
-                <MessageSquare className="w-4 h-4 text-emerald-400" />
+                <MessageSquare className="w-4 h-4 text-emerald-600" />
                 <span>Official WhatsApp Investor Group →</span>
               </a>
 
               <a
                 href="#properties_catalog"
-                className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-mono font-bold hover:underline py-2 px-1 cursor-pointer"
+                className={`inline-flex items-center gap-1.5 text-xs ${isChampagne ? 'text-amber-800 hover:text-amber-900' : 'text-amber-400 hover:text-amber-300'} font-mono font-bold hover:underline py-2 px-1 cursor-pointer`}
               >
                 <span>Explore All 6 Properties ↓</span>
               </a>
@@ -369,12 +370,12 @@ function MainAppContent() {
           </div>
 
           {/* RIGHT PANEL: Clean Auth Forms in Luxury Obsidian & Brushed Gold */}
-          <div className="lg:col-span-5 bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/30 rounded-2xl p-6 sm:p-7 shadow-2xl relative overflow-hidden text-slate-100" id="card_auth_panel">
+          <div className={`lg:col-span-5 ${isChampagne ? 'bg-white border-[#c5a059]/40 text-slate-900 shadow-xl' : 'bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border-amber-500/30 text-slate-100 shadow-2xl'} border rounded-2xl p-6 sm:p-7 relative overflow-hidden`} id="card_auth_panel">
             {/* Ambient accent background blur */}
             <div className="absolute top-0 right-0 w-44 h-44 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
             {/* Segmented Top Tabs */}
-            <div className="flex bg-[#06080e] p-1 rounded-xl mb-5 border border-amber-500/20">
+            <div className={`flex ${isChampagne ? 'bg-[#ede5d8] border-[#c5a059]/30' : 'bg-[#06080e] border-amber-500/20'} p-1 rounded-xl mb-5 border`}>
               <button
                 type="button"
                 onClick={() => { setIsRegistering(false); setIsResettingPassword(false); clearMessages(); }}
@@ -882,17 +883,17 @@ function MainAppContent() {
         </div>
 
         {/* SECTION 2: LIVE TREASURY STRIP & FRIDAY PAYOUT COUNTDOWN */}
-        <section className="w-full bg-gradient-to-r from-[#0c101c] via-[#090d18] to-[#120a24] border-y border-amber-500/25 py-6 px-4 sm:px-6 lg:px-8 shadow-2xl relative z-10">
+        <section className={`w-full ${isChampagne ? 'bg-gradient-to-r from-[#fbf8f2] via-[#f5ede0] to-[#ece1cf] border-y border-[#c5a059]/35 text-slate-900' : 'bg-gradient-to-r from-[#0c101c] via-[#090d18] to-[#120a24] border-y border-amber-500/25 text-slate-100'} py-6 px-4 sm:px-6 lg:px-8 shadow-md relative z-10`}>
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="space-y-1.5 text-center md:text-left">
-              <span className="text-[10px] text-amber-400 font-mono uppercase tracking-widest font-bold flex items-center justify-center md:justify-start gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span className={`text-[10px] ${isChampagne ? 'text-amber-800 font-extrabold' : 'text-amber-400 font-bold'} font-mono uppercase tracking-widest flex items-center justify-center md:justify-start gap-1.5`}>
+                <Clock className={`w-3.5 h-3.5 ${isChampagne ? 'text-amber-700' : 'text-amber-400'} shrink-0`} />
                 OFFICIAL FRIDAY TREASURY CASH DISTRIBUTION SCHEDULE
               </span>
-              <h3 className="text-base sm:text-xl font-black text-[#f7ecd5] uppercase tracking-wide font-mono">
+              <h3 className={`text-base sm:text-xl font-black ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-wide font-mono`}>
                 Live Countdown to Friday 12:00 PM Payout Window
               </h3>
-              <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
+              <p className={`text-xs ${isChampagne ? 'text-slate-700' : 'text-slate-300'} max-w-xl leading-relaxed`}>
                 Every Friday at 12:00 PM, tenant rental yields collected from our UAE luxury towers are automatically disbursed to investor wallets and local Nigerian bank accounts.
               </p>
             </div>
@@ -905,50 +906,50 @@ function MainAppContent() {
         {/* SECTION 3: HOW IT WORKS (3 PLAIN-LANGUAGE LAYMAN STEPS) */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-8 relative z-10">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider font-mono">
+            <div className={`inline-flex items-center gap-1.5 ${isChampagne ? 'bg-amber-100/90 border-amber-300 text-amber-900 font-bold' : 'bg-amber-500/10 border-amber-500/30 text-amber-300 font-bold'} border text-[11px] px-3 py-1 rounded-full uppercase tracking-wider font-mono`}>
               <span>HOW PM INVEST WORKS</span>
             </div>
-            <h3 className="text-xl sm:text-3xl font-black text-[#f7ecd5] uppercase tracking-tight font-mono">
+            <h3 className={`text-xl sm:text-3xl font-black ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-tight font-mono`}>
               Dubai Real Estate Co-Ownership in 3 Steps
             </h3>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+            <p className={`text-xs sm:text-sm ${isChampagne ? 'text-slate-600' : 'text-slate-400'} leading-relaxed`}>
               No complicated paperwork or international banking hurdles. Co-own verified Dubai luxury assets and start receiving weekly direct bank alerts in minutes.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#0c101c] border border-amber-500/20 rounded-2xl p-6 shadow-xl space-y-3 relative overflow-hidden group hover:border-amber-400/50 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black font-mono text-base">
+            <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md hover:border-amber-600' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-xl hover:border-amber-400/50'} border rounded-2xl p-6 space-y-3 relative overflow-hidden group transition-all`}>
+              <div className={`w-10 h-10 rounded-xl ${isChampagne ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-amber-500/15 text-amber-400 border-amber-500/30'} border flex items-center justify-center font-black font-mono text-base`}>
                 1
               </div>
-              <h4 className="text-base font-bold text-white uppercase tracking-wide">
+              <h4 className={`text-base font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} uppercase tracking-wide`}>
                 Pick Your Property Stake
               </h4>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
                 Choose a structured 24-week unit in prime Dubai towers (starting from ₦30,000). Every unit is backed by authentic Dubai Land Department Title Deeds and Makani parcel IDs.
               </p>
             </div>
 
-            <div className="bg-[#0c101c] border border-amber-500/20 rounded-2xl p-6 shadow-xl space-y-3 relative overflow-hidden group hover:border-amber-400/50 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-black font-mono text-base">
+            <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md hover:border-amber-600' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-xl hover:border-amber-400/50'} border rounded-2xl p-6 space-y-3 relative overflow-hidden group transition-all`}>
+              <div className={`w-10 h-10 rounded-xl ${isChampagne ? 'bg-emerald-100 text-emerald-900 border-emerald-300' : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'} border flex items-center justify-center font-black font-mono text-base`}>
                 2
               </div>
-              <h4 className="text-base font-bold text-white uppercase tracking-wide">
+              <h4 className={`text-base font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} uppercase tracking-wide`}>
                 Receive Friday Bank Alerts
               </h4>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
                 Tenants pay rent, and our treasury distributes your guaranteed weekly cash yield directly to your wallet and Nigerian bank account every Friday at 12:00 PM sharp.
               </p>
             </div>
 
-            <div className="bg-[#0c101c] border border-amber-500/20 rounded-2xl p-6 shadow-xl space-y-3 relative overflow-hidden group hover:border-amber-400/50 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black font-mono text-base">
+            <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md hover:border-amber-600' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-xl hover:border-amber-400/50'} border rounded-2xl p-6 space-y-3 relative overflow-hidden group transition-all`}>
+              <div className={`w-10 h-10 rounded-xl ${isChampagne ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-amber-500/15 text-amber-400 border-amber-500/30'} border flex items-center justify-center font-black font-mono text-base`}>
                 3
               </div>
-              <h4 className="text-base font-bold text-white uppercase tracking-wide">
+              <h4 className={`text-base font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} uppercase tracking-wide`}>
                 Principal Capital Return
               </h4>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
                 At the completion of the 24-week tenure, your initial investment capital is returned in full, or you can roll it over into new luxury Dubai developments.
               </p>
             </div>
@@ -957,22 +958,22 @@ function MainAppContent() {
 
         {/* SECTION 4: FULL-WIDTH 3-COLUMN DUBAI PROPERTY CATALOG */}
         <section id="properties_catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 relative z-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-amber-500/20 pb-4">
+          <div className={`flex flex-col md:flex-row md:items-end justify-between gap-4 border-b ${isChampagne ? 'border-[#c5a059]/30' : 'border-amber-500/20'} pb-4`}>
             <div>
-              <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 font-mono">
+              <div className={`inline-flex items-center gap-1.5 ${isChampagne ? 'bg-amber-100/90 border-amber-300 text-amber-900 font-bold' : 'bg-amber-500/10 border-amber-500/30 text-amber-300 font-bold'} border text-[11px] px-3 py-1 rounded-full uppercase tracking-wider mb-2 font-mono`}>
                 <UaeFlag size="xs" />
                 <span>Prime Real Estate Portfolio</span>
               </div>
-              <h3 className="text-xl sm:text-3xl font-black text-[#f7ecd5] uppercase tracking-tight font-mono">
+              <h3 className={`text-xl sm:text-3xl font-black ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-tight font-mono`}>
                 Verified Dubai Property Offerings (24-Week Cycles)
               </h3>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl leading-relaxed">
+              <p className={`text-xs sm:text-sm ${isChampagne ? 'text-slate-600' : 'text-slate-400'} mt-1 max-w-xl leading-relaxed`}>
                 All offerings are recorded under the Dubai Land Department and managed through Treasure Homes Special Purpose Vehicles (SPVs).
               </p>
             </div>
             <div className="shrink-0 flex items-center gap-3">
-              <span className="text-xs font-mono text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-full font-bold">
-                <Clock className="w-3.5 h-3.5 text-emerald-400" />
+              <span className={`text-xs font-mono ${isChampagne ? 'text-emerald-800 bg-emerald-100/90 border-emerald-300' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'} flex items-center gap-1.5 border px-3 py-1.5 rounded-full font-bold`}>
+                <Clock className={`w-3.5 h-3.5 ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'}`} />
                 Weekly Friday Payouts
               </span>
             </div>
@@ -983,7 +984,7 @@ function MainAppContent() {
             {INVESTMENT_PLANS.map(plan => (
               <div 
                 key={plan.id}
-                className="bg-gradient-to-b from-[#0e1424] via-[#090d18] to-[#06080e] border border-amber-500/20 hover:border-amber-400/60 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between group"
+                className={`${isChampagne ? 'bg-white border-[#c5a059]/35 shadow-lg hover:border-amber-600' : 'bg-gradient-to-b from-[#0e1424] via-[#090d18] to-[#06080e] border-amber-500/20 hover:border-amber-400/60 shadow-2xl'} border rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between group`}
               >
                 {/* Property Photography Banner with Badges */}
                 <div className="relative h-48 w-full overflow-hidden bg-slate-950">
@@ -994,7 +995,7 @@ function MainAppContent() {
                     loading="lazy"
                     decoding="async"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#06080e] via-[#06080e]/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                   
                   {/* Location Badge */}
                   <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-md">
@@ -1021,37 +1022,37 @@ function MainAppContent() {
                   <div>
                     {/* Title & Street Address */}
                     <div className="space-y-1">
-                      <h4 className="text-base sm:text-lg font-black text-[#f7ecd5] uppercase tracking-tight group-hover:text-amber-400 transition-colors">
+                      <h4 className={`text-base sm:text-lg font-black ${isChampagne ? 'text-slate-950 group-hover:text-amber-800' : 'text-[#f7ecd5] group-hover:text-amber-400'} uppercase tracking-tight transition-colors`}>
                         {plan.propertyName || plan.name}
                       </h4>
-                      <div className="flex items-start gap-1 text-[11px] text-slate-400">
-                        <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                      <div className={`flex items-start gap-1 text-[11px] ${isChampagne ? 'text-slate-600' : 'text-slate-400'}`}>
+                        <MapPin className={`w-3.5 h-3.5 ${isChampagne ? 'text-amber-700' : 'text-amber-400'} shrink-0 mt-0.5`} />
                         <span className="line-clamp-1 leading-snug">{plan.propertyAddress}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 pt-1 text-[9px] font-mono text-slate-400">
-                        <span className="bg-[#06080e] border border-amber-500/15 text-amber-300/80 px-2 py-0.5 rounded">
+                      <div className={`flex items-center gap-1.5 pt-1 text-[9px] font-mono ${isChampagne ? 'text-slate-600' : 'text-slate-400'}`}>
+                        <span className={`${isChampagne ? 'bg-[#f4eee2] border-[#c5a059]/30 text-amber-900' : 'bg-[#06080e] border-amber-500/15 text-amber-300/80'} border px-2 py-0.5 rounded`}>
                           Makani: {plan.makaniNumber}
                         </span>
-                        <span className="bg-[#06080e] border border-amber-500/15 text-slate-400 px-2 py-0.5 rounded">
+                        <span className={`${isChampagne ? 'bg-[#f4eee2] border-[#c5a059]/30 text-slate-700' : 'bg-[#06080e] border-amber-500/15 text-slate-400'} border px-2 py-0.5 rounded`}>
                           Ref: {plan.cadastralId}
                         </span>
                       </div>
                     </div>
 
                     {/* Yield Box */}
-                    <div className="mt-3.5 bg-[#06080e]/90 border border-amber-500/20 rounded-xl p-3.5 space-y-2 text-xs shadow-inner">
+                    <div className={`mt-3.5 ${isChampagne ? 'bg-[#faf7f2] border-[#c5a059]/35' : 'bg-[#06080e]/90 border-amber-500/20 shadow-inner'} border rounded-xl p-3.5 space-y-2 text-xs`}>
                       <div className="flex justify-between items-baseline">
-                        <span className="text-slate-400 text-xs">Stake Capital:</span>
-                        <span className="text-base font-extrabold text-white font-mono">₦{plan.cost.toLocaleString()}</span>
+                        <span className={`${isChampagne ? 'text-slate-600' : 'text-slate-400'} text-xs`}>Stake Capital:</span>
+                        <span className={`text-base font-extrabold ${isChampagne ? 'text-slate-950' : 'text-white'} font-mono`}>₦{plan.cost.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-baseline">
-                        <span className="text-slate-400 text-xs">Weekly Friday Yield:</span>
-                        <span className="text-sm font-black text-emerald-400 font-mono">₦{plan.weeklyPayout.toLocaleString()} / wk</span>
+                        <span className={`${isChampagne ? 'text-slate-600' : 'text-slate-400'} text-xs`}>Weekly Friday Yield:</span>
+                        <span className={`text-sm font-black ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'} font-mono`}>₦{plan.weeklyPayout.toLocaleString()} / wk</span>
                       </div>
-                      <div className="h-px bg-amber-500/15 w-full" />
+                      <div className={`h-px ${isChampagne ? 'bg-[#e5d8c3]' : 'bg-amber-500/15'} w-full`} />
                       <div className="flex justify-between items-baseline">
-                        <span className="text-amber-300 font-bold text-xs">24-Week Total Returns:</span>
-                        <span className="text-base font-black text-amber-400 font-mono">₦{plan.totalReturns.toLocaleString()}</span>
+                        <span className={`${isChampagne ? 'text-amber-900 font-bold' : 'text-amber-300 font-bold'} text-xs`}>24-Week Total Returns:</span>
+                        <span className={`text-base font-black ${isChampagne ? 'text-amber-800' : 'text-amber-400'} font-mono`}>₦{plan.totalReturns.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -1070,9 +1071,13 @@ function MainAppContent() {
                         }, 250);
                       }
                     }}
-                    className="w-full mt-3 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 hover:from-amber-500 hover:to-amber-600 border border-amber-500/30 hover:border-amber-400 text-amber-300 hover:text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer group-hover:bg-amber-500 group-hover:text-slate-950 active:scale-95"
+                    className={`w-full mt-3 py-2.5 px-3 rounded-xl ${
+                      isChampagne
+                        ? 'bg-amber-50 hover:bg-amber-500 border border-amber-300 hover:border-amber-500 text-amber-900 hover:text-slate-950 font-bold'
+                        : 'bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 hover:from-amber-500 hover:to-amber-600 border border-amber-500/30 hover:border-amber-400 text-amber-300 hover:text-slate-950 font-bold'
+                    } text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95`}
                   >
-                    <Award className="w-3.5 h-3.5 text-amber-400 group-hover:text-slate-950" />
+                    <Award className="w-3.5 h-3.5" />
                     <span>Acquire Stake in {plan.name} →</span>
                   </button>
                 </div>
@@ -1081,12 +1086,12 @@ function MainAppContent() {
           </div>
 
           {/* Note on Plans */}
-          <div className="bg-[#0c101c] border border-amber-500/25 rounded-2xl p-5 text-xs text-slate-200 shadow-xl space-y-1.5">
-            <span className="font-bold text-amber-400 block uppercase tracking-wider text-[11px] font-mono flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md' : 'bg-[#0c101c] border-amber-500/25 text-slate-200 shadow-xl'} border rounded-2xl p-5 text-xs space-y-1.5`}>
+            <span className={`font-bold ${isChampagne ? 'text-amber-800' : 'text-amber-400'} block uppercase tracking-wider text-[11px] font-mono flex items-center gap-1.5`}>
+              <Sparkles className={`w-3.5 h-3.5 ${isChampagne ? 'text-amber-700' : 'text-amber-400'}`} />
               Note on UAE Property Tenures &amp; Friday Cash Payouts
             </span>
-            <p className="leading-relaxed text-slate-300 text-xs">
+            <p className={`leading-relaxed ${isChampagne ? 'text-slate-700' : 'text-slate-300'} text-xs`}>
               Your returns stem from direct tenancy rent and institutional capital growth of physical luxury towers in the United Arab Emirates. Each plan runs for a strict 24-week tenure with cash profits paid into your bank or wallet every Friday. Investors receive registered fractional deeds upon acquisition.
             </p>
           </div>
@@ -1095,49 +1100,49 @@ function MainAppContent() {
         {/* SECTION 5: INSTITUTIONAL BENEFIT HIGHLIGHTS */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-            <div className="flex items-start gap-3 bg-[#0c101c] p-4 rounded-xl border border-amber-500/20 shadow-lg">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            <div className={`flex items-start gap-3 ${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-lg'} border p-4 rounded-xl`}>
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 shrink-0 mt-0.5">
+                <ShieldCheck className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
-                <h4 className="font-bold text-[#f7ecd5] uppercase tracking-wider">Weekly Cash Returns</h4>
-                <p className="text-slate-400 text-[11px] mt-0.5 leading-relaxed">
+                <h4 className={`font-bold ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-wider`}>Weekly Cash Returns</h4>
+                <p className={`${isChampagne ? 'text-slate-600' : 'text-slate-400'} text-[11px] mt-0.5 leading-relaxed`}>
                   Physical property yield paid directly to your wallet every Friday without withdrawal delays.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 bg-[#0c101c] p-4 rounded-xl border border-amber-500/20 shadow-lg">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
-                <Users className="w-5 h-5 text-amber-400" />
+            <div className={`flex items-start gap-3 ${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-lg'} border p-4 rounded-xl`}>
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-700 shrink-0 mt-0.5">
+                <Users className="w-5 h-5 text-amber-700" />
               </div>
               <div>
-                <h4 className="font-bold text-[#f7ecd5] uppercase tracking-wider">7.5% Referral Bonus</h4>
-                <p className="text-slate-400 text-[11px] mt-0.5 leading-relaxed">
+                <h4 className={`font-bold ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-wider`}>7.5% Referral Bonus</h4>
+                <p className={`${isChampagne ? 'text-slate-600' : 'text-slate-400'} text-[11px] mt-0.5 leading-relaxed`}>
                   Share your exclusive invite link. Earn 7.5% liquid cash every Friday your invitee gets paid.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 bg-[#0c101c] p-4 rounded-xl border border-amber-500/20 shadow-lg">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
-                <Award className="w-5 h-5 text-amber-400" />
+            <div className={`flex items-start gap-3 ${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-lg'} border p-4 rounded-xl`}>
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-700 shrink-0 mt-0.5">
+                <Award className="w-5 h-5 text-amber-700" />
               </div>
               <div>
-                <h4 className="font-bold text-[#f7ecd5] uppercase tracking-wider">DLD Recorded Deeds</h4>
-                <p className="text-slate-400 text-[11px] mt-0.5 leading-relaxed">
+                <h4 className={`font-bold ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-wider`}>DLD Recorded Deeds</h4>
+                <p className={`${isChampagne ? 'text-slate-600' : 'text-slate-400'} text-[11px] mt-0.5 leading-relaxed`}>
                   All properties registered under official Dubai Land Department cadastral parcel identifiers.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 bg-[#0c101c] p-4 rounded-xl border border-amber-500/20 shadow-lg">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
-                <MessageSquare className="w-5 h-5 text-emerald-400" />
+            <div className={`flex items-start gap-3 ${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-lg'} border p-4 rounded-xl`}>
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 shrink-0 mt-0.5">
+                <MessageSquare className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
-                <h4 className="font-bold text-[#f7ecd5] uppercase tracking-wider">24/7 Investor Group</h4>
-                <p className="text-slate-400 text-[11px] mt-0.5 leading-relaxed">
+                <h4 className={`font-bold ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-wider`}>24/7 Investor Group</h4>
+                <p className={`${isChampagne ? 'text-slate-600' : 'text-slate-400'} text-[11px] mt-0.5 leading-relaxed`}>
                   Join our official verified WhatsApp community for live Friday payment proofs and updates.
                 </p>
               </div>
@@ -1146,19 +1151,19 @@ function MainAppContent() {
         </section>
 
         {/* Unified Brand Footer */}
-        <div className="bg-[#06080e] border-t border-amber-500/20 text-slate-400 text-xs">
+        <div className={`${isChampagne ? 'bg-[#ede5d8] border-t border-[#c5a059]/30 text-slate-700' : 'bg-[#06080e] border-t border-amber-500/20 text-slate-400'} text-xs`}>
           <div className="max-w-7xl mx-auto px-4 pt-8 pb-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
             <div className="space-y-1">
-              <span className="text-[#f7ecd5] font-bold text-sm block">100% REGULATED</span>
-              <p className="text-slate-400">Operating transparent cash reserves under supervision of the Treasure Homes asset board.</p>
+              <span className={`${isChampagne ? 'text-slate-900' : 'text-[#f7ecd5]'} font-bold text-sm block`}>100% REGULATED</span>
+              <p className={isChampagne ? 'text-slate-600' : 'text-slate-400'}>Operating transparent cash reserves under supervision of the Treasure Homes asset board.</p>
             </div>
-            <div className="space-y-1 py-4 md:py-0 md:border-x md:border-amber-500/20">
-              <span className="text-amber-400 font-bold text-sm block font-mono">₦{(liveLiquidityReserve / 1000000000).toFixed(2)}B+ RESERVE BACKING</span>
-              <p className="text-slate-400">Ensuring complete stability with physical properties and liquid collateral holding records.</p>
+            <div className={`space-y-1 py-4 md:py-0 md:border-x ${isChampagne ? 'border-[#c5a059]/30' : 'border-amber-500/20'}`}>
+              <span className={`${isChampagne ? 'text-amber-800' : 'text-amber-400'} font-bold text-sm block font-mono`}>₦{(liveLiquidityReserve / 1000000000).toFixed(2)}B+ RESERVE BACKING</span>
+              <p className={isChampagne ? 'text-slate-600' : 'text-slate-400'}>Ensuring complete stability with physical properties and liquid collateral holding records.</p>
             </div>
             <div className="space-y-1">
-              <span className="text-[#f7ecd5] font-bold text-sm block">KYC INTEGRITY GATE</span>
-              <p className="text-slate-400">Anti-fraud protection including verified identification checks for seamless, quick clearances.</p>
+              <span className={`${isChampagne ? 'text-slate-900' : 'text-[#f7ecd5]'} font-bold text-sm block`}>KYC INTEGRITY GATE</span>
+              <p className={isChampagne ? 'text-slate-600' : 'text-slate-400'}>Anti-fraud protection including verified identification checks for seamless, quick clearances.</p>
             </div>
           </div>
 
@@ -1171,7 +1176,7 @@ function MainAppContent() {
 
   // Authenticated workspace
   return (
-    <div className="min-h-screen bg-[#06080e] text-slate-100 flex flex-col justify-between font-sans pb-0 selection:bg-amber-500/30 selection:text-amber-200" id="app_workspace_root">
+    <div className={`min-h-screen ${isChampagne ? 'bg-[#f4efe6] text-slate-900' : 'bg-[#06080e] text-slate-100'} flex flex-col justify-between font-sans pb-0 selection:bg-amber-500/30 selection:text-amber-200`} id="app_workspace_root">
       <PayoutToastContainer
         toasts={payoutToasts}
         onDismiss={dismissPayoutToast}
@@ -1190,19 +1195,19 @@ function MainAppContent() {
         <BrandingHeader />
         
         {currentUser.role === 'admin' && (
-          <div className="bg-[#1e293b] border-b border-slate-700 py-3 px-4">
+          <div className={`${isChampagne ? 'bg-[#ede5d8] border-b border-[#c5a059]/35 text-slate-800' : 'bg-[#1e293b] border-b border-slate-700'} py-3 px-4 transition-colors`}>
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
-              <div className="flex items-center gap-2 text-slate-300 text-xs font-medium">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+              <div className={`flex items-center gap-2 ${isChampagne ? 'text-slate-800 font-semibold' : 'text-slate-300'} text-xs font-medium`}>
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shadow-sm" />
                 <span>Treasure Homes Authorized Admin session</span>
               </div>
-              <div className="flex gap-2 bg-[#0f172a] p-1 rounded-xl border border-slate-700 flex-wrap justify-center">
+              <div className={`flex gap-2 ${isChampagne ? 'bg-[#dfd5c2] border-[#c5a059]/40' : 'bg-[#0f172a] border-slate-700'} p-1 rounded-xl border flex-wrap justify-center`}>
                 <button
                   onClick={() => setAdminView('admin')}
                   className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     adminView === 'admin'
                       ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
-                      : 'text-slate-400 hover:text-white'
+                      : isChampagne ? 'text-slate-700 hover:text-slate-950 hover:bg-black/5' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <ShieldAlert className="w-3.5 h-3.5" />
@@ -1212,8 +1217,8 @@ function MainAppContent() {
                   onClick={() => setAdminView('investor')}
                   className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     adminView === 'investor'
-                      ? 'bg-emerald-500 text-slate-950 shadow-sm font-extrabold'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-emerald-600 text-white shadow-sm font-extrabold'
+                      : isChampagne ? 'text-slate-700 hover:text-slate-950 hover:bg-black/5' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
@@ -1223,8 +1228,8 @@ function MainAppContent() {
                   onClick={() => setAdminView('marketer')}
                   className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     adminView === 'marketer'
-                      ? 'bg-purple-500 text-white shadow-sm font-extrabold'
-                      : 'text-purple-300 hover:text-white'
+                      ? 'bg-purple-600 text-white shadow-sm font-extrabold'
+                      : isChampagne ? 'text-purple-800 hover:text-purple-950 hover:bg-black/5' : 'text-purple-300 hover:text-white'
                   }`}
                 >
                   <Zap className="w-3.5 h-3.5" />
