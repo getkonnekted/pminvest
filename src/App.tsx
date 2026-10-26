@@ -34,7 +34,9 @@ import {
   KeyRound,
   RotateCcw,
   MapPin,
-  Award
+  Award,
+  Clock,
+  MessageSquare
 } from 'lucide-react';
 import { INVESTMENT_PLANS } from './types';
 import { PayoutToastContainer } from './components/PayoutToast';
@@ -43,6 +45,8 @@ import { LiveReserveCounter } from './components/LiveReserveCounter';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { UaeFlag } from './components/UaeFlag';
+import { PayoutCountdown } from './components/PayoutCountdown';
+import { WHATSAPP_COMMUNITY_URL } from './components/CommunityBanner';
 
 const UserDashboard = React.lazy(() => import('./components/UserDashboard').then(module => ({ default: module.UserDashboard })));
 const MarketerDashboard = React.lazy(() => import('./components/MarketerDashboard').then(module => ({ default: module.MarketerDashboard })));
@@ -281,192 +285,86 @@ function MainAppContent() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start flex-grow relative z-10">
-          {/* LEFT PANEL: Brand identity, full luxury property showcase, yield cards */}
-          <div className="lg:col-span-7 space-y-7">
-            <div className="flex items-center gap-4">
-              <PmLogo className="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-[0_8px_20px_rgba(245,158,11,0.25)]" />
+          {/* LEFT PANEL: Brand identity, executive headline & 4 live trust metrics */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="flex items-center gap-3.5 sm:gap-4">
+              <PmLogo className="w-14 h-14 sm:w-18 sm:h-18 drop-shadow-[0_8px_20px_rgba(245,158,11,0.25)] shrink-0" />
               <div>
-                <span className="text-[11px] font-bold text-amber-400 uppercase tracking-widest block font-mono">TREASURE HOMES SOVEREIGN ASSETS</span>
+                <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-widest font-mono mb-1">
+                  <UaeFlag size="xs" />
+                  <span>Treasure Homes Sovereign Real Estate SPV</span>
+                </div>
                 <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight uppercase font-sans">
                   PM <span className="gold-gradient-text">Invest</span> Platform
                 </h1>
-                <p className="text-xs text-amber-400/80 font-mono mt-0.5">Physical UAE Properties · Verified DLD Deeds · Friday Cash Yields</p>
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              <p className="text-lg sm:text-xl text-[#f7ecd5] font-semibold leading-relaxed max-w-xl">
-                Fractional sovereign real estate co-ownership with steady cash payouts paid directly to your wallet every Friday.
-              </p>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-xl">
-                Acquire institutional stakes in premium Dubai towers and master-planned waterfront developments starting from ₦30,000. Fully asset-backed by recorded deeds and managed by <strong>TREASURE HOMES LTD</strong>.
-              </p>
-            </div>
-
-            {/* FULL LUXURY PROPERTY CARDS SHOWCASE */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-                  <span className="text-xs font-bold text-[#f7ecd5] uppercase tracking-wider font-mono">
-                    Prime UAE Property Portfolios (24-Week Cycles)
-                  </span>
-                </div>
-                <span className="text-[11px] text-amber-400/80 font-mono">DLD Recorded</span>
-              </div>
-
-              {/* Showcase Grid of Full Luxury Cards with Photography, Yields & Address */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {INVESTMENT_PLANS.slice(0, 4).map(plan => (
-                  <div 
-                    key={plan.id}
-                    className="bg-gradient-to-b from-[#0e1424] via-[#090d18] to-[#06080e] border border-amber-500/20 hover:border-amber-400/60 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between group"
-                  >
-                    {/* Property Photography Banner with Badges */}
-                    <div className="relative h-44 w-full overflow-hidden bg-slate-950">
-                      <img 
-                        src={plan.propertyImage} 
-                        alt={plan.propertyName || plan.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#06080e] via-[#06080e]/40 to-transparent" />
-                      
-                      {/* Location Badge */}
-                      <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-md">
-                        <UaeFlag size="xs" />
-                        <span>{plan.propertyLocation.split(',')[0]}</span>
-                      </div>
-
-                      {/* DLD Verified Tag */}
-                      <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-[9px] font-black uppercase px-2.5 py-1 rounded-full tracking-widest font-mono shadow-md">
-                        DLD VERIFIED
-                      </div>
-
-                      {/* Property Type & Occupancy */}
-                      <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-[11px]">
-                        <span className="font-semibold text-slate-200 truncate pr-2">{plan.propertyType}</span>
-                        <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded font-mono text-[10px] font-bold shrink-0">
-                          {plan.occupancyRate}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Card Content */}
-                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                      <div>
-                        {/* Title & Street Address */}
-                        <div className="space-y-1">
-                          <h4 className="text-base font-black text-[#f7ecd5] uppercase tracking-tight group-hover:text-amber-400 transition-colors">
-                            {plan.propertyName || plan.name}
-                          </h4>
-                          <div className="flex items-start gap-1 text-[11px] text-slate-400">
-                            <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                            <span className="line-clamp-1 leading-snug">{plan.propertyAddress}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 pt-1 text-[9px] font-mono text-slate-400">
-                            <span className="bg-[#06080e] border border-amber-500/15 text-amber-300/80 px-1.5 py-0.5 rounded">
-                              Makani: {plan.makaniNumber}
-                            </span>
-                            <span className="bg-[#06080e] border border-amber-500/15 text-slate-400 px-1.5 py-0.5 rounded">
-                              Ref: {plan.cadastralId}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Yield Box */}
-                        <div className="mt-3 bg-[#06080e]/90 border border-amber-500/15 rounded-xl p-3 space-y-2 text-xs">
-                          <div className="flex justify-between items-baseline">
-                            <span className="text-slate-400 text-[11px]">Stake Capital:</span>
-                            <span className="text-sm font-extrabold text-white font-mono">₦{plan.cost.toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between items-baseline">
-                            <span className="text-slate-400 text-[11px]">Weekly Friday Yield:</span>
-                            <span className="text-xs font-black text-emerald-400 font-mono">₦{plan.weeklyPayout.toLocaleString()} / wk</span>
-                          </div>
-                          <div className="h-px bg-amber-500/15 w-full" />
-                          <div className="flex justify-between items-baseline">
-                            <span className="text-amber-300 font-bold text-[11px]">24-Week Total Returns:</span>
-                            <span className="text-sm font-black text-amber-400 font-mono">₦{plan.totalReturns.toLocaleString()}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Quick CTA */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const authCard = document.getElementById('card_auth_panel');
-                          if (authCard) {
-                            authCard.scrollIntoView({ behavior: 'smooth' });
-                            const emailInput = document.querySelector('#card_auth_panel input[type="email"]') as HTMLInputElement;
-                            if (emailInput) emailInput.focus();
-                          }
-                        }}
-                        className="w-full mt-2 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 hover:from-amber-500 hover:to-amber-600 border border-amber-500/30 hover:border-amber-400 text-amber-300 hover:text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer group-hover:bg-amber-500 group-hover:text-slate-950"
-                      >
-                        <Award className="w-3.5 h-3.5 text-amber-400 group-hover:text-slate-950" />
-                        <span>Acquire Stake in {plan.name} →</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* View all 6 properties prompt */}
-              <div className="bg-[#0c101c] border border-amber-500/20 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2">
-                  <Building className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span className="text-slate-300 text-[11px]">
-                    Includes DIFC Financial Towers (₦1.5M → ₦7.8M Returns) & Palm Azure Ocean Villas.
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const authCard = document.getElementById('card_auth_panel');
-                    authCard?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="text-amber-400 hover:text-amber-300 font-bold font-mono text-[11px] underline shrink-0 cursor-pointer"
-                >
-                  View All UAE Plans in Portal →
-                </button>
-              </div>
-
-              {/* Note on Plans */}
-              <div className="bg-[#0c101c] border border-amber-500/25 rounded-2xl p-4 text-xs text-slate-200 shadow-xl space-y-1.5">
-                <span className="font-bold text-amber-400 block uppercase tracking-wider text-[11px] font-mono flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  Note on UAE Property Tenures &amp; Friday Cash Payouts
-                </span>
-                <p className="leading-relaxed text-slate-300 text-[11px]">
-                  Your returns stem from direct tenancy rent and institutional capital growth of physical luxury towers in the United Arab Emirates. Each plan runs for a strict 24-week tenure with cash profits paid into your bank or wallet every Friday. Investors receive registered fractional deeds upon acquisition.
+                <p className="text-xs text-amber-400/90 font-mono mt-0.5">
+                  Physical UAE Luxury Real Estate · Verified DLD Deeds · Friday Cash Yields
                 </p>
               </div>
             </div>
 
-            {/* Brand benefits */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 text-xs">
-              <div className="flex items-start gap-3 bg-[#0c101c] p-4 rounded-xl border border-amber-500/20 shadow-lg">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
-                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-[#f7ecd5] uppercase tracking-wider">Weekly Cash Returns</h4>
-                  <p className="text-slate-400 text-[11px] mt-0.5">Physical property yield paid directly to your wallet every Friday without withdrawal delays.</p>
-                </div>
+            <div className="space-y-3">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#f7ecd5] leading-snug">
+                Co-Own Prime Dubai Real Estate · Earn Direct Friday Cash Rental Payouts
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
+                Acquire fractional institutional stakes in Dubai Marina, DIFC, and Palm Jumeirah starting from ₦30,000. Rental profits collected from verified tenants are credited directly into your Nigerian bank account or digital wallet every Friday at 12:00 PM.
+              </p>
+            </div>
+
+            {/* 4 Hero Institutional Metric Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+              <div className="bg-[#0c101c] border border-amber-500/25 p-3 rounded-xl shadow-md">
+                <span className="text-[10px] font-mono text-slate-400 uppercase block">Liquid Backing</span>
+                <span className="text-sm sm:text-base font-extrabold text-amber-400 font-mono block mt-0.5">
+                  ₦{(liveLiquidityReserve / 1000000000).toFixed(2)}B+
+                </span>
+                <span className="text-[9px] text-emerald-400 font-mono">Treasure Homes SPV</span>
               </div>
 
-              <div className="flex items-start gap-3 bg-[#0c101c] p-4 rounded-xl border border-amber-500/20 shadow-lg">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
-                  <Users className="w-5 h-5 text-amber-400" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-[#f7ecd5] uppercase tracking-wider">7.5% Referral Bonus</h4>
-                  <p className="text-slate-400 text-[11px] mt-0.5">Share your exclusive invite link. Earn 7.5% liquid cash every Friday your invitee gets paid.</p>
-                </div>
+              <div className="bg-[#0c101c] border border-amber-500/25 p-3 rounded-xl shadow-md">
+                <span className="text-[10px] font-mono text-slate-400 uppercase block">Dubai Assets</span>
+                <span className="text-sm sm:text-base font-extrabold text-white font-mono block mt-0.5">
+                  6 Verified
+                </span>
+                <span className="text-[9px] text-slate-400 font-mono">DLD Recorded</span>
               </div>
+
+              <div className="bg-[#0c101c] border border-amber-500/25 p-3 rounded-xl shadow-md">
+                <span className="text-[10px] font-mono text-slate-400 uppercase block">Payout Day</span>
+                <span className="text-sm sm:text-base font-extrabold text-emerald-400 font-mono block mt-0.5">
+                  Every Friday
+                </span>
+                <span className="text-[9px] text-slate-400 font-mono">12:00 PM Auto-Bank</span>
+              </div>
+
+              <div className="bg-[#0c101c] border border-amber-500/25 p-3 rounded-xl shadow-md">
+                <span className="text-[10px] font-mono text-slate-400 uppercase block">Partner Share</span>
+                <span className="text-sm sm:text-base font-extrabold text-amber-300 font-mono block mt-0.5">
+                  7.5% Weekly
+                </span>
+                <span className="text-[9px] text-emerald-400 font-mono">Liquid Override</span>
+              </div>
+            </div>
+
+            {/* Quick links & WhatsApp Community CTA */}
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <a
+                href={WHATSAPP_COMMUNITY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm cursor-pointer"
+              >
+                <MessageSquare className="w-4 h-4 text-emerald-400" />
+                <span>Official WhatsApp Investor Group →</span>
+              </a>
+
+              <a
+                href="#properties_catalog"
+                className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-mono font-bold hover:underline py-2 px-1 cursor-pointer"
+              >
+                <span>Explore All 6 Properties ↓</span>
+              </a>
             </div>
           </div>
 
@@ -983,6 +881,270 @@ function MainAppContent() {
           </div>
         </div>
 
+        {/* SECTION 2: LIVE TREASURY STRIP & FRIDAY PAYOUT COUNTDOWN */}
+        <section className="w-full bg-gradient-to-r from-[#0c101c] via-[#090d18] to-[#120a24] border-y border-amber-500/25 py-6 px-4 sm:px-6 lg:px-8 shadow-2xl relative z-10">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-1.5 text-center md:text-left">
+              <span className="text-[10px] text-amber-400 font-mono uppercase tracking-widest font-bold flex items-center justify-center md:justify-start gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                OFFICIAL FRIDAY TREASURY CASH DISTRIBUTION SCHEDULE
+              </span>
+              <h3 className="text-base sm:text-xl font-black text-[#f7ecd5] uppercase tracking-wide font-mono">
+                Live Countdown to Friday 12:00 PM Payout Window
+              </h3>
+              <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
+                Every Friday at 12:00 PM, tenant rental yields collected from our UAE luxury towers are automatically disbursed to investor wallets and local Nigerian bank accounts.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <PayoutCountdown />
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 3: HOW IT WORKS (3 PLAIN-LANGUAGE LAYMAN STEPS) */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-8 relative z-10">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider font-mono">
+              <span>HOW PM INVEST WORKS</span>
+            </div>
+            <h3 className="text-xl sm:text-3xl font-black text-[#f7ecd5] uppercase tracking-tight font-mono">
+              Dubai Real Estate Co-Ownership in 3 Steps
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              No complicated paperwork or international banking hurdles. Co-own verified Dubai luxury assets and start receiving weekly direct bank alerts in minutes.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-[#0c101c] border border-amber-500/20 rounded-2xl p-6 shadow-xl space-y-3 relative overflow-hidden group hover:border-amber-400/50 transition-all">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black font-mono text-base">
+                1
+              </div>
+              <h4 className="text-base font-bold text-white uppercase tracking-wide">
+                Pick Your Property Stake
+              </h4>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Choose a structured 24-week unit in prime Dubai towers (starting from ₦30,000). Every unit is backed by authentic Dubai Land Department Title Deeds and Makani parcel IDs.
+              </p>
+            </div>
+
+            <div className="bg-[#0c101c] border border-amber-500/20 rounded-2xl p-6 shadow-xl space-y-3 relative overflow-hidden group hover:border-amber-400/50 transition-all">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-black font-mono text-base">
+                2
+              </div>
+              <h4 className="text-base font-bold text-white uppercase tracking-wide">
+                Receive Friday Bank Alerts
+              </h4>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Tenants pay rent, and our treasury distributes your guaranteed weekly cash yield directly to your wallet and Nigerian bank account every Friday at 12:00 PM sharp.
+              </p>
+            </div>
+
+            <div className="bg-[#0c101c] border border-amber-500/20 rounded-2xl p-6 shadow-xl space-y-3 relative overflow-hidden group hover:border-amber-400/50 transition-all">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black font-mono text-base">
+                3
+              </div>
+              <h4 className="text-base font-bold text-white uppercase tracking-wide">
+                Principal Capital Return
+              </h4>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                At the completion of the 24-week tenure, your initial investment capital is returned in full, or you can roll it over into new luxury Dubai developments.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 4: FULL-WIDTH 3-COLUMN DUBAI PROPERTY CATALOG */}
+        <section id="properties_catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-amber-500/20 pb-4">
+            <div>
+              <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 font-mono">
+                <UaeFlag size="xs" />
+                <span>Prime Real Estate Portfolio</span>
+              </div>
+              <h3 className="text-xl sm:text-3xl font-black text-[#f7ecd5] uppercase tracking-tight font-mono">
+                Verified Dubai Property Offerings (24-Week Cycles)
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl leading-relaxed">
+                All offerings are recorded under the Dubai Land Department and managed through Treasure Homes Special Purpose Vehicles (SPVs).
+              </p>
+            </div>
+            <div className="shrink-0 flex items-center gap-3">
+              <span className="text-xs font-mono text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-full font-bold">
+                <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                Weekly Friday Payouts
+              </span>
+            </div>
+          </div>
+
+          {/* 3-Column Grid on Desktop, 2 on Tablet, 1 on Mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {INVESTMENT_PLANS.map(plan => (
+              <div 
+                key={plan.id}
+                className="bg-gradient-to-b from-[#0e1424] via-[#090d18] to-[#06080e] border border-amber-500/20 hover:border-amber-400/60 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between group"
+              >
+                {/* Property Photography Banner with Badges */}
+                <div className="relative h-48 w-full overflow-hidden bg-slate-950">
+                  <img 
+                    src={plan.propertyImage} 
+                    alt={plan.propertyName || plan.name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#06080e] via-[#06080e]/40 to-transparent" />
+                  
+                  {/* Location Badge */}
+                  <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-md">
+                    <UaeFlag size="xs" />
+                    <span>{plan.propertyLocation.split(',')[0]}</span>
+                  </div>
+
+                  {/* DLD Verified Tag */}
+                  <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-[9px] font-black uppercase px-2.5 py-1 rounded-full tracking-widest font-mono shadow-md">
+                    DLD VERIFIED
+                  </div>
+
+                  {/* Property Type & Occupancy */}
+                  <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-[11px]">
+                    <span className="font-semibold text-slate-200 truncate pr-2">{plan.propertyType}</span>
+                    <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded font-mono text-[10px] font-bold shrink-0">
+                      {plan.occupancyRate}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card Content */}
+                <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    {/* Title & Street Address */}
+                    <div className="space-y-1">
+                      <h4 className="text-base sm:text-lg font-black text-[#f7ecd5] uppercase tracking-tight group-hover:text-amber-400 transition-colors">
+                        {plan.propertyName || plan.name}
+                      </h4>
+                      <div className="flex items-start gap-1 text-[11px] text-slate-400">
+                        <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                        <span className="line-clamp-1 leading-snug">{plan.propertyAddress}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 pt-1 text-[9px] font-mono text-slate-400">
+                        <span className="bg-[#06080e] border border-amber-500/15 text-amber-300/80 px-2 py-0.5 rounded">
+                          Makani: {plan.makaniNumber}
+                        </span>
+                        <span className="bg-[#06080e] border border-amber-500/15 text-slate-400 px-2 py-0.5 rounded">
+                          Ref: {plan.cadastralId}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Yield Box */}
+                    <div className="mt-3.5 bg-[#06080e]/90 border border-amber-500/20 rounded-xl p-3.5 space-y-2 text-xs shadow-inner">
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-slate-400 text-xs">Stake Capital:</span>
+                        <span className="text-base font-extrabold text-white font-mono">₦{plan.cost.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-slate-400 text-xs">Weekly Friday Yield:</span>
+                        <span className="text-sm font-black text-emerald-400 font-mono">₦{plan.weeklyPayout.toLocaleString()} / wk</span>
+                      </div>
+                      <div className="h-px bg-amber-500/15 w-full" />
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-amber-300 font-bold text-xs">24-Week Total Returns:</span>
+                        <span className="text-base font-black text-amber-400 font-mono">₦{plan.totalReturns.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick CTA */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRegistering(true);
+                      const authCard = document.getElementById('card_auth_panel');
+                      if (authCard) {
+                        authCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setTimeout(() => {
+                          const nameInput = document.querySelector('#card_auth_panel input[type="text"]') as HTMLInputElement;
+                          if (nameInput) nameInput.focus();
+                        }, 250);
+                      }
+                    }}
+                    className="w-full mt-3 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 hover:from-amber-500 hover:to-amber-600 border border-amber-500/30 hover:border-amber-400 text-amber-300 hover:text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer group-hover:bg-amber-500 group-hover:text-slate-950 active:scale-95"
+                  >
+                    <Award className="w-3.5 h-3.5 text-amber-400 group-hover:text-slate-950" />
+                    <span>Acquire Stake in {plan.name} →</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Note on Plans */}
+          <div className="bg-[#0c101c] border border-amber-500/25 rounded-2xl p-5 text-xs text-slate-200 shadow-xl space-y-1.5">
+            <span className="font-bold text-amber-400 block uppercase tracking-wider text-[11px] font-mono flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              Note on UAE Property Tenures &amp; Friday Cash Payouts
+            </span>
+            <p className="leading-relaxed text-slate-300 text-xs">
+              Your returns stem from direct tenancy rent and institutional capital growth of physical luxury towers in the United Arab Emirates. Each plan runs for a strict 24-week tenure with cash profits paid into your bank or wallet every Friday. Investors receive registered fractional deeds upon acquisition.
+            </p>
+          </div>
+        </section>
+
+        {/* SECTION 5: INSTITUTIONAL BENEFIT HIGHLIGHTS */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div className="flex items-start gap-3 bg-[#0c101c] p-4 rounded-xl border border-amber-500/20 shadow-lg">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h4 className="font-bold text-[#f7ecd5] uppercase tracking-wider">Weekly Cash Returns</h4>
+                <p className="text-slate-400 text-[11px] mt-0.5 leading-relaxed">
+                  Physical property yield paid directly to your wallet every Friday without withdrawal delays.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 bg-[#0c101c] p-4 rounded-xl border border-amber-500/20 shadow-lg">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+                <Users className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h4 className="font-bold text-[#f7ecd5] uppercase tracking-wider">7.5% Referral Bonus</h4>
+                <p className="text-slate-400 text-[11px] mt-0.5 leading-relaxed">
+                  Share your exclusive invite link. Earn 7.5% liquid cash every Friday your invitee gets paid.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 bg-[#0c101c] p-4 rounded-xl border border-amber-500/20 shadow-lg">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+                <Award className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h4 className="font-bold text-[#f7ecd5] uppercase tracking-wider">DLD Recorded Deeds</h4>
+                <p className="text-slate-400 text-[11px] mt-0.5 leading-relaxed">
+                  All properties registered under official Dubai Land Department cadastral parcel identifiers.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 bg-[#0c101c] p-4 rounded-xl border border-amber-500/20 shadow-lg">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+                <MessageSquare className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h4 className="font-bold text-[#f7ecd5] uppercase tracking-wider">24/7 Investor Group</h4>
+                <p className="text-slate-400 text-[11px] mt-0.5 leading-relaxed">
+                  Join our official verified WhatsApp community for live Friday payment proofs and updates.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Unified Brand Footer */}
         <div className="bg-[#06080e] border-t border-amber-500/20 text-slate-400 text-xs">
           <div className="max-w-7xl mx-auto px-4 pt-8 pb-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
@@ -991,7 +1153,7 @@ function MainAppContent() {
               <p className="text-slate-400">Operating transparent cash reserves under supervision of the Treasure Homes asset board.</p>
             </div>
             <div className="space-y-1 py-4 md:py-0 md:border-x md:border-amber-500/20">
-              <span className="text-amber-400 font-bold text-sm block font-mono">₦{Math.floor(liveLiquidityReserve / 1000000)}M+ RESERVE BACKING</span>
+              <span className="text-amber-400 font-bold text-sm block font-mono">₦{(liveLiquidityReserve / 1000000000).toFixed(2)}B+ RESERVE BACKING</span>
               <p className="text-slate-400">Ensuring complete stability with physical properties and liquid collateral holding records.</p>
             </div>
             <div className="space-y-1">
