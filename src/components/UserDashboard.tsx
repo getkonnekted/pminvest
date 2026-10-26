@@ -53,6 +53,7 @@ import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 import { InsufficientFundsModal } from './InsufficientFundsModal';
 import { MultilingualPitchModal } from './MultilingualPitchModal';
+import { PWAInstallButton } from './PWAInstallButton';
 import { recordInvestorProtectionEvent } from '../lib/supabase';
 import { useSupabaseSync } from '../hooks/useSupabaseSync';
 
@@ -715,6 +716,9 @@ export const UserDashboard: React.FC = () => {
       {/* OVERVIEW TAB */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
+          {/* In-App Mobile PWA Installation Prompt */}
+          <PWAInstallButton variant="banner" />
+
           {/* Top Quick Stats Grid in Luxury Obsidian & Brushed Gold */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 shadow-xl flex items-center justify-between">

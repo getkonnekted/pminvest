@@ -1741,9 +1741,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       amount: plan.cost,
       status: 'completed',
       createdAt: new Date().toISOString(),
-      description: isMkt 
-        ? `[Marketing Demo] Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`
-        : `Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`,
+      description: `Purchased ${plan.name} (₦${plan.cost.toLocaleString()})`,
       isMarketing: isMkt
     };
     newTransactionsList.push(invTx);

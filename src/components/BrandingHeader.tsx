@@ -14,6 +14,7 @@ import { WHATSAPP_COMMUNITY_URL, TELEGRAM_COMMUNITY_URL } from './CommunityBanne
 import { WhatsAppGoldIcon, TelegramGoldIcon } from './CommunityIcons';
 import { LiveReserveCounter } from './LiveReserveCounter';
 import { ThemeToggle } from './ThemeToggle';
+import { PWAInstallButton } from './PWAInstallButton';
 
 export const BrandingHeader: React.FC = () => {
   const { currentUser, logout } = useAppState();
@@ -35,6 +36,7 @@ export const BrandingHeader: React.FC = () => {
 
         {/* Current logged in user view / actions & Luxury Theme Switcher */}
         <div className="flex items-center gap-3 flex-wrap justify-end">
+          <PWAInstallButton />
           <ThemeToggle />
 
           {currentUser && (

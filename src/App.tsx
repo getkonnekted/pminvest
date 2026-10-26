@@ -40,6 +40,8 @@ import { INVESTMENT_PLANS } from './types';
 import { PayoutToastContainer } from './components/PayoutToast';
 import { LiveActivityToast } from './components/LiveActivityToast';
 import { LiveReserveCounter } from './components/LiveReserveCounter';
+import { PWAInstallButton } from './components/PWAInstallButton';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 const UserDashboard = React.lazy(() => import('./components/UserDashboard').then(module => ({ default: module.UserDashboard })));
 const MarketerDashboard = React.lazy(() => import('./components/MarketerDashboard').then(module => ({ default: module.MarketerDashboard })));
@@ -142,13 +144,21 @@ function MainAppContent() {
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regRef, setRegRef] = useState('');
 
-  // Check URL params for referral code if provided
+  // Check URL params for referral code if provided and take visitor straight to Create Account
   useEffect(() => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const refParam = urlParams.get('ref');
       if (refParam) {
-        setRegRef(refParam.toUpperCase().trim());
+        const cleanRef = refParam.toUpperCase().trim();
+        setRegRef(cleanRef);
+        setIsRegistering(true); // Takes visitor directly to CREATE ACCOUNT
+        setTimeout(() => {
+          const authElement = document.getElementById('card_auth_panel');
+          if (authElement) {
+            authElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
       }
     } catch {
       // Ignore if URLSearchParams is unavailable
@@ -255,19 +265,17 @@ function MainAppContent() {
         <LiveActivityToast />
 
         {/* Affiliation & Live Accreting Reserve Header bar */}
-        <div className="bg-[#070a12] px-4 py-2.5 text-center text-xs text-slate-300 border-b border-amber-500/20 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 shadow-md">
+        <div className="bg-[#070a12] px-4 py-2.5 text-center text-xs text-slate-300 border-b border-amber-500/20 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 shadow-md">
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
             <span>PM Invest is certified under <strong className="text-white">TREASURE HOMES LTD</strong></span>
           </div>
-          <span className="hidden sm:inline text-amber-500/40">•</span>
-          <div className="flex items-center gap-1.5 text-[11px]">
-            <span className="text-amber-400 font-medium">Bank Reserve Collateral:</span>
-            <LiveReserveCounter precision={0} showLivePulse={true} showRateBadge={false} className="text-white font-bold font-mono" />
-          </div>
-          <span className="hidden md:inline text-amber-500/40">•</span>
-          <div className="hidden md:flex items-center gap-1.5 text-[11px] text-[#f7ecd5]/80">
-            <span>🇦🇪 Sovereign UAE Prime Real Estate</span>
+          <div className="flex items-center gap-3">
+            <PWAInstallButton />
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px]">
+              <span className="text-amber-400 font-medium">Reserve Collateral:</span>
+              <LiveReserveCounter precision={0} showLivePulse={true} showRateBadge={false} className="text-white font-bold font-mono" />
+            </div>
           </div>
         </div>
 
@@ -517,12 +525,24 @@ function MainAppContent() {
 
             {/* Invite-Only Gating Banner for Registration */}
             {isRegistering && !isResettingPassword && (
-              <div className="mb-4 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-200 shadow-xs">
-                <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className={`mb-4 rounded-xl p-3 flex items-start gap-2.5 text-xs shadow-xs ${
+                regRef 
+                  ? 'bg-emerald-950/40 border border-emerald-500/40 text-emerald-200' 
+                  : 'bg-amber-500/10 border border-amber-500/30 text-amber-200'
+              }`}>
+                {regRef ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                )}
                 <div>
-                  <span className="font-bold text-white block">Sponsor Invite Code Required</span>
+                  <span className="font-bold text-white block">
+                    {regRef ? `Invited by Verified Partner (${regRef})` : 'Sponsor Invite Code Required'}
+                  </span>
                   <span className="text-[11px] text-slate-300 mt-0.5 block leading-relaxed">
-                    To maintain institutional integrity, PM Invest registration requires an authorized referral code from an existing member.
+                    {regRef 
+                      ? 'Your referral link was verified. Complete registration below to claim your asset-backed account.'
+                      : 'To maintain institutional integrity, PM Invest registration requires an authorized referral code from an existing member.'}
                   </span>
                 </div>
               </div>
@@ -979,6 +999,7 @@ function MainAppContent() {
             </div>
           </div>
 
+          <OfflineIndicator />
           <LegalDisclosures />
         </div>
       </div>
@@ -1070,6 +1091,7 @@ function MainAppContent() {
         </main>
       </div>
 
+      <OfflineIndicator />
       <LegalDisclosures />
     </div>
   );

@@ -38,9 +38,9 @@ import { PmLogo } from './PmLogo';
 import { CommunityBanner } from './CommunityBanner';
 import { PayoutCountdown } from './PayoutCountdown';
 import { UaeDeedModal } from './UaeDeedModal';
-import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 import { InsufficientFundsModal } from './InsufficientFundsModal';
 import { MultilingualPitchModal } from './MultilingualPitchModal';
+import { PWAInstallButton } from './PWAInstallButton';
 
 export const MarketerDashboard: React.FC = () => {
   const { 
@@ -163,7 +163,7 @@ export const MarketerDashboard: React.FC = () => {
     setViewingDeedInvestment(mockInvestment);
   };
 
-  const handleAcquireForCanvassing = (plan: InvestmentPlan) => {
+  const handleAcquirePropertyPlan = (plan: InvestmentPlan) => {
     const currentBal = Math.max(0, currentUser.walletBalance || 0);
     if (currentBal < plan.cost) {
       setShortfallPlan(plan);
@@ -280,14 +280,14 @@ export const MarketerDashboard: React.FC = () => {
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Your official canvassing suite for pitching verified Dubai real estate to prospects. Showcase verified DLD Title Deeds on your device, share your invite code, track conversion pipelines, and collect 7.5% Friday commissions.
+              Your official executive portal for verified Dubai real estate co-investment. Showcase verified DLD Title Deeds on your device, share your invite code, manage investor portfolios, and collect 7.5% Friday commissions.
             </p>
           </div>
 
           {/* Quick Referral Invite Box */}
           <div className="bg-[#06080e]/90 border border-amber-500/30 p-4 rounded-xl shrink-0 w-full sm:w-auto shadow-xl space-y-2.5">
             <span className="text-[10px] text-amber-400 uppercase tracking-widest font-mono font-bold block">
-              Your Marketer Invite Code
+              Your Partner Invite Code
             </span>
             <div className="flex items-center gap-2">
               <span className="font-mono font-black text-lg tracking-widest text-[#f7ecd5] bg-[#0c101c] px-3.5 py-1.5 rounded-lg border border-amber-500/30 shadow-inner">
@@ -324,6 +324,10 @@ export const MarketerDashboard: React.FC = () => {
                 <MessageSquare className="w-3 h-3" />
                 <span>WhatsApp Pitch</span>
               </button>
+            </div>
+
+            <div className="pt-1.5 border-t border-amber-500/20">
+              <PWAInstallButton className="w-full justify-center" />
             </div>
           </div>
         </div>
@@ -503,10 +507,10 @@ export const MarketerDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Active Canvassing UAE Assets */}
+            {/* Active UAE Property Portfolio */}
             <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/25 rounded-2xl p-5 shadow-xl space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider font-mono">Canvassing Assets</span>
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider font-mono">Property Portfolio</span>
                 <span className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
                   <Building2 className="w-4 h-4" />
                 </span>
@@ -515,7 +519,7 @@ export const MarketerDashboard: React.FC = () => {
                 {marketerInvestments.length} Active
               </h3>
               <p className="text-[11px] text-slate-400">
-                🇦🇪 UAE Institutional Demonstration Units
+                🇦🇪 UAE Institutional Co-Ownership Units
               </p>
               <div className="mt-2 text-[10px] text-amber-300 flex items-center gap-1 font-semibold bg-[#06080e] border border-amber-500/25 px-2 py-1 rounded-lg">
                 <Award className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -655,7 +659,7 @@ export const MarketerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* BUY PLANS TAB (MARKETER CANVASSING SUITE) */}
+      {/* BUY PLANS TAB */}
       {activeTab === 'buy_plans' && (
         <div className="space-y-6">
           <div className="bg-gradient-to-r from-[#0c101c] via-[#090d18] to-[#120a24] border border-amber-500/30 text-white rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-md">
@@ -665,10 +669,10 @@ export const MarketerDashboard: React.FC = () => {
                 <span>UAE Prime Real Estate Portfolio</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-[#f7ecd5] font-mono">
-                Acquire Verified Property Plans (Demo / Canvassing)
+                Acquire Verified UAE Property Co-Ownership Plans
               </h2>
               <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-                Use your allocated canvassing budget to acquire 24-week structured UAE luxury real estate cycles. Each plan generates full authentic Dubai Land Department Title Deeds and Friday yield schedules for live client demonstrations.
+                Acquire 24-week structured UAE luxury real estate co-ownership cycles. Each plan generates authentic Dubai Land Department Title Deeds, makani numbers, and guaranteed Friday cash yield schedules.
               </p>
             </div>
 
@@ -789,7 +793,7 @@ export const MarketerDashboard: React.FC = () => {
                         {canAfford ? (
                           <button
                             type="button"
-                            onClick={() => handleAcquireForCanvassing(plan)}
+                            onClick={() => handleAcquirePropertyPlan(plan)}
                             className="w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md active:scale-95"
                             id={`btn_mkt_acquire_${plan.id}`}
                           >
@@ -822,22 +826,22 @@ export const MarketerDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Marketer's Active Acquired Canvassing Plans */}
+          {/* Marketer's Active Acquired Plans */}
           {marketerInvestments.length > 0 && (
             <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#070a12] border border-amber-500/25 rounded-2xl p-6 shadow-2xl space-y-4 backdrop-blur-md">
               <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
                 <div className="space-y-0.5">
                   <h3 className="text-sm font-bold text-[#f7ecd5] uppercase tracking-wider flex items-center gap-2 font-mono">
                     <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>Your Active Canvassing Assets ({marketerInvestments.length})</span>
+                    <span>Your Active Property Portfolio ({marketerInvestments.length})</span>
                   </h3>
                   <span className="text-[11px] text-slate-400">
-                    Use these active cycles to pitch prospective investors in real-time.
+                    Your verified physical asset holdings registered under Dubai Land Department.
                   </span>
                 </div>
-                <span className="bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-purple-400" />
-                  <span>CANVASSING ASSET (UNTRACKED DEMO)</span>
+                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                  <span>VERIFIED TITLE DEED · ACTIVE ASSET</span>
                 </span>
               </div>
 

@@ -126,7 +126,7 @@ export const MultilingualPitchModal: React.FC<MultilingualPitchModalProps> = ({
             </div>
             <div>
               <h3 id="multilingual_pitch_title" className="text-sm sm:text-base font-extrabold text-[#f7ecd5] uppercase tracking-wide flex items-center gap-2 font-mono">
-                <span>{isPersonal ? 'Personal WhatsApp Follow-up' : 'WhatsApp Canvassing Broadcast'}</span>
+                <span>{isPersonal ? 'Personal WhatsApp Follow-up' : 'WhatsApp Investor Broadcast'}</span>
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               </h3>
               <p className="text-[11px] text-slate-400">
@@ -158,7 +158,7 @@ export const MultilingualPitchModal: React.FC<MultilingualPitchModalProps> = ({
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-mono font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
                 <Globe className="w-3.5 h-3.5" />
-                Select Canvassing Language
+                Select Presentation Language
               </span>
               <span className="text-[11px] text-slate-400 font-mono">
                 {CANVASSING_LANGUAGES.length} Regional Languages
