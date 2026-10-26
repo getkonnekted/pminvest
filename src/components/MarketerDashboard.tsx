@@ -41,6 +41,7 @@ import { UaeDeedModal } from './UaeDeedModal';
 import { InsufficientFundsModal } from './InsufficientFundsModal';
 import { MultilingualPitchModal } from './MultilingualPitchModal';
 import { PWAInstallButton } from './PWAInstallButton';
+import { UaeFlag } from './UaeFlag';
 
 export const MarketerDashboard: React.FC = () => {
   const { 
@@ -269,8 +270,8 @@ export const MarketerDashboard: React.FC = () => {
               <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono px-2 py-0.5 rounded-full">
                 7.5% Weekly Override Active
               </span>
-              <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono px-2 py-0.5 rounded-full flex items-center gap-1">
-                <span>🇦🇪</span>
+              <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono px-2 py-0.5 rounded-full flex items-center gap-1.5">
+                <UaeFlag size="xs" />
                 <span>UAE DLD Backed</span>
               </span>
             </div>
@@ -518,8 +519,9 @@ export const MarketerDashboard: React.FC = () => {
               <h3 className="text-2xl font-black text-[#f7ecd5] font-mono mt-1">
                 {marketerInvestments.length} Active
               </h3>
-              <p className="text-[11px] text-slate-400">
-                🇦🇪 UAE Institutional Co-Ownership Units
+              <p className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                <UaeFlag size="xs" />
+                <span>UAE Institutional Co-Ownership Units</span>
               </p>
               <div className="mt-2 text-[10px] text-amber-300 flex items-center gap-1 font-semibold bg-[#06080e] border border-amber-500/25 px-2 py-1 rounded-lg">
                 <Award className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -665,7 +667,7 @@ export const MarketerDashboard: React.FC = () => {
           <div className="bg-gradient-to-r from-[#0c101c] via-[#090d18] to-[#120a24] border border-amber-500/30 text-white rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-md">
             <div className="space-y-1">
               <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-1">
-                <span>🇦🇪</span>
+                <UaeFlag size="xs" />
                 <span>UAE Prime Real Estate Portfolio</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-[#f7ecd5] font-mono">
@@ -722,8 +724,8 @@ export const MarketerDashboard: React.FC = () => {
                         decoding="async"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#06080e] via-[#06080e]/40 to-transparent" />
-                      <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                        <span>🇦🇪</span>
+                      <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                        <UaeFlag size="xs" />
                         <span>{plan.propertyLocation.split(',')[0]}</span>
                       </div>
                       <div className="absolute top-3 right-3 text-[9px] font-extrabold uppercase px-2.5 py-1 rounded-full tracking-widest font-mono shadow-sm bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950">

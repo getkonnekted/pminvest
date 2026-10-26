@@ -18,6 +18,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { UserInvestment } from '../types';
+import { UaeFlag } from './UaeFlag';
 
 interface UaeDeedModalProps {
   isOpen: boolean;
@@ -45,7 +46,7 @@ interface PropertyMeta {
 const PROPERTY_DATABASE: Record<string, PropertyMeta> = {
   plan_1: {
     name: 'Marina Bay Residences',
-    location: 'Dubai Marina, Dubai, UAE 🇦🇪',
+    location: 'Dubai Marina, Dubai, UAE',
     address: 'Plot 392-581, Marina Promenade, Al Marsa Street, Dubai Marina, Dubai, United Arab Emirates',
     image: '/properties/marina_bay_residences.jpg',
     type: 'Executive Studio Waterfront Stake',
@@ -60,7 +61,7 @@ const PROPERTY_DATABASE: Record<string, PropertyMeta> = {
   },
   plan_2: {
     name: 'Creek Horizon Suites',
-    location: 'Dubai Creek Harbour, Dubai, UAE 🇦🇪',
+    location: 'Dubai Creek Harbour, Dubai, UAE',
     address: 'Plot 184-210, Creek Island Boulevard, Dubai Creek Harbour, The Lagoons, Dubai, United Arab Emirates',
     image: '/properties/creek_horizon_suites.jpg',
     type: '1-Bedroom Waterfront Apartment',
@@ -75,7 +76,7 @@ const PROPERTY_DATABASE: Record<string, PropertyMeta> = {
   },
   plan_3: {
     name: 'Downtown Sky Vista',
-    location: 'Downtown Burj Khalifa District, Dubai, UAE 🇦🇪',
+    location: 'Downtown Burj Khalifa District, Dubai, UAE',
     address: 'Plot 119-969, Sheikh Mohammed bin Rashid Boulevard, Downtown Dubai, Dubai, United Arab Emirates',
     image: '/properties/downtown_sky_vista.jpg',
     type: 'Serviced Luxury Residence Stake',
@@ -90,7 +91,7 @@ const PROPERTY_DATABASE: Record<string, PropertyMeta> = {
   },
   plan_4: {
     name: 'Sobha Sanctuary Estates',
-    location: 'Sobha Hartland / MBR City, Dubai, UAE 🇦🇪',
+    location: 'Sobha Hartland / MBR City, Dubai, UAE',
     address: 'Plot 440-112, Ras Al Khor Road, Sobha Hartland, Mohammed Bin Rashid Al Maktoum City, Dubai, United Arab Emirates',
     image: '/properties/sobha_sanctuary_estates.jpg',
     type: '2-Bedroom Forest Villa Stake',
@@ -105,7 +106,7 @@ const PROPERTY_DATABASE: Record<string, PropertyMeta> = {
   },
   plan_5: {
     name: 'Palm Azure Ocean Villa',
-    location: 'Palm Jumeirah, Dubai, UAE 🇦🇪',
+    location: 'Palm Jumeirah, Dubai, UAE',
     address: 'Plot 512-404, Crescent Road West, Frond G, Palm Jumeirah, Dubai, United Arab Emirates',
     image: '/properties/palm_azure_villa.jpg',
     type: 'Ultra-Luxury Waterfront Residence',
@@ -120,7 +121,7 @@ const PROPERTY_DATABASE: Record<string, PropertyMeta> = {
   },
   plan_6: {
     name: 'Emirates Financial Tower',
-    location: 'DIFC Financial District, Dubai, UAE 🇦🇪',
+    location: 'DIFC Financial District, Dubai, UAE',
     address: 'Plot 884-219, Al Sa\'ada Street, DIFC Gate Precinct 4, Dubai International Financial Centre, Dubai, United Arab Emirates',
     image: '/properties/emirates_tower_difc.jpg',
     type: 'Prime Grade-A Commercial Asset',
@@ -286,9 +287,10 @@ export const UaeDeedModal: React.FC<UaeDeedModalProps> = ({
                     <h2 className="text-xl sm:text-2xl font-extrabold text-white font-serif tracking-wide drop-shadow-md">
                       {propertyName}
                     </h2>
-                    <p className="text-xs text-amber-300 font-mono flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {propertyLocation}
+                    <p className="text-xs text-amber-300 font-mono flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3 text-amber-400" />
+                      <span>{propertyLocation}</span>
+                      <UaeFlag size="xs" />
                     </p>
                   </div>
                   <span className="text-xs font-mono text-emerald-400 font-bold bg-slate-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/30">

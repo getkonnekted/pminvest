@@ -203,7 +203,7 @@ export const fetchAllSupabaseData = async (): Promise<SupabaseFetchResult | null
       return {
         ...inv,
         propertyName: inv.propertyName || match?.propertyName || match?.name || inv.planName,
-        propertyLocation: inv.propertyLocation || match?.propertyLocation || 'Dubai Marina, Dubai, UAE 🇦🇪',
+        propertyLocation: inv.propertyLocation || match?.propertyLocation || 'Dubai Marina, Dubai, UAE',
         propertyAddress: inv.propertyAddress || match?.propertyAddress || 'Plot 392-581, Marina Promenade, Dubai Marina, Dubai, UAE',
         propertyImage: inv.propertyImage || match?.propertyImage || '/properties/marina_bay_residences.jpg',
         propertyType: inv.propertyType || match?.propertyType || 'Executive Luxury Asset',

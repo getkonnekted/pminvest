@@ -57,8 +57,7 @@ export default defineConfig(({ mode }) => {
           maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         },
         devOptions: {
-          enabled: true,
-          type: 'module',
+          enabled: false,
         },
       }),
     ],
@@ -87,9 +86,14 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 650,
     },
     server: {
+      port: 3000,
+      host: '0.0.0.0',
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       hmr: process.env.DISABLE_HMR !== 'true',
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+    },
+    preview: {
+      port: 3000,
+      host: '0.0.0.0',
     },
   };
 });

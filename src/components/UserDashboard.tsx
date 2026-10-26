@@ -54,6 +54,7 @@ import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 import { InsufficientFundsModal } from './InsufficientFundsModal';
 import { MultilingualPitchModal } from './MultilingualPitchModal';
 import { PWAInstallButton } from './PWAInstallButton';
+import { UaeFlag } from './UaeFlag';
 import { recordInvestorProtectionEvent } from '../lib/supabase';
 import { useSupabaseSync } from '../hooks/useSupabaseSync';
 
@@ -1131,7 +1132,7 @@ export const UserDashboard: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl text-center max-w-3xl mx-auto backdrop-blur-md">
             <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
-              <span>🇦🇪</span>
+              <UaeFlag size="xs" />
               <span>UAE Prime Real Estate Portfolio</span>
             </div>
             <h3 className="text-xl sm:text-2xl font-black text-[#f7ecd5] tracking-wide uppercase font-mono">UAE Institutional Property Plans</h3>
@@ -1180,8 +1181,8 @@ export const UserDashboard: React.FC = () => {
                       decoding="async"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#06080e] via-[#06080e]/40 to-transparent" />
-                    <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                      <span>🇦🇪</span>
+                    <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                      <UaeFlag size="xs" />
                       <span>{plan.propertyLocation.split(',')[0]}</span>
                     </div>
                     <div className={`absolute top-3 right-3 text-[9px] font-extrabold uppercase px-2.5 py-1 rounded-full tracking-widest font-mono shadow-sm ${
@@ -1987,7 +1988,7 @@ export const UserDashboard: React.FC = () => {
                     planId: plan.id,
                     planName: plan.name,
                     propertyName: plan.propertyName || plan.name,
-                    propertyLocation: plan.propertyLocation || 'Dubai Marina, Dubai, UAE 🇦🇪',
+                    propertyLocation: plan.propertyLocation || 'Dubai Marina, Dubai, UAE',
                     propertyAddress: plan.propertyAddress || 'Plot 392-581, Marina Promenade, Dubai Marina, Dubai, UAE',
                     propertyImage: plan.propertyImage || '/properties/marina_bay_residences.jpg',
                     propertyType: plan.propertyType || 'Executive Studio Waterfront Stake',

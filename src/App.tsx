@@ -42,6 +42,7 @@ import { LiveActivityToast } from './components/LiveActivityToast';
 import { LiveReserveCounter } from './components/LiveReserveCounter';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { UaeFlag } from './components/UaeFlag';
 
 const UserDashboard = React.lazy(() => import('./components/UserDashboard').then(module => ({ default: module.UserDashboard })));
 const MarketerDashboard = React.lazy(() => import('./components/MarketerDashboard').then(module => ({ default: module.MarketerDashboard })));
@@ -333,8 +334,8 @@ function MainAppContent() {
                       <div className="absolute inset-0 bg-gradient-to-t from-[#06080e] via-[#06080e]/40 to-transparent" />
                       
                       {/* Location Badge */}
-                      <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md">
-                        <span>🇦🇪</span>
+                      <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-md">
+                        <UaeFlag size="xs" />
                         <span>{plan.propertyLocation.split(',')[0]}</span>
                       </div>
 

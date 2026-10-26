@@ -15,6 +15,7 @@ import { WhatsAppGoldIcon, TelegramGoldIcon } from './CommunityIcons';
 import { LiveReserveCounter } from './LiveReserveCounter';
 import { ThemeToggle } from './ThemeToggle';
 import { PWAInstallButton } from './PWAInstallButton';
+import { UaeFlag } from './UaeFlag';
 
 export const BrandingHeader: React.FC = () => {
   const { currentUser, logout } = useAppState();
@@ -30,7 +31,10 @@ export const BrandingHeader: React.FC = () => {
               <span className="text-xl font-black tracking-tight uppercase font-sans text-white">PM <span className="text-amber-400">Invest</span></span>
               <span className="text-[10px] uppercase tracking-widest text-amber-500/80 font-mono font-bold leading-none">By Treasure Homes</span>
             </div>
-            <p className="text-xs text-slate-300 font-normal mt-0.5">Sovereign UAE Luxury Property Wealth &amp; Steady Friday Payouts</p>
+            <p className="text-xs text-slate-300 font-normal mt-0.5 flex items-center gap-1.5">
+              <UaeFlag size="xs" />
+              <span>Sovereign UAE Luxury Property Wealth &amp; Steady Friday Payouts</span>
+            </p>
           </div>
         </div>
 

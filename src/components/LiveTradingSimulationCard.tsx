@@ -11,6 +11,7 @@ import {
   Clock,
   Building2
 } from 'lucide-react';
+import { UaeFlag } from './UaeFlag';
 
 export interface SimulatedOrder {
   id: string;
@@ -41,12 +42,12 @@ export interface LiveTradingSimulationCardProps {
 }
 
 export const UAE_PROPERTY_LOCATIONS = [
-  { name: 'Marina Bay Residences', code: 'DXB-MB', district: 'Dubai Marina 🇦🇪', baseYield: '15.2%' },
-  { name: 'Creek Horizon Suites', code: 'DXB-CH', district: 'Dubai Creek Harbour 🇦🇪', baseYield: '14.8%' },
-  { name: 'Downtown Sky Vista', code: 'DXB-DT', district: 'Burj Khalifa District 🇦🇪', baseYield: '16.5%' },
-  { name: 'Sobha Sanctuary Estates', code: 'DXB-SB', district: 'Sobha Hartland / MBR City 🇦🇪', baseYield: '17.4%' },
-  { name: 'Palm Azure Ocean Villa', code: 'DXB-PJ', district: 'Palm Jumeirah 🇦🇪', baseYield: '18.2%' },
-  { name: 'Emirates Financial Tower', code: 'DXB-DIFC', district: 'DIFC Financial Center 🇦🇪', baseYield: '15.9%' }
+  { name: 'Marina Bay Residences', code: 'DXB-MB', district: 'Dubai Marina', baseYield: '15.2%' },
+  { name: 'Creek Horizon Suites', code: 'DXB-CH', district: 'Dubai Creek Harbour', baseYield: '14.8%' },
+  { name: 'Downtown Sky Vista', code: 'DXB-DT', district: 'Burj Khalifa District', baseYield: '16.5%' },
+  { name: 'Sobha Sanctuary Estates', code: 'DXB-SB', district: 'Sobha Hartland / MBR City', baseYield: '17.4%' },
+  { name: 'Palm Azure Ocean Villa', code: 'DXB-PJ', district: 'Palm Jumeirah', baseYield: '18.2%' },
+  { name: 'Emirates Financial Tower', code: 'DXB-DIFC', district: 'DIFC Financial Center', baseYield: '15.9%' }
 ];
 
 export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps> = ({
@@ -345,7 +346,10 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
             <p className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
               <span>Prime UAE Luxury Property Liquidity Index</span>
               <span className="text-slate-600">•</span>
-              <span className="text-amber-400/90 font-medium">Dubai Asset Backing 🇦🇪</span>
+              <span className="text-amber-400/90 font-medium flex items-center gap-1">
+                <span>Dubai Asset Backing</span>
+                <UaeFlag size="xs" />
+              </span>
             </p>
           </div>
         </div>

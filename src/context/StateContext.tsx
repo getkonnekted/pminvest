@@ -189,7 +189,7 @@ const SEED_INVESTMENTS: UserInvestment[] = [];
 const SEED_TRANSACTIONS: Transaction[] = [];
 
 // Base cash reserve backing and automated continuous daily accretion (+₦4.2M/day = +₦175,000/hr)
-export const BASE_LIQUIDITY_RESERVE = 843507547; // Starting cash reserve backing ₦843,507,547 (Treasure Homes Backed)
+export const BASE_LIQUIDITY_RESERVE = 3418520000; // Starting cash reserve backing ₦3,418,520,000 (Treasure Homes Backed ₦3.4B+)
 export const HOURLY_LIQUIDITY_GROWTH = 175000; // Adds ₦175,000 to the reserve every hour (~₦4,200,000 daily)
 export const DAILY_LIQUIDITY_GROWTH = 4200000; // ₦175,000 x 24 hours = ₦4,200,000 daily (4M+ daily)
 export const LIQUIDITY_ANCHOR_DATE = '2026-10-10T00:00:00.000Z'; // Reference baseline anchor
@@ -1620,7 +1620,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       planId: plan.id,
       planName: plan.name,
       propertyName: plan.propertyName || plan.name,
-      propertyLocation: plan.propertyLocation || 'Dubai Marina, Dubai, UAE 🇦🇪',
+      propertyLocation: plan.propertyLocation || 'Dubai Marina, Dubai, UAE',
       propertyAddress: plan.propertyAddress || 'Plot 392-581, Marina Promenade, Dubai Marina, Dubai, UAE',
       propertyImage: plan.propertyImage || '/properties/marina_bay_residences.jpg',
       propertyType: plan.propertyType || 'Executive Studio Waterfront Stake',
@@ -1758,7 +1758,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       planId: plan.id,
       planName: plan.name,
       propertyName: plan.propertyName || plan.name,
-      propertyLocation: plan.propertyLocation || 'Dubai Marina, Dubai, UAE 🇦🇪',
+      propertyLocation: plan.propertyLocation || 'Dubai Marina, Dubai, UAE',
       propertyAddress: plan.propertyAddress || 'Plot 392-581, Marina Promenade, Dubai Marina, Dubai, UAE',
       propertyImage: plan.propertyImage || '/properties/marina_bay_residences.jpg',
       propertyType: plan.propertyType || 'Executive Studio Waterfront Stake',
