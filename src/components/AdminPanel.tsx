@@ -51,6 +51,7 @@ import { PmLogo } from './PmLogo';
 import { LiveReserveCounter } from './LiveReserveCounter';
 import { ThemeToggle } from './ThemeToggle';
 import { AdminAuditLogsTab } from './AdminAuditLogsTab';
+import { AdminBroadcastReengagementModal } from './AdminBroadcastReengagementModal';
 import { testSupabaseConnection, recordAdminSecurityAudit } from '../lib/supabase';
 import { SUPABASE_CORE_SQL, FULL_SUPABASE_SQL } from '../data/supabaseSql';
 
@@ -157,6 +158,10 @@ export const AdminPanel: React.FC = () => {
   // User Filter & In-App Deactivation Modal State
   const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'real_paid' | 'unfunded' | 'marketing' | 'active' | 'deactivated' | 'admin'>('all');
   const [deactivateModalTarget, setDeactivateModalTarget] = useState<{ user: User; willDeactivate: boolean } | null>(null);
+
+  // Broadcast Re-engagement for Unfunded Leads State
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
+  const [broadcastInitialLeadId, setBroadcastInitialLeadId] = useState<string | null>(null);
 
   const handleCreateUserSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -315,9 +320,27 @@ export const AdminPanel: React.FC = () => {
           </div>
         </div>
 
-        {/* Live Simulator Quick Trigger, Quick Account Creator & Theme Switcher */}
+        {/* Live Simulator Quick Trigger, Quick Account Creator, Broadcast Campaign & Theme Switcher */}
         <div className="flex flex-wrap items-center gap-2">
           <ThemeToggle compact />
+          <button
+            type="button"
+            onClick={() => {
+              setBroadcastInitialLeadId(null);
+              setShowBroadcastModal(true);
+            }}
+            className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold px-3.5 py-2 rounded-lg text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+            id="btn_admin_header_broadcast"
+            title="Launch Broadcast Re-engagement campaign for unfunded leads"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            <span>Broadcast Re-engagement</span>
+            {unfundedLeadsCount > 0 && (
+              <span className="bg-slate-950 text-amber-400 font-mono text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                {unfundedLeadsCount}
+              </span>
+            )}
+          </button>
           <button
             type="button"
             onClick={() => {
@@ -522,9 +545,24 @@ export const AdminPanel: React.FC = () => {
                 <span className="text-xs text-emerald-800 font-semibold font-mono">Real Paid</span>
               </div>
               <div className="pt-1.5 border-t border-slate-100 text-[10px] space-y-0.5">
-                <div className="flex justify-between text-slate-600">
-                  <span>Unfunded Leads:</span>
-                  <span className="font-bold text-amber-700 font-mono">{unfundedLeadsCount}</span>
+                <div className="flex justify-between items-center text-slate-600">
+                  <div className="flex items-center gap-1">
+                    <span>Unfunded Leads:</span>
+                    <span className="font-bold text-amber-700 font-mono">{unfundedLeadsCount}</span>
+                  </div>
+                  {unfundedLeadsCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBroadcastInitialLeadId(null);
+                        setShowBroadcastModal(true);
+                      }}
+                      className="text-[9px] text-amber-600 hover:text-amber-700 font-bold underline cursor-pointer"
+                      title="Launch Broadcast Re-engagement campaign"
+                    >
+                      Re-engage →
+                    </button>
+                  )}
                 </div>
                 <div className="flex justify-between text-purple-700 font-semibold">
                   <span>Marketing Canvassers:</span>
@@ -1620,6 +1658,36 @@ export const AdminPanel: React.FC = () => {
             </button>
           </div>
 
+          {/* Unfunded Leads Re-engagement Campaign Banner */}
+          {userStatusFilter === 'unfunded' && unfundedLeadsCount > 0 && (
+            <div className="mb-4 bg-gradient-to-r from-amber-50 to-amber-100/70 border border-amber-300 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shrink-0 shadow-xs">
+                  <Share2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-tight">
+                    Unfunded Leads Campaign Opportunity ({unfundedLeadsCount} Registered)
+                  </h4>
+                  <p className="text-[11px] text-slate-600 mt-0.5">
+                    These users created accounts but haven't funded their wallets yet. Send personalized WhatsApp alerts for new property openings with pre-built multilingual copy.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setBroadcastInitialLeadId(null);
+                  setShowBroadcastModal(true);
+                }}
+                className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>Launch Broadcast Desk</span>
+              </button>
+            </div>
+          )}
+
           {filteredUsers.length === 0 ? (
             <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
               <Users className="w-8 h-8 text-slate-400 mx-auto mb-2 opacity-60" />
@@ -1782,6 +1850,21 @@ export const AdminPanel: React.FC = () => {
                             >
                               <Edit3 className="w-3 h-3 text-amber-600" /> Edit
                             </button>
+
+                            {!u.isMarketingAccount && u.role !== 'admin' && getUserPaidTopup(u.id) === 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setBroadcastInitialLeadId(u.id);
+                                  setShowBroadcastModal(true);
+                                }}
+                                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                                title={`Re-engage ${u.name} with new property openings via WhatsApp`}
+                              >
+                                <MessageSquare className="w-3 h-3 text-emerald-600" />
+                                <span>Re-engage</span>
+                              </button>
+                            )}
 
                             {u.isMarketingAccount && (
                               <button
@@ -2196,15 +2279,17 @@ export const AdminPanel: React.FC = () => {
                                           <PhoneCall className="w-3.5 h-3.5" />
                                         </a>
                                         {waNumber && (
-                                          <a
-                                            href={`https://wa.me/${waNumber}?text=${encodeURIComponent(`Hello ${member.name}, I am reaching out from Treasure Homes regarding your investment portfolio.`)}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-emerald-600 hover:text-emerald-800 p-1 hover:bg-emerald-50 rounded transition-colors"
-                                            title={`Chat with ${member.name} on WhatsApp`}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setBroadcastInitialLeadId(member.id);
+                                              setShowBroadcastModal(true);
+                                            }}
+                                            className="text-emerald-600 hover:text-emerald-800 p-1 hover:bg-emerald-50 rounded transition-colors cursor-pointer"
+                                            title={!isPaid ? `Re-engage ${member.name} with New Property Opening via WhatsApp` : `Message ${member.name} on WhatsApp`}
                                           >
                                             <MessageSquare className="w-3.5 h-3.5" />
-                                          </a>
+                                          </button>
                                         )}
                                       </div>
                                     ) : (
@@ -3481,6 +3566,19 @@ export const AdminPanel: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Broadcast Re-engagement for Unfunded Leads Modal */}
+      <AdminBroadcastReengagementModal
+        isOpen={showBroadcastModal}
+        onClose={() => {
+          setShowBroadcastModal(false);
+          setBroadcastInitialLeadId(null);
+        }}
+        unfundedLeads={unfundedLeads}
+        properties={INVESTMENT_PLANS}
+        initialLeadId={broadcastInitialLeadId}
+        adminName={currentUser?.name || 'Treasure Homes Admin'}
+      />
     </div>
   );
 };

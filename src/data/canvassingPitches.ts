@@ -134,3 +134,133 @@ export const getPersonalFollowupPitch = (
       return `Hello ${safeLead}! 👋 This is ${safeMarketer} from PM Invest.\n\nI noticed you registered under my referral link, but you haven't yet funded your wallet or selected a property plan.\n\nOur UAE luxury property plans start at just ₦30,000, and weekly cash returns pay directly to your account every Friday. Can I assist you with funding your wallet or selecting a plan today?\n\nLog in to your dashboard here:\n👉 ${referralLink}`;
   }
 };
+
+/**
+ * Helper to clean and format phone numbers for WhatsApp API links.
+ */
+export const cleanPhoneForWhatsApp = (phone?: string): string => {
+  if (!phone) return '';
+  const cleaned = phone.replace(/[^0-9]/g, '');
+  if (cleaned.startsWith('0') && cleaned.length === 11) {
+    return `234${cleaned.slice(1)}`;
+  }
+  return cleaned;
+};
+
+export interface PropertyPitchDetails {
+  name: string;
+  propertyName?: string;
+  propertyLocation?: string;
+  cost: number;
+  weeklyPayout: number;
+  occupancyRate?: string;
+  deedTier?: string;
+}
+
+/**
+ * Returns a high-converting announcement pitch for newly opened UAE luxury properties
+ * targeted at unfunded registered leads to drive wallet activation before the Friday payout lock.
+ */
+export const getPropertyOpeningPitch = (
+  lang: CanvassingLanguage,
+  leadName: string,
+  property: PropertyPitchDetails,
+  customNote?: string,
+  portalUrl: string = 'https://pminvest.org.ng'
+): string => {
+  const safeLead = leadName?.trim() || 'Valued Investor';
+  const propName = property.propertyName || property.name;
+  const propLoc = property.propertyLocation || 'Dubai, UAE';
+  const costFormatted = property.cost.toLocaleString();
+  const payoutFormatted = property.weeklyPayout.toLocaleString();
+  const occupancy = property.occupancyRate || '98.2%';
+  const extraNote = customNote?.trim() ? `\n\n📌 Note: ${customNote.trim()}` : '';
+
+  switch (lang) {
+    case 'pcm':
+      return `Hello ${safeLead}! 👋 Special alert from PM Invest (Treasure Homes).
+
+🏢 *Fresh Property Opening Just Drop for Dubai!*
+✨ *${propName}* (${propLoc})
+• Verified Tenant Occupancy: *${occupancy}*
+• Minimum Co-Ownership Entry: *₦${costFormatted}*
+• Your Guaranteed Friday Cash Yield: *₦${payoutFormatted} / week*
+
+Only a few fractional co-ownership slots remain before the upcoming Friday 12:00 PM treasury distribution lock. As a registered member, your slot is prioritized!
+
+Fund your wallet and secure your deed today:
+👉 ${portalUrl}${extraNote}`;
+
+    case 'yo':
+      return `Ẹ ǹlẹ́ o ${safeLead}! 👋 Ìròyìn ayọ̀ pàtàkì láti PM Invest (Treasure Homes).
+
+🏢 *Ilé Ìdoko-Owo Aládùn Tuntun Ti Ṣí Sílẹ̀ Ní Dubai!*
+✨ *${propName}* (${propLoc})
+• Àwọn Ayalégbé Tó Wà Níbẹ̀: *${occupancy}*
+• Owó Ìpín Ìbẹ̀rẹ̀ (Entry): *₦${costFormatted}*
+• Èrè Owó Oṣùṣẹ̀ Gbogbo Ọjọ́ Jimọ: *₦${payoutFormatted} lẹ́sẹ̀kẹsẹ̀*
+
+A kíyèsí pé ẹ ti forúkọsílẹ̀ lórí pẹpẹ wa ṣùgbọ́n ẹ kò tí ì fi owó sí àpò-owó láti yan ilé kankan. Àwọn ààyè tó kù kéré púpọ̀ kí agogo méjìlá ọ̀sán ọjọ́ Jimọ tó lu!
+
+Fi owó sí wallet yín kí ẹ sì gba deed yín lónìí:
+👉 ${portalUrl}${extraNote}`;
+
+    case 'ig':
+      return `Ndewo ${safeLead}! 👋 Ozi pụrụ iche sitere na PM Invest (Treasure Homes).
+
+🏢 *Ohere Ọhụrụ Maka Ala na Ụlọ Dị Oke Ọnụ Ahịa na Dubai!*
+✨ *${propName}* (${propLoc})
+• Ọnụego Ndị Bi n'Ụlọ: *${occupancy}*
+• Ntinye Ego Ngalaba: *₦${costFormatted}*
+• Ego Nloghachi Kwa Fraịde: *₦${payoutFormatted} ozugbo n'akpa ego gị*
+
+Anyị hụrụ na ị debanyere aha na PM Invest mana ị kpatabeghị ego na wallet gị iji nweta ngalaba ala na ụlọ. Ohere ndị fọdụrụ pere mpe tupu nkesa ego nke Fraịde 12:00 PM!
+
+Kpatuo ego na wallet gị ma nweta akwụkwọ nkwado gị taa:
+👉 ${portalUrl}${extraNote}`;
+
+    case 'ha':
+      return `Barka dai ${safeLead}! 👋 Sanarwa ta musamman daga PM Invest (Treasure Homes).
+
+🏢 *An Buɗe Sabon Ginin Alatu a Dubai!*
+✨ *${propName}* (${propLoc})
+• Yawan Masu Haya: *${occupancy}*
+• Ƙarancin Kuɗin Mallaka: *₦${costFormatted}*
+• Ribar Kuɗi a Kowace Ranar Juma'a: *₦${payoutFormatted} kai tsaye*
+
+Mun lura cewa asusunka a shirye yake amma har yanzu ba ka saka kuɗi a aljihunka ba don mallakar kaso a wannan sabon ginin. Kaso kadan ne ya rage kafin ranar Juma'a da rana.
+
+Sanya kuɗi a aljihunka yau don mallakar takardarka:
+👉 ${portalUrl}${extraNote}`;
+
+    case 'fr':
+      return `Bonjour ${safeLead} ! 👋 Annonce exclusive de PM Invest par Treasure Homes.
+
+🏢 *Nouvelle Opportunité Immobilière aux Émirats Arabes Unis*
+✨ *${propName}* (${propLoc})
+• Taux d'occupation vérifié : *${occupancy}*
+• Ticket d'entrée co-propriété : *₦${costFormatted}*
+• Dividendes locatifs hebdomadaires : *₦${payoutFormatted} chaque vendredi*
+
+Votre compte PM Invest est enregistré mais vous n'avez pas encore finalisé votre premier investissement. Les parts de cette nouvelle propriété sont limitées avant la distribution de vendredi 12h00.
+
+Activez votre portefeuille et sécurisez votre titre de propriété :
+👉 ${portalUrl}${extraNote}`;
+
+    case 'en':
+    default:
+      return `Hello ${safeLead}! 👋 Official update from PM Invest by Treasure Homes.
+
+🏢 *New Luxury Property Opening in UAE*
+✨ *${propName}* (${propLoc})
+• Occupancy Rate: *${occupancy}* (Prime Tenanted Asset)
+• Co-Ownership Fractional Entry: *₦${costFormatted}*
+• Fixed Weekly Rental Distribution: *₦${payoutFormatted} every Friday*
+
+We noticed your PM Invest investor account is registered but pending first property deed acquisition. Limited fractional allocations are open for this asset before the upcoming Friday 12:00 PM distribution window.
+
+Activate your portfolio and secure your deed today:
+👉 ${portalUrl}${extraNote}`;
+  }
+};
+
