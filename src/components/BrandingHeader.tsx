@@ -2,9 +2,6 @@ import React from 'react';
 import { 
   ShieldCheck, 
   LogOut, 
-  Wallet,
-  MessageCircle,
-  Send,
   ExternalLink,
   Building2
 } from 'lucide-react';
@@ -14,8 +11,6 @@ import { WHATSAPP_COMMUNITY_URL, TELEGRAM_COMMUNITY_URL } from './CommunityBanne
 import { WhatsAppGoldIcon, TelegramGoldIcon } from './CommunityIcons';
 import { LiveReserveCounter } from './LiveReserveCounter';
 import { ThemeToggle } from './ThemeToggle';
-import { PWAInstallButton } from './PWAInstallButton';
-import { UaeFlag } from './UaeFlag';
 
 import { useTheme } from '../context/ThemeContext';
 
@@ -46,37 +41,6 @@ export const BrandingHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Zone 2: Editorial Navigation Links (Desktop) */}
-        <nav className="hidden lg:flex items-center gap-6 text-xs font-mono uppercase tracking-wider text-slate-400">
-          <button
-            type="button"
-            onClick={() => scrollToSection('properties_catalog')}
-            className="hover:text-[#D4AF37] transition-colors cursor-pointer"
-          >
-            Portfolio Dossiers
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollToSection('difc_trust_section')}
-            className="hover:text-[#D4AF37] transition-colors cursor-pointer text-[#D4AF37]/90 font-semibold"
-          >
-            Legal Custody &amp; DIFC
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollToSection('distribution_schedule')}
-            className="hover:text-[#D4AF37] transition-colors cursor-pointer"
-          >
-            Distribution Ledger
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollToSection('legal_disclosures')}
-            className="hover:text-[#D4AF37] transition-colors cursor-pointer"
-          >
-            Disclosures
-          </button>
-        </nav>
 
         {/* Zone 3: Executive CTA & Account Access */}
         <div className="flex items-center gap-3 shrink-0">
