@@ -8,6 +8,7 @@ interface PayoutCountdownProps {
   className?: string;
   compact?: boolean;
   isLocked?: boolean;
+  isCompleted?: boolean;
 }
 
 export const PayoutCountdown: React.FC<PayoutCountdownProps> = ({ 
@@ -15,7 +16,8 @@ export const PayoutCountdown: React.FC<PayoutCountdownProps> = ({
   fallbackDays = 7, 
   className = "",
   compact = false,
-  isLocked = false
+  isLocked = false,
+  isCompleted = false
 }) => {
   const { isChampagne } = useTheme();
   const [timeLeft, setTimeLeft] = useState<{
@@ -27,7 +29,7 @@ export const PayoutCountdown: React.FC<PayoutCountdownProps> = ({
   }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isDue: false });
 
   useEffect(() => {
-    if (isLocked) return;
+    if (isLocked || isCompleted) return;
 
     const calculateTime = () => {
       let targetTime: number;
@@ -55,7 +57,16 @@ export const PayoutCountdown: React.FC<PayoutCountdownProps> = ({
     calculateTime();
     const interval = setInterval(calculateTime, 1000);
     return () => clearInterval(interval);
-  }, [targetDate, fallbackDays, isLocked]);
+  }, [targetDate, fallbackDays, isLocked, isCompleted]);
+
+  if (isCompleted) {
+    return (
+      <div className={`inline-flex items-center gap-1.5 ${isChampagne ? 'bg-emerald-50 text-emerald-800 border border-emerald-300' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'} font-mono text-[10px] font-bold px-2.5 py-1 rounded-full ${className}`}>
+        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+        <span>All 24 Weeks Disbursed • Plan Fully Matured</span>
+      </div>
+    );
+  }
 
   if (isLocked) {
     if (compact) {

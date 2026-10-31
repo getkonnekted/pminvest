@@ -18,11 +18,13 @@ export const InvestmentPayoutButton: React.FC<InvestmentPayoutButtonProps> = ({
   const [hasClicked, setHasClicked] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // When investment data updates (e.g. weeksPaid or nextPayoutDate advances), reset click state
-  useEffect(() => {
-    setHasClicked(false);
-    setIsProcessing(false);
-  }, [investment.nextPayoutDate, investment.weeksPaid]);
+  // Compute completed state strictly
+  const isCompleted = investment.status === 'completed' || investment.weeksPaid >= investment.totalWeeks;
+
+  // Anti-deficit duplicate guard: recently claimed within the last 60 seconds
+  const isClaimedRecently = investment.lastPayoutDate 
+    ? Date.now() - new Date(investment.lastPayoutDate).getTime() < 60 * 1000 
+    : false;
 
   useEffect(() => {
     const updateDiff = () => {
@@ -39,13 +41,19 @@ export const InvestmentPayoutButton: React.FC<InvestmentPayoutButtonProps> = ({
     return () => clearInterval(interval);
   }, [investment.nextPayoutDate]);
 
-  const isCompleted = investment.weeksPaid >= investment.totalWeeks;
-  // Active ONLY on the last minute of the countdown (<= 60,000 ms) or when due (<= 0), and NOT yet clicked
-  const isLastMinuteOrDue = !isCompleted && !hasClicked && diff <= 60 * 1000;
+  // Reset click state only when diff is positive and beyond due window
+  useEffect(() => {
+    if (diff > 60 * 1000) {
+      setHasClicked(false);
+      setIsProcessing(false);
+    }
+  }, [diff]);
+
+  // Active ONLY on the last minute of countdown (<= 60,000 ms) or when due, NOT completed, NOT recently claimed, and NOT clicked
+  const isLastMinuteOrDue = !isCompleted && !hasClicked && !isClaimedRecently && diff <= 60 * 1000;
 
   const handleClaim = () => {
-    if (hasClicked || isProcessing || isCompleted) return;
-    // When clicked once, immediately mark as clicked and transition back to idle
+    if (hasClicked || isProcessing || isCompleted || isClaimedRecently) return;
     setHasClicked(true);
     setIsProcessing(true);
     try {
@@ -59,10 +67,10 @@ export const InvestmentPayoutButton: React.FC<InvestmentPayoutButtonProps> = ({
     return (
       <button
         disabled
-        className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-400 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-not-allowed select-none"
+        className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-not-allowed select-none"
       >
-        <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
-        <span>Plan Completed</span>
+        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+        <span>Plan Completed ({investment.totalWeeks}/{investment.totalWeeks} Wks)</span>
       </button>
     );
   }
@@ -80,7 +88,7 @@ export const InvestmentPayoutButton: React.FC<InvestmentPayoutButtonProps> = ({
         disabled={isProcessing}
         className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md shadow-emerald-700/20 active:scale-95 cursor-pointer ring-2 ring-emerald-400/50 animate-pulse"
         id={`btn_credit_weekly_payout_${investment.id}`}
-        title={isAutoRenew ? "Auto-Renew active: Claim weekly rollover payout with 3% increment" : "Active on last minute! Click once to credit your weekly yield and return to idle"}
+        title={isAutoRenew ? "Auto-Renew active: Claim weekly rollover payout with 3% increment" : "Active! Click once to credit your weekly yield and lock until next cycle"}
       >
         {isProcessing ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
@@ -99,13 +107,13 @@ export const InvestmentPayoutButton: React.FC<InvestmentPayoutButtonProps> = ({
   return (
     <button
       disabled
-      className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-400 px-3 py-1.5 rounded-lg text-xs font-medium cursor-not-allowed select-none opacity-80"
+      className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 px-3 py-1.5 rounded-lg text-xs font-medium cursor-not-allowed select-none opacity-80"
       id={`btn_credit_weekly_payout_${investment.id}`}
-      title={hasClicked ? "Payout claimed. Idle until next cycle." : "Payout button can only be active on the last minute of the countdown"}
+      title={hasClicked || isClaimedRecently ? "Payout claimed. Next Friday cycle scheduled." : "Payout button unlocks in the final minute of the cycle"}
     >
       <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
       <span>
-        {hasClicked 
+        {hasClicked || isClaimedRecently
           ? `Payout Claimed — Idle (+₦${investment.weeklyPayout.toLocaleString()})`
           : `Payout Idle (Active In Last Minute) (+₦${investment.weeklyPayout.toLocaleString()})`}
       </span>

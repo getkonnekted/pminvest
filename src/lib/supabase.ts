@@ -310,6 +310,46 @@ export const syncMultipleUsersToSupabase = async (usersList: User[]) => {
   if (error) console.error('Error syncing multiple users:', error);
 };
 
+export const deleteUserFromSupabase = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+  const client = getSupabaseClient();
+  if (!client) return { success: true }; // Local-only mode
+
+  try {
+    // 1. Try atomic PostgreSQL RPC first (bypasses RLS issues and cascades cleanly)
+    try {
+      const { data: rpcData, error: rpcErr } = await client.rpc('admin_delete_user', { p_user_id: userId });
+      if (!rpcErr && rpcData && rpcData.success) {
+        return { success: true };
+      }
+    } catch {
+      // RPC might not exist on old schema versions, fall through to client-side cascade
+    }
+
+    // 2. Client-side sequential deletion in strict foreign key order
+    // Must delete child tables referencing wallets first to avoid ON DELETE RESTRICT foreign key violations
+    await client.from('wallet_transactions').delete().eq('user_id', userId);
+    await client.from('wallets').delete().eq('user_id', userId);
+    await client.from('investor_protection_logs').delete().eq('user_id', userId);
+    await client.from('admin_audit_logs').delete().eq('target_user_id', userId);
+    await client.from('user_daily_progress').delete().eq('user_id', userId);
+    await client.from('task_submissions').delete().eq('userId', userId);
+    await client.from('transactions').delete().eq('userId', userId);
+    await client.from('investments').delete().eq('userId', userId);
+
+    // 3. Delete from users table directly
+    const { error: userDeleteErr } = await client.from('users').delete().eq('id', userId);
+    if (userDeleteErr) {
+      console.error('Supabase direct users delete failed:', userDeleteErr);
+      return { success: false, error: userDeleteErr.message || 'Permission denied or constraint failed on Supabase users table' };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Exception during deleteUserFromSupabase:', err);
+    return { success: false, error: err?.message || 'Database connection error during account deletion' };
+  }
+};
+
 const toCoreInvestment = (inv: UserInvestment) => ({
   id: inv.id,
   userId: inv.userId,

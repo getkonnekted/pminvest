@@ -1,8 +1,11 @@
+export type WhatsAppStatus = 'verified' | 'pending' | 'not_on_whatsapp';
+
 export interface User {
   id: string;
   name: string;
   email: string;
   phone?: string;
+  whatsappStatus?: WhatsAppStatus;
   password?: string;
   referralCode: string;
   referredByCode?: string;

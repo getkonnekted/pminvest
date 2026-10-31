@@ -44,7 +44,8 @@ import {
   Activity,
   Code2,
   Terminal,
-  ExternalLink
+  ExternalLink,
+  AlertCircle
 } from 'lucide-react';
 import { User, INVESTMENT_PLANS } from '../types';
 import { PmLogo } from './PmLogo';
@@ -54,6 +55,12 @@ import { AdminAuditLogsTab } from './AdminAuditLogsTab';
 import { AdminBroadcastReengagementModal } from './AdminBroadcastReengagementModal';
 import { testSupabaseConnection, recordAdminSecurityAudit } from '../lib/supabase';
 import { SUPABASE_CORE_SQL, FULL_SUPABASE_SQL } from '../data/supabaseSql';
+import { 
+  sanitizeAndValidatePhone, 
+  formatPhoneDisplay, 
+  getWhatsAppStatusInfo, 
+  WhatsAppStatus 
+} from '../lib/phoneSanitizer';
 
 export const AdminPanel: React.FC = () => {
   const { 
@@ -76,6 +83,7 @@ export const AdminPanel: React.FC = () => {
     adminCreateUser,
     adminToggleUserStatus,
     adminUpdateUser,
+    updateUserWhatsAppStatus,
     adminTopUpMarketingWallet,
     adminToggleMarketingStatus,
     adminDeleteUser,
@@ -125,6 +133,7 @@ export const AdminPanel: React.FC = () => {
   const [editUserName, setEditUserName] = useState('');
   const [editUserEmail, setEditUserEmail] = useState('');
   const [editUserPhone, setEditUserPhone] = useState('');
+  const [editUserWhatsappStatus, setEditUserWhatsappStatus] = useState<WhatsAppStatus>('pending');
   const [editUserBalance, setEditUserBalance] = useState('');
   const [editUserRole, setEditUserRole] = useState<'user' | 'admin'>('user');
   const [editUserKyc, setEditUserKyc] = useState<'unverified' | 'pending' | 'verified' | 'rejected'>('unverified');
@@ -139,6 +148,7 @@ export const AdminPanel: React.FC = () => {
   const [createUserName, setCreateUserName] = useState('');
   const [createUserEmail, setCreateUserEmail] = useState('');
   const [createUserPhone, setCreateUserPhone] = useState('');
+  const [createUserWhatsappStatus, setCreateUserWhatsappStatus] = useState<WhatsAppStatus>('pending');
   const [createUserPassword, setCreateUserPassword] = useState('password123');
   const [createUserBalance, setCreateUserBalance] = useState('0');
   const [createUserRole, setCreateUserRole] = useState<'user' | 'admin'>('user');
@@ -156,12 +166,15 @@ export const AdminPanel: React.FC = () => {
   const [marketingTopUpNotes, setMarketingTopUpNotes] = useState('Marketing Canvassing Allocation');
 
   // User Filter & In-App Deactivation Modal State
-  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'real_paid' | 'unfunded' | 'marketing' | 'active' | 'deactivated' | 'admin'>('all');
+  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'real_paid' | 'unfunded' | 'marketing' | 'active' | 'deactivated' | 'admin' | 'wa_verified' | 'wa_pending' | 'wa_missing'>('all');
   const [deactivateModalTarget, setDeactivateModalTarget] = useState<{ user: User; willDeactivate: boolean } | null>(null);
 
   // Broadcast Re-engagement for Unfunded Leads State
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [broadcastInitialLeadId, setBroadcastInitialLeadId] = useState<string | null>(null);
+
+  // Manual Database Sync State
+  const [isManualSyncingUsers, setIsManualSyncingUsers] = useState(false);
 
   const handleCreateUserSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,6 +184,7 @@ export const AdminPanel: React.FC = () => {
       name: createUserName,
       email: createUserEmail,
       phone: createUserPhone.trim() ? createUserPhone.trim() : undefined,
+      whatsappStatus: createUserWhatsappStatus,
       password: createUserPassword.trim() ? createUserPassword.trim() : 'password123',
       walletBalance: !isNaN(parsedBal) ? parsedBal : 0,
       role: createUserRole,
@@ -185,6 +199,7 @@ export const AdminPanel: React.FC = () => {
       setCreateUserName('');
       setCreateUserEmail('');
       setCreateUserPhone('');
+      setCreateUserWhatsappStatus('pending');
       setCreateUserPassword('password123');
       setCreateUserBalance('0');
       setCreateUserRole('user');
@@ -221,6 +236,7 @@ export const AdminPanel: React.FC = () => {
       role: editUserRole,
       kycStatus: editUserKyc,
       phone: editUserPhone.trim() ? editUserPhone.trim() : undefined,
+      whatsappStatus: editUserWhatsappStatus,
       isDeactivated: editUserIsDeactivated,
       isMarketingAccount: editUserIsMarketing,
       password: editUserPassword.trim() ? editUserPassword.trim() : undefined
@@ -285,6 +301,9 @@ export const AdminPanel: React.FC = () => {
   const totalInvestorBalances = users.filter(u => u.role !== 'admin').reduce((sum, u) => sum + u.walletBalance, 0);
   const realInvestorBalances = users.filter(u => !u.isMarketingAccount && u.role !== 'admin').reduce((sum, u) => sum + u.walletBalance, 0);
   const marketingBalances = users.filter(u => !!u.isMarketingAccount).reduce((sum, u) => sum + u.walletBalance, 0);
+  const waVerifiedCount = users.filter(u => u.whatsappStatus === 'verified').length;
+  const waPendingCount = users.filter(u => u.whatsappStatus === 'pending' || (!u.whatsappStatus && !!u.phone)).length;
+  const waMissingCount = users.filter(u => u.whatsappStatus === 'not_on_whatsapp' || !u.phone).length;
 
   // Filter users by search and status filter
   const filteredUsers = users.filter(u => {
@@ -303,6 +322,9 @@ export const AdminPanel: React.FC = () => {
     if (userStatusFilter === 'active') return !u.isDeactivated;
     if (userStatusFilter === 'deactivated') return !!u.isDeactivated;
     if (userStatusFilter === 'admin') return u.role === 'admin';
+    if (userStatusFilter === 'wa_verified') return u.whatsappStatus === 'verified';
+    if (userStatusFilter === 'wa_pending') return u.whatsappStatus === 'pending' || (!u.whatsappStatus && !!u.phone);
+    if (userStatusFilter === 'wa_missing') return u.whatsappStatus === 'not_on_whatsapp' || !u.phone;
     return true;
   });
 
@@ -1514,6 +1536,22 @@ export const AdminPanel: React.FC = () => {
             <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
               <button
                 type="button"
+                onClick={async () => {
+                  setIsManualSyncingUsers(true);
+                  await refreshFromSupabase();
+                  setTimeout(() => setIsManualSyncingUsers(false), 500);
+                }}
+                disabled={isManualSyncingUsers}
+                className="bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold text-xs px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap active:scale-95 disabled:opacity-60"
+                title="Force refresh from Supabase database to verify deleted accounts and new registrations"
+                id="btn_admin_sync_users_database"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${isManualSyncingUsers ? 'animate-spin text-amber-600' : ''}`} />
+                <span>{isManualSyncingUsers ? 'Syncing...' : 'Sync Database'}</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => {
                   setCreateUserError(null);
                   setShowCreateUserModal(true);
@@ -1656,6 +1694,45 @@ export const AdminPanel: React.FC = () => {
             >
               <span>Admins ({adminUsersCount})</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setUserStatusFilter('wa_verified')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                userStatusFilter === 'wa_verified'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-emerald-700 hover:bg-emerald-50'
+              }`}
+              title="Users with verified active WhatsApp numbers"
+            >
+              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              <span>WA Verified ({waVerifiedCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserStatusFilter('wa_pending')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                userStatusFilter === 'wa_pending'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-amber-700 hover:bg-amber-50'
+              }`}
+              title="Users with pending WhatsApp verification"
+            >
+              <Clock className="w-3 h-3 text-amber-300" />
+              <span>WA Pending ({waPendingCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserStatusFilter('wa_missing')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                userStatusFilter === 'wa_missing'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-rose-700 hover:bg-rose-50'
+              }`}
+              title="Users flagged as not on WhatsApp or missing phone"
+            >
+              <AlertCircle className="w-3 h-3 text-rose-400" />
+              <span>Not on WA ({waMissingCount})</span>
+            </button>
           </div>
 
           {/* Unfunded Leads Re-engagement Campaign Banner */}
@@ -1740,7 +1817,71 @@ export const AdminPanel: React.FC = () => {
                             )}
                           </div>
                           <div className="text-[10px] text-slate-500 font-mono">{u.email}</div>
-                          {u.phone && <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">📞 {u.phone}</div>}
+                          {u.phone ? (
+                            <div className="mt-1 space-y-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] text-slate-800 font-mono font-bold flex items-center gap-1">
+                                  <span>{sanitizeAndValidatePhone(u.phone).flag}</span>
+                                  <span>{formatPhoneDisplay(u.phone)}</span>
+                                </span>
+                              </div>
+
+                              {/* WhatsApp Status Tag Badge & 1-Click Status Flagging */}
+                              {(() => {
+                                const waStatus: WhatsAppStatus = u.whatsappStatus || 'pending';
+                                const info = getWhatsAppStatusInfo(waStatus);
+                                return (
+                                  <div className="flex items-center gap-1 flex-wrap">
+                                    <span 
+                                      className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold border inline-flex items-center gap-1 ${info.bgLight}`}
+                                      title={info.description}
+                                    >
+                                      <span className={`w-1.5 h-1.5 rounded-full ${info.dotColor}`} />
+                                      <span>{info.label}</span>
+                                    </span>
+
+                                    {/* 1-Click Campaign Flagging Buttons */}
+                                    <div className="inline-flex items-center gap-1">
+                                      {waStatus !== 'verified' && (
+                                        <button
+                                          type="button"
+                                          onClick={() => updateUserWhatsAppStatus(u.id, 'verified')}
+                                          className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold cursor-pointer border border-emerald-300 transition-colors"
+                                          title="1-Click: Verify active on WhatsApp"
+                                        >
+                                          ✓ Verify
+                                        </button>
+                                      )}
+                                      {waStatus !== 'not_on_whatsapp' && (
+                                        <button
+                                          type="button"
+                                          onClick={() => updateUserWhatsAppStatus(u.id, 'not_on_whatsapp')}
+                                          className="text-[9px] px-1.5 py-0.5 rounded bg-rose-100 hover:bg-rose-200 text-rose-800 font-semibold cursor-pointer border border-rose-300 transition-colors"
+                                          title="1-Click: Flag as Not on WhatsApp"
+                                        >
+                                          ✕ Not on WA
+                                        </button>
+                                      )}
+                                      {waStatus !== 'pending' && (
+                                        <button
+                                          type="button"
+                                          onClick={() => updateUserWhatsAppStatus(u.id, 'pending')}
+                                          className="text-[9px] px-1 py-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold cursor-pointer border border-amber-300 transition-colors"
+                                          title="1-Click: Set status back to Pending"
+                                        >
+                                          Reset
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          ) : (
+                            <div className="mt-0.5 text-[9px] text-rose-600 font-mono italic">
+                              ⚠️ No WhatsApp number
+                            </div>
+                          )}
                           {u.isMarketingAccount && (u.marketingAllocatedBalance || 0) > 0 && (
                             <div className="text-[9px] text-purple-700 font-mono mt-0.5">
                               Allocated Demo: ₦{(u.marketingAllocatedBalance || 0).toLocaleString()}
@@ -1836,6 +1977,7 @@ export const AdminPanel: React.FC = () => {
                                 setEditUserName(u.name);
                                 setEditUserEmail(u.email);
                                 setEditUserPhone(u.phone || '');
+                                setEditUserWhatsappStatus(u.whatsappStatus || (u.phone ? 'pending' : 'not_on_whatsapp'));
                                 setEditUserBalance(String(u.walletBalance));
                                 setEditUserRole(u.role);
                                 setEditUserKyc(u.kycStatus);
@@ -2398,14 +2540,39 @@ export const AdminPanel: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Phone Number</label>
+                  <div className="flex justify-between items-baseline mb-1">
+                    <label className="block text-slate-700 font-semibold flex items-center gap-1">
+                      <MessageSquare className="w-3 h-3 text-emerald-600" />
+                      <span>Active WhatsApp Number</span>
+                    </label>
+                    <span className="text-[10px] text-slate-400">Auto-sanitizes (+234...)</span>
+                  </div>
                   <input
                     type="tel"
                     value={editUserPhone}
                     onChange={(e) => setEditUserPhone(e.target.value)}
-                    placeholder="e.g. 08012345678"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-amber-500"
+                    placeholder="e.g. 08012345678 or +234..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono focus:outline-none focus:border-amber-500"
                   />
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Receive instant Friday yield receipts and deed documents.
+                  </p>
+                  {editUserPhone.trim() && (
+                    <div className="mt-1 text-[10px] font-mono">
+                      {(() => {
+                        const res = sanitizeAndValidatePhone(editUserPhone);
+                        return res.isValid ? (
+                          <span className="text-emerald-700 flex items-center gap-1 font-semibold">
+                            <span>{res.flag}</span>
+                            <span>{res.formatted}</span>
+                            <span className="text-emerald-600">✓ Valid</span>
+                          </span>
+                        ) : (
+                          <span className="text-rose-600 font-semibold">{res.error}</span>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -2453,7 +2620,19 @@ export const AdminPanel: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">WhatsApp Status</label>
+                  <select
+                    value={editUserWhatsappStatus}
+                    onChange={(e) => setEditUserWhatsappStatus(e.target.value as WhatsAppStatus)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-amber-500 font-semibold"
+                  >
+                    <option value="verified">🟢 Verified WhatsApp</option>
+                    <option value="pending">🟡 Pending Check</option>
+                    <option value="not_on_whatsapp">🔴 Not on WhatsApp</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1">Account Status</label>
                   <select
@@ -2607,14 +2786,39 @@ export const AdminPanel: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Phone Number (Optional)</label>
+                  <div className="flex justify-between items-baseline mb-1">
+                    <label className="block text-slate-700 font-semibold flex items-center gap-1">
+                      <MessageSquare className="w-3 h-3 text-emerald-600" />
+                      <span>Active WhatsApp Number</span>
+                    </label>
+                    <span className="text-[10px] text-slate-400">Auto-sanitizes (+234...)</span>
+                  </div>
                   <input
                     type="tel"
                     value={createUserPhone}
                     onChange={(e) => setCreateUserPhone(e.target.value)}
-                    placeholder="e.g. 08012345678"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500"
+                    placeholder="e.g. 08012345678 or +234..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 font-mono focus:outline-none focus:border-emerald-500"
                   />
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Receive instant Friday yield receipts and deed documents.
+                  </p>
+                  {createUserPhone.trim() && (
+                    <div className="mt-1 text-[10px] font-mono">
+                      {(() => {
+                        const res = sanitizeAndValidatePhone(createUserPhone);
+                        return res.isValid ? (
+                          <span className="text-emerald-700 flex items-center gap-1 font-semibold">
+                            <span>{res.flag}</span>
+                            <span>{res.formatted}</span>
+                            <span className="text-emerald-600">✓ Valid</span>
+                          </span>
+                        ) : (
+                          <span className="text-rose-600 font-semibold">{res.error}</span>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1">
@@ -2680,7 +2884,7 @@ export const AdminPanel: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1">Account Role</label>
                   <select
@@ -2717,6 +2921,18 @@ export const AdminPanel: React.FC = () => {
                     <option value="verified">VERIFIED (Fast-track)</option>
                     <option value="unverified">UNVERIFIED</option>
                     <option value="pending">PENDING</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">WhatsApp Status</label>
+                  <select
+                    value={createUserWhatsappStatus}
+                    onChange={(e) => setCreateUserWhatsappStatus(e.target.value as WhatsAppStatus)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500 font-semibold"
+                  >
+                    <option value="pending">⏳ Pending Check</option>
+                    <option value="verified">✓ WhatsApp Verified</option>
+                    <option value="not_on_whatsapp">🚫 Not on WhatsApp</option>
                   </select>
                 </div>
               </div>

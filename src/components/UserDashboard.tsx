@@ -57,6 +57,7 @@ import { PWAInstallButton } from './PWAInstallButton';
 import { UaeFlag } from './UaeFlag';
 import { recordInvestorProtectionEvent } from '../lib/supabase';
 import { useSupabaseSync } from '../hooks/useSupabaseSync';
+import { formatPhoneDisplay, getWhatsAppStatusInfo } from '../lib/phoneSanitizer';
 
 const AutoRenewControl: React.FC<{ investment: UserInvestment; onToggle: (id: string) => void }> = ({ investment, onToggle }) => {
   const [now, setNow] = useState(Date.now());
@@ -970,7 +971,11 @@ export const UserDashboard: React.FC = () => {
 
                           {/* Live Payout Countdown Timer */}
                           <div className="my-2">
-                            <PayoutCountdown targetDate={inv.nextPayoutDate} isLocked={inv.isTimerLocked || currentUser?.isTimerLocked} />
+                            <PayoutCountdown 
+                              targetDate={inv.nextPayoutDate} 
+                              isCompleted={inv.status === 'completed' || inv.weeksPaid >= inv.totalWeeks}
+                              isLocked={inv.isTimerLocked || currentUser?.isTimerLocked} 
+                            />
                           </div>
 
                           <AutoRenewControl investment={inv} onToggle={toggleAutoReinvest} />
@@ -1877,6 +1882,56 @@ export const UserDashboard: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Active WhatsApp Number & Verified Dispatch Channel Card */}
+          <div className="bg-[#06080e] border border-amber-500/25 rounded-2xl p-5 space-y-3.5 shadow-xl">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <MessageSquare className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-[#f7ecd5] uppercase tracking-wider font-mono">
+                    Active WhatsApp Dispatch Channel
+                  </h4>
+                  <p className="text-[10px] text-slate-400">
+                    Official phone number designated for automated Friday distributions &amp; official deeds
+                  </p>
+                </div>
+              </div>
+              {(() => {
+                const waInfo = getWhatsAppStatusInfo(currentUser.whatsappStatus);
+                return (
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border ${waInfo.badgeClass}`}>
+                    <span>{waInfo.icon}</span>
+                    <span>{waInfo.label}</span>
+                  </span>
+                );
+              })()}
+            </div>
+
+            <div className="bg-[#0b0f19] border border-slate-800 p-3.5 rounded-xl flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <span className="text-[10px] text-slate-400 font-mono block">Registered Active WhatsApp</span>
+                <span className="text-sm font-bold text-white font-mono mt-0.5 block">
+                  {formatPhoneDisplay(currentUser.phone)}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[9px] font-mono text-emerald-400 block font-semibold">Priority Delivery Channel</span>
+                <span className="text-[11px] text-slate-300 font-mono">Encrypted 256-bit</span>
+              </div>
+            </div>
+
+            {/* Clear Value Proposition */}
+            <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="text-xs text-slate-300 leading-relaxed">
+                <strong className="text-amber-300 block font-semibold mb-0.5">Value Guarantee:</strong>
+                Receive instant Friday yield receipts and deed documents directly to your WhatsApp inbox every Friday at 12:00 PM without manual follow-up.
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

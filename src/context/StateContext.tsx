@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS, DailyTask, TaskSubmission, UserDailyProgress, PayoutToastData, LiveActivityItem } from '../types';
+import { User, InvestmentPlan, UserInvestment, Transaction, SystemSettings, INVESTMENT_PLANS, DailyTask, TaskSubmission, UserDailyProgress, PayoutToastData, LiveActivityItem, WhatsAppStatus } from '../types';
+import { sanitizeAndValidatePhone } from '../lib/phoneSanitizer';
 import { DEFAULT_DAILY_TASKS } from '../data/dailyTasks';
 import { playPayoutChime } from '../lib/sound';
 import { getWatDate, getWatDateString, getWatYesterdayString } from '../lib/watTime';
@@ -23,7 +24,8 @@ import {
   subscribeToSupabaseRealtime,
   getSupabaseConfig,
   saveSupabaseCredentials,
-  getSupabaseClient
+  getSupabaseClient,
+  deleteUserFromSupabase
 } from '../lib/supabase';
 
 interface StateContextType {
@@ -33,6 +35,7 @@ interface StateContextType {
   transactions: Transaction[];
   settings: SystemSettings;
   currentWeek: number;
+  refreshFromDatabase: () => Promise<void>;
   errorMsg: string | null;
   successMsg: string | null;
   supabaseStatus: 'idle' | 'loading' | 'connected' | 'error' | 'not_configured';
@@ -92,6 +95,7 @@ interface StateContextType {
     name: string;
     email: string;
     phone?: string;
+    whatsappStatus?: WhatsAppStatus;
     password?: string;
     walletBalance?: number;
     role?: 'user' | 'admin';
@@ -102,7 +106,8 @@ interface StateContextType {
     isMarketingAccount?: boolean;
   }) => { success: boolean; message: string; user?: User };
   adminToggleUserStatus: (userId: string, isDeactivated: boolean) => { success: boolean; message: string };
-  adminUpdateUser: (userId: string, updates: { walletBalance?: number; role?: 'user' | 'admin'; kycStatus?: 'unverified' | 'pending' | 'verified' | 'rejected'; name?: string; password?: string; phone?: string; isDeactivated?: boolean; isMarketingAccount?: boolean }) => boolean;
+  adminUpdateUser: (userId: string, updates: { walletBalance?: number; role?: 'user' | 'admin'; kycStatus?: 'unverified' | 'pending' | 'verified' | 'rejected'; name?: string; password?: string; phone?: string; whatsappStatus?: WhatsAppStatus; isDeactivated?: boolean; isMarketingAccount?: boolean }) => boolean;
+  updateUserWhatsAppStatus: (userId: string, status: WhatsAppStatus) => boolean;
   adminTopUpMarketingWallet: (userId: string, amount: number, notes?: string) => boolean;
   adminToggleMarketingStatus: (userId: string) => boolean;
   adminDeleteUser: (userId: string) => Promise<{ success: boolean; message: string }>;
@@ -248,12 +253,34 @@ const DEFAULT_SETTINGS: SystemSettings = {
   enableLiveActivityToasts: true // Real-time purchase and investor activity toasts
 };
 
+const getDeletedUserIds = (): Set<string> => {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const saved = localStorage.getItem('pm_deleted_user_ids');
+    if (saved) {
+      const arr = JSON.parse(saved);
+      if (Array.isArray(arr)) return new Set(arr);
+    }
+  } catch (e) {}
+  return new Set();
+};
+
 export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const deletedUserIdsRef = useRef<Set<string>>(getDeletedUserIds());
+
+  const addDeletedUserId = (id: string) => {
+    deletedUserIdsRef.current.add(id);
+    try {
+      localStorage.setItem('pm_deleted_user_ids', JSON.stringify(Array.from(deletedUserIdsRef.current)));
+    } catch (e) {}
+  };
+
   const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem('pm_prod_users_v1');
     const parsed = saved ? JSON.parse(saved) : null;
+    const deleted = getDeletedUserIds();
     if (parsed && Array.isArray(parsed)) {
-      return parsed.filter((u: any) => u.id !== 'usr_demo_investor');
+      return parsed.filter((u: any) => u.id !== 'usr_demo_investor' && !deleted.has(u.id));
     }
     return getSeedUsers();
   });
@@ -267,18 +294,20 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const saved = localStorage.getItem('pm_prod_investments_v1');
     const parsed = saved ? JSON.parse(saved) : SEED_INVESTMENTS;
     if (parsed && Array.isArray(parsed)) {
-      // Standardize active investments to canonical 24-week UAE property plans
+      // Standardize active investments to canonical 24-week UAE property plans & enforce completed bounds
       return parsed.map((inv: UserInvestment) => {
-        if (inv.status === 'active' && inv.totalWeeks !== 24) {
-          const weekly = inv.weeklyPayout || Math.round(inv.cost * (6500 / 30000));
-          return {
-            ...inv,
-            totalWeeks: 24,
-            weeklyPayout: weekly,
-            totalReturns: weekly * 24
-          };
+        const normalized = { ...inv };
+        if (normalized.status === 'active' && normalized.totalWeeks !== 24) {
+          const weekly = normalized.weeklyPayout || Math.round(normalized.cost * (6500 / 30000));
+          normalized.totalWeeks = 24;
+          normalized.weeklyPayout = weekly;
+          normalized.totalReturns = weekly * 24;
         }
-        return inv;
+        if (normalized.weeksPaid >= normalized.totalWeeks) {
+          normalized.status = 'completed';
+          normalized.nextPayoutDate = undefined;
+        }
+        return normalized;
       });
     }
     return parsed;
@@ -346,8 +375,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Payout Notification Toasts
+  // Payout Notification Toasts & Claim Mutex
   const [payoutToasts, setPayoutToasts] = useState<PayoutToastData[]>([]);
+  const claimingInvestmentIdsRef = useRef<Set<string>>(new Set());
 
   // Periodic calendar tick to ensure reserve updates daily
   const [calendarTick, setCalendarTick] = useState<number>(0);
@@ -359,19 +389,20 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => clearInterval(timer);
   }, []);
 
-  const dismissPayoutToast = (id: string) => {
+  const dismissPayoutToast = useCallback((id: string) => {
     setPayoutToasts(prev => prev.filter(t => t.id !== id));
-  };
+  }, []);
 
-  const triggerPayoutToast = (toastData: Omit<PayoutToastData, 'id' | 'timestamp'>) => {
+  const triggerPayoutToast = useCallback((toastData: Omit<PayoutToastData, 'id' | 'timestamp'>) => {
     const newToast: PayoutToastData = {
       ...toastData,
       id: 'toast_payout_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     };
-    setPayoutToasts(prev => [newToast, ...prev]);
+    // Cap visible toasts to max 2 items to ensure clean screen without clutter
+    setPayoutToasts(prev => [newToast, ...prev].slice(0, 2));
     playPayoutChime();
-  };
+  }, []);
 
   // High-Resolution Live Continuous Liquidity Reserve
   const [liveLiquidityReserve, setLiveLiquidityReserve] = useState<number>(() => calculateContinuousLiquidity(virtualDayOffset));
@@ -422,13 +453,25 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setSupabaseStatus('connected');
       setLastSyncedAt(new Date().toLocaleTimeString());
 
-      if (dbData.users && dbData.users.length > 0) {
-        const sanitizedUsers = dbData.users.filter((u: any) => u.id !== 'usr_demo_investor');
+      if (dbData.users) {
+        // Filter out demo investor and any deleted user IDs
+        const sanitizedUsers = dbData.users.filter((u: any) => u.id !== 'usr_demo_investor' && !deletedUserIdsRef.current.has(u.id));
         setUsers(sanitizedUsers);
+        try {
+          localStorage.setItem('pm_prod_users_v1', JSON.stringify(sanitizedUsers));
+        } catch (e) {}
+
+        // Expunge any zombie records from Supabase in background if they were previously deleted
+        dbData.users.forEach((u: any) => {
+          if (deletedUserIdsRef.current.has(u.id)) {
+            deleteUserFromSupabase(u.id).catch(() => {});
+          }
+        });
 
         // Keep active logged-in user in sync with updated balance, KYC status, etc.
         setCurrentUser(prevUser => {
           if (!prevUser) return null;
+          if (deletedUserIdsRef.current.has(prevUser.id)) return null;
           const freshUser = sanitizedUsers.find(u => u.id === prevUser.id);
           return freshUser ? { ...prevUser, ...freshUser } : prevUser;
         });
@@ -504,8 +547,12 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             await syncSettingsToSupabase(settings);
             await syncWeekToSupabase(currentWeek);
           } else {
-            const sanitizedUsers = dbData.users.filter((u: any) => u.id !== 'usr_demo_investor');
+            const sanitizedUsers = dbData.users.filter((u: any) => u.id !== 'usr_demo_investor' && !deletedUserIdsRef.current.has(u.id));
             setUsers(sanitizedUsers);
+            try {
+              localStorage.setItem('pm_prod_users_v1', JSON.stringify(sanitizedUsers));
+            } catch (e) {}
+
             if (dbData.investments !== null) {
               // Preserve locally loaded plans if the initial investments query failed.
               setInvestments(dbData.investments);
@@ -577,14 +624,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [refreshFromSupabase]);
 
-  // Sync to local storage and Supabase (guarded against echo loops)
+  // Sync to local storage only (do NOT blindly upsert entire users table to Supabase on every render!)
   useEffect(() => {
     localStorage.setItem('pm_prod_users_v1', JSON.stringify(users));
-    if (isDbLoaded && isSupabaseConfigured() && users.length > 0) {
-      if (isRemoteSyncingRef.current) return;
-      syncMultipleUsersToSupabase(users);
-    }
-  }, [users, isDbLoaded]);
+  }, [users]);
 
   useEffect(() => {
     localStorage.setItem('pm_prod_current_user_v1', JSON.stringify(currentUser));
@@ -718,7 +761,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     if (!cleanPhone) {
-      setErrorMsg('Phone number is required for account security and SMS transaction updates.');
+      setErrorMsg('An active WhatsApp number is required to receive instant Friday yield receipts and deed documents.');
+      return false;
+    }
+
+    const phoneValidation = sanitizeAndValidatePhone(cleanPhone);
+    if (!phoneValidation.isValid) {
+      setErrorMsg(phoneValidation.error || 'Please enter a valid active WhatsApp number (e.g. 08012345678 or +234...).');
       return false;
     }
 
@@ -759,7 +808,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: 'usr_' + Date.now(),
       name: trimmedName,
       email: trimmedEmail,
-      phone: cleanPhone,
+      phone: phoneValidation.e164,
+      whatsappStatus: 'pending',
       password: password || undefined,
       referralCode: refCode || ('INV' + Math.floor(1000 + Math.random() * 9000)),
       referredByCode: sponsor.referralCode,
@@ -971,6 +1021,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     name: string;
     email: string;
     phone?: string;
+    whatsappStatus?: WhatsAppStatus;
     password?: string;
     walletBalance?: number;
     role?: 'user' | 'admin';
@@ -1024,11 +1075,23 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ? Math.max(0, userData.walletBalance)
       : 0;
 
+    let sanitizedPhone = userData.phone?.trim() || undefined;
+    let initialWhatsappStatus: WhatsAppStatus = userData.whatsappStatus || 'pending';
+    if (sanitizedPhone) {
+      const pRes = sanitizeAndValidatePhone(sanitizedPhone);
+      if (pRes.isValid) {
+        sanitizedPhone = pRes.e164;
+      }
+    } else {
+      initialWhatsappStatus = 'not_on_whatsapp';
+    }
+
     const newUser: User = {
       id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       name: trimmedName,
       email: trimmedEmail,
-      phone: userData.phone?.trim() || undefined,
+      phone: sanitizedPhone,
+      whatsappStatus: initialWhatsappStatus,
       password: userData.password?.trim() || 'password123',
       referralCode: refCode,
       referredByCode: sponsorCode || undefined,
@@ -1151,8 +1214,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return { success: false, message: msg };
     }
 
-    // 1. Remove from local React state
-    setUsers(prev => prev.filter(u => u.id !== userId));
+    // 1. Mark in tombstone set so background polls or realtime events never resurrect this user
+    addDeletedUserId(userId);
+    isRemoteSyncingRef.current = true;
+
+    // 2. Remove immediately from local React state
+    const remainingUsers = users.filter(u => u.id !== userId);
+    setUsers(remainingUsers);
     setInvestments(prev => prev.filter(inv => inv.userId !== userId));
     setTransactions(prev => prev.filter(t => t.userId !== userId));
     setTaskSubmissions(prev => prev.filter(sub => sub.userId !== userId));
@@ -1162,25 +1230,25 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return next;
     });
 
-    // 2. Remove from Supabase if connected
-    const client = getSupabaseClient();
-    if (client) {
-      try {
-        await Promise.allSettled([
-          client.from('transactions').delete().eq('userId', userId),
-          client.from('investments').delete().eq('userId', userId),
-          client.from('task_submissions').delete().eq('userId', userId),
-          client.from('wallet_transactions').delete().eq('user_id', userId),
-          client.from('wallets').delete().eq('user_id', userId),
-          client.from('user_daily_progress').delete().eq('user_id', userId),
-          client.from('users').delete().eq('id', userId)
-        ]);
-      } catch (err) {
-        console.warn('Supabase delete record notice:', err);
-      }
+    // 3. Immediately persist clean user array to localStorage
+    try {
+      localStorage.setItem('pm_prod_users_v1', JSON.stringify(remainingUsers));
+    } catch (e) {}
+
+    // 4. Cascade delete from Supabase via atomic RPC or sequential queries
+    const result = await deleteUserFromSupabase(userId);
+
+    setTimeout(() => {
+      isRemoteSyncingRef.current = false;
+    }, 1500);
+
+    if (!result.success) {
+      const warnMsg = `Account removed locally, but Supabase reported: "${result.error}". Check that you have run the updated SQL in Supabase SQL Editor.`;
+      setErrorMsg(warnMsg);
+      return { success: false, message: warnMsg };
     }
 
-    const successMessage = `Account for ${targetUser.name} (${targetUser.email}) and all associated records permanently deleted.`;
+    const successMessage = `Account for ${targetUser.name} (${targetUser.email}) and all associated records permanently purged from database.`;
     setSuccessMsg(successMessage);
     return { success: true, message: successMessage };
   };
@@ -1361,6 +1429,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       name?: string; 
       password?: string;
       phone?: string;
+      whatsappStatus?: WhatsAppStatus;
       isDeactivated?: boolean;
       isMarketingAccount?: boolean;
     }
@@ -1377,6 +1446,17 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       balanceDiff = updates.walletBalance - targetUser.walletBalance;
     }
 
+    let updatedPhone = targetUser.phone;
+    if (updates.phone !== undefined) {
+      const trimmedP = updates.phone.trim();
+      if (!trimmedP) {
+        updatedPhone = undefined;
+      } else {
+        const pRes = sanitizeAndValidatePhone(trimmedP);
+        updatedPhone = pRes.isValid ? pRes.e164 : trimmedP;
+      }
+    }
+
     const updatedUser: User = {
       ...targetUser,
       name: updates.name !== undefined && updates.name.trim() ? updates.name.trim() : targetUser.name,
@@ -1384,7 +1464,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       role: updates.role !== undefined ? updates.role : targetUser.role,
       kycStatus: updates.kycStatus !== undefined ? updates.kycStatus : targetUser.kycStatus,
       password: updates.password !== undefined && updates.password.trim() ? updates.password.trim() : targetUser.password,
-      phone: updates.phone !== undefined ? updates.phone.trim() : targetUser.phone,
+      phone: updatedPhone,
+      whatsappStatus: updates.whatsappStatus !== undefined ? updates.whatsappStatus : targetUser.whatsappStatus,
       isDeactivated: updates.isDeactivated !== undefined ? updates.isDeactivated : targetUser.isDeactivated,
       isMarketingAccount: updates.isMarketingAccount !== undefined ? updates.isMarketingAccount : targetUser.isMarketingAccount
     };
@@ -1414,7 +1495,35 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       syncTransactionToSupabase(auditTx);
     }
 
-    setSuccessMsg(`Successfully updated account and wallet balance for ${updatedUser.name}.`);
+    setSuccessMsg(`Successfully updated account for ${updatedUser.name}.`);
+    return true;
+  };
+
+  const updateUserWhatsAppStatus = (userId: string, status: WhatsAppStatus): boolean => {
+    clearMessages();
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser) {
+      setErrorMsg('User not found.');
+      return false;
+    }
+
+    const updatedUser: User = {
+      ...targetUser,
+      whatsappStatus: status
+    };
+
+    setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
+    if (currentUser && currentUser.id === userId) {
+      setCurrentUser(updatedUser);
+    }
+    syncUserToSupabase(updatedUser);
+
+    const labels: Record<WhatsAppStatus, string> = {
+      verified: 'Verified WhatsApp',
+      pending: 'Pending Verification',
+      not_on_whatsapp: 'Not on WhatsApp'
+    };
+    setSuccessMsg(`WhatsApp status for ${targetUser.name} updated to "${labels[status]}".`);
     return true;
   };
 
@@ -2010,123 +2119,159 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     clearMessages();
     if (!currentUser) return false;
 
-    const inv = investments.find(i => i.id === invId && i.userId === currentUser.id);
-    if (!inv) {
-      setErrorMsg('Active investment plan not found.');
+    // Mutex: prevent duplicate concurrent clicks on the same investment
+    if (claimingInvestmentIdsRef.current.has(invId)) {
       return false;
     }
+    claimingInvestmentIdsRef.current.add(invId);
 
-    if (inv.status === 'completed' || inv.weeksPaid >= inv.totalWeeks) {
-      setErrorMsg('This investment plan has already completed all scheduled weekly payouts.');
-      return false;
-    }
-
-    // Payouts button can only be active on the last minute of the countdown not before
-    if (inv.nextPayoutDate) {
-      const remainingMs = new Date(inv.nextPayoutDate).getTime() - Date.now();
-      if (remainingMs > 60 * 1000) {
-        setErrorMsg('Payout button can only be active on the last minute of the countdown.');
+    try {
+      const inv = investments.find(i => i.id === invId && i.userId === currentUser.id);
+      if (!inv) {
+        setErrorMsg('Active investment plan not found.');
         return false;
       }
-    }
 
-    const nextWeeksPaid = inv.weeksPaid + 1;
-    // Auto-Renew means investors want to rollover their weekly payouts and are entitled to a 3% increment on each payout rolled over not the entire plan.
-    const isAutoRenew = Boolean(inv.autoReinvest);
-    const rolloverIncrement = isAutoRenew ? Math.round(inv.weeklyPayout * 0.03) : 0;
-    const totalPayoutAmount = inv.weeklyPayout + rolloverIncrement;
-    const isCompleted = nextWeeksPaid === inv.totalWeeks;
-    const updatedBalance = currentUser.walletBalance + totalPayoutAmount;
-
-    // 1. Credit User
-    const updatedUser = { ...currentUser, walletBalance: updatedBalance };
-    setCurrentUser(updatedUser);
-    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-
-    // 2. Update Investment
-    const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    let updatedInv: UserInvestment;
-    if (isCompleted && inv.autoReinvest) {
-      updatedInv = {
-        ...inv,
-        weeksPaid: 0,
-        status: 'active',
-        lastPayoutDate: new Date().toISOString(),
-        nextPayoutDate: nextPayout,
-        autoReinvestLockedUntil: inv.autoReinvestLockedUntil && new Date(inv.autoReinvestLockedUntil).getTime() > Date.now()
-          ? nextPayout
-          : undefined
-      };
-      setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} credited! (${inv.planName} weekly payout rolled over with +3% increment [+₦${rolloverIncrement.toLocaleString()}] and renewed into a new 24-week cycle).`);
-    } else {
-      updatedInv = {
-        ...inv,
-        weeksPaid: nextWeeksPaid,
-        status: isCompleted ? 'completed' : 'active',
-        lastPayoutDate: new Date().toISOString(),
-        nextPayoutDate: isCompleted ? undefined : nextPayout,
-        autoReinvestLockedUntil: !isCompleted && inv.autoReinvestLockedUntil && new Date(inv.autoReinvestLockedUntil).getTime() > Date.now()
-          ? nextPayout
-          : undefined
-      };
-      if (isAutoRenew) {
-        setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} credited! Includes +₦${rolloverIncrement.toLocaleString()} (+3% Auto-Renew increment) on your weekly payout.`);
-      } else {
-        setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} weekly yield credited directly to your wallet!`);
+      if (inv.status === 'completed' || inv.weeksPaid >= inv.totalWeeks) {
+        setErrorMsg('This investment plan has already completed all scheduled weekly payouts.');
+        return false;
       }
-    }
-    setInvestments(prev => prev.map(i => i.id === invId ? updatedInv : i));
 
-    // 3. Create Transaction
-    const payoutTxId = 'tx_payout_' + Date.now() + '_' + inv.id;
-    const logTx: Transaction = {
-      id: payoutTxId,
-      userId: currentUser.id,
-      userName: currentUser.name,
-      type: 'payout',
-      amount: totalPayoutAmount,
-      status: 'completed',
-      createdAt: new Date().toISOString(),
-      description: isAutoRenew
-        ? `Weekly payout rolled over (+3% increment: +₦${rolloverIncrement.toLocaleString()}): ${inv.planName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`
-        : `Weekly payout: ${inv.planName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`
-    };
-    setTransactions(prev => [logTx, ...prev]);
+      // Strict Anti-Deficit Guard: if claimed recently within the last 45 seconds, block duplicate claims
+      if (inv.lastPayoutDate) {
+        const msSinceLast = Date.now() - new Date(inv.lastPayoutDate).getTime();
+        if (msSinceLast < 45 * 1000) {
+          setErrorMsg('Yield for this cycle was already processed. Next payout countdown is active.');
+          return false;
+        }
+      }
 
-    // 4. Trigger slide-in notification toast
-    triggerPayoutToast({
-      planName: isAutoRenew ? `${inv.planName} (+3% Rollover Increment)` : inv.planName,
-      amount: totalPayoutAmount,
-      weeksPaid: nextWeeksPaid,
-      totalWeeks: inv.totalWeeks,
-      walletBalance: updatedBalance,
-      type: 'payout'
-    });
+      // Payouts button can only be active on the last minute of the countdown or when due
+      if (inv.nextPayoutDate) {
+        const remainingMs = new Date(inv.nextPayoutDate).getTime() - Date.now();
+        if (remainingMs > 60 * 1000) {
+          setErrorMsg('Payout button can only be active on the last minute of the countdown.');
+          return false;
+        }
+      }
 
-    // 5. If investor was referred, credit sponsor 7.5% bonus
-    if (currentUser.referredByCode) {
-      const sponsorUser = users.find(u => u.referralCode === currentUser.referredByCode);
-      if (sponsorUser) {
-        const bonusAmount = inv.weeklyPayout * 0.075;
-        const updatedSponsorBal = sponsorUser.walletBalance + bonusAmount;
-        setUsers(prev => prev.map(u => u.id === sponsorUser.id ? { ...u, walletBalance: updatedSponsorBal } : u));
-        
-        const bonusTxId = 'tx_ref_bonus_' + Date.now() + '_' + inv.id;
-        const refTx: Transaction = {
-          id: bonusTxId,
-          userId: sponsorUser.id,
-          userName: sponsorUser.name,
-          type: 'referral_bonus',
-          amount: bonusAmount,
-          status: 'completed',
-          createdAt: new Date().toISOString(),
-          description: `7.5% Referral bonus from ${currentUser.name}'s ${inv.planName} weekly payout`
+      const nextWeeksPaid = inv.weeksPaid + 1;
+      // Auto-Renew rollover: +3% increment on the weekly payout disbursement
+      const isAutoRenew = Boolean(inv.autoReinvest);
+      const rolloverIncrement = isAutoRenew ? Math.round(inv.weeklyPayout * 0.03) : 0;
+      const totalPayoutAmount = inv.weeklyPayout + rolloverIncrement;
+      const isCompleted = nextWeeksPaid >= inv.totalWeeks;
+      const updatedBalance = currentUser.walletBalance + totalPayoutAmount;
+
+      // 1. Credit User Balance
+      const updatedUser: User = { ...currentUser, walletBalance: updatedBalance };
+      setCurrentUser(updatedUser);
+      setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+
+      // 2. Advance Investment Schedule: strictly 7 days forward
+      const nextPayout = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      let updatedInv: UserInvestment;
+      if (isCompleted && inv.autoReinvest) {
+        updatedInv = {
+          ...inv,
+          weeksPaid: 0,
+          status: 'active',
+          lastPayoutDate: new Date().toISOString(),
+          nextPayoutDate: nextPayout,
+          autoReinvestLockedUntil: nextPayout
         };
-        setTransactions(prev => [refTx, ...prev]);
+        setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} credited! (${inv.planName} weekly payout rolled over with +3% increment [+₦${rolloverIncrement.toLocaleString()}] and renewed into a new 24-week cycle).`);
+      } else {
+        updatedInv = {
+          ...inv,
+          weeksPaid: nextWeeksPaid,
+          status: isCompleted ? 'completed' : 'active',
+          lastPayoutDate: new Date().toISOString(),
+          nextPayoutDate: isCompleted ? undefined : nextPayout,
+          autoReinvestLockedUntil: !isCompleted && inv.autoReinvestLockedUntil ? nextPayout : undefined
+        };
+        if (isCompleted) {
+          setSuccessMsg(`🎉 All 24 weeks completed! Final payout of ₦${totalPayoutAmount.toLocaleString()} received for ${inv.planName}. Plan is fully matured!`);
+        } else if (isAutoRenew) {
+          setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} credited! Includes +₦${rolloverIncrement.toLocaleString()} (+3% Auto-Renew increment) on your weekly payout.`);
+        } else {
+          setSuccessMsg(`₦${totalPayoutAmount.toLocaleString()} weekly yield credited directly to your wallet!`);
+        }
       }
-    }
 
-    return true;
+      // Update in-memory investment state
+      setInvestments(prev => prev.map(i => i.id === invId ? updatedInv : i));
+
+      // 3. Create Transaction Record
+      const payoutTxId = 'tx_payout_' + Date.now() + '_' + inv.id;
+      const logTx: Transaction = {
+        id: payoutTxId,
+        userId: currentUser.id,
+        userName: currentUser.name,
+        type: 'payout',
+        amount: totalPayoutAmount,
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+        description: isAutoRenew
+          ? `Weekly payout rolled over (+3% increment: +₦${rolloverIncrement.toLocaleString()}): ${inv.planName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`
+          : `Weekly payout: ${inv.planName} (Week ${nextWeeksPaid}/${inv.totalWeeks})`
+      };
+      setTransactions(prev => [logTx, ...prev]);
+
+      // 4. CRITICAL PERSISTENCE: Immediately sync to Supabase and LocalStorage so background sync cannot overwrite state!
+      syncInvestmentToSupabase(updatedInv);
+      syncUserToSupabase(updatedUser);
+      syncTransactionToSupabase(logTx);
+
+      try {
+        const savedInvs = investments.map(i => i.id === invId ? updatedInv : i);
+        localStorage.setItem('pm_prod_investments_v1', JSON.stringify(savedInvs));
+        localStorage.setItem('pm_prod_current_user_v1', JSON.stringify(updatedUser));
+      } catch (e) {}
+
+      // 5. Trigger slide-in notification toast
+      triggerPayoutToast({
+        planName: isAutoRenew ? `${inv.planName} (+3% Rollover Increment)` : inv.planName,
+        amount: totalPayoutAmount,
+        weeksPaid: nextWeeksPaid,
+        totalWeeks: inv.totalWeeks,
+        walletBalance: updatedBalance,
+        type: 'payout'
+      });
+
+      // 6. Referral Commission (7.5% from weekly payout)
+      if (currentUser.referredByCode) {
+        const sponsorUser = users.find(u => u.referralCode === currentUser.referredByCode);
+        if (sponsorUser) {
+          const bonusAmount = inv.weeklyPayout * 0.075;
+          const updatedSponsorBal = sponsorUser.walletBalance + bonusAmount;
+          const updatedSponsor: User = { ...sponsorUser, walletBalance: updatedSponsorBal };
+          setUsers(prev => prev.map(u => u.id === sponsorUser.id ? updatedSponsor : u));
+          
+          const bonusTxId = 'tx_ref_bonus_' + Date.now() + '_' + inv.id;
+          const refTx: Transaction = {
+            id: bonusTxId,
+            userId: sponsorUser.id,
+            userName: sponsorUser.name,
+            type: 'referral_bonus',
+            amount: bonusAmount,
+            status: 'completed',
+            createdAt: new Date().toISOString(),
+            description: `7.5% Referral bonus from ${currentUser.name}'s ${inv.planName} weekly payout`
+          };
+          setTransactions(prev => [refTx, ...prev]);
+          syncUserToSupabase(updatedSponsor);
+          syncTransactionToSupabase(refTx);
+        }
+      }
+
+      return true;
+    } finally {
+      // Release mutex lock after short debounce
+      setTimeout(() => {
+        claimingInvestmentIdsRef.current.delete(invId);
+      }, 1200);
+    }
   };
 
   const toggleAutoReinvest = (investmentId: string) => {
@@ -3014,6 +3159,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.removeItem('pm_investor_protection_logs');
     localStorage.removeItem('pm_admin_audit_logs');
     localStorage.removeItem('pm_supabase_sync_queue');
+    localStorage.removeItem('pm_deleted_user_ids');
+    deletedUserIdsRef.current.clear();
 
     const freshUsers = getSeedUsers().map(u => ({
       ...u,
@@ -3052,6 +3199,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const refreshFromDatabase = async (): Promise<void> => {
+    clearMessages();
+    setSuccessMsg('Fetching fresh user records directly from Supabase...');
+    await refreshFromSupabase();
+    setSuccessMsg('Database synchronization complete. User list is now up to date.');
+  };
+
   return (
     <StateContext.Provider value={{
       users,
@@ -3063,6 +3217,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       errorMsg,
       successMsg,
       supabaseStatus,
+      refreshFromDatabase,
       isDbLoaded,
       lastSyncedAt,
       getSupabaseConfig,
@@ -3097,6 +3252,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       adminCreateUser,
       adminToggleUserStatus,
       adminUpdateUser,
+      updateUserWhatsAppStatus,
       adminTopUpMarketingWallet,
       adminToggleMarketingStatus,
       adminDeleteUser,

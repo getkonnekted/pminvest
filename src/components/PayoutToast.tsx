@@ -1,10 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  TrendingUp, 
   Wallet, 
   X, 
-  Sparkles, 
   ArrowUpRight, 
   Coins, 
   CheckCircle2,
@@ -18,46 +16,24 @@ interface PayoutToastItemProps {
   onNavigateToWallet?: () => void;
 }
 
-const TOAST_DURATION_MS = 7000;
+const TOAST_DURATION_MS = 5000;
 
 export const PayoutToastItem: React.FC<PayoutToastItemProps> = ({ 
   toast, 
   onDismiss, 
   onNavigateToWallet 
 }) => {
-  const [progress, setProgress] = useState(100);
-  const [isPaused, setIsPaused] = useState(false);
-  const startTimeRef = useRef(Date.now());
-  const remainingTimeRef = useRef(TOAST_DURATION_MS);
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
 
+  // Rock-solid auto-dismissal after 5000ms: unaffected by parent re-renders
   useEffect(() => {
-    if (isPaused) return;
+    const timer = setTimeout(() => {
+      onDismissRef.current(toast.id);
+    }, TOAST_DURATION_MS);
 
-    startTimeRef.current = Date.now();
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTimeRef.current;
-      const newRemaining = Math.max(0, remainingTimeRef.current - elapsed);
-      const percent = (newRemaining / TOAST_DURATION_MS) * 100;
-      setProgress(percent);
-
-      if (newRemaining <= 0) {
-        clearInterval(interval);
-        onDismiss(toast.id);
-      }
-    }, 50);
-
-    return () => clearInterval(interval);
-  }, [isPaused, toast.id, onDismiss]);
-
-  const handleMouseEnter = () => {
-    setIsPaused(true);
-    const elapsed = Date.now() - startTimeRef.current;
-    remainingTimeRef.current = Math.max(0, remainingTimeRef.current - elapsed);
-  };
-
-  const handleMouseLeave = () => {
-    setIsPaused(false);
-  };
+    return () => clearTimeout(timer);
+  }, [toast.id]);
 
   const isReferral = toast.type === 'referral_bonus';
 
@@ -68,8 +44,6 @@ export const PayoutToastItem: React.FC<PayoutToastItemProps> = ({
       animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
       exit={{ opacity: 0, x: 70, scale: 0.9, transition: { duration: 0.22, ease: 'easeOut' } }}
       transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       role="status"
       aria-live="polite"
       id={`payout_toast_${toast.id}`}
@@ -199,15 +173,24 @@ export const PayoutToastItem: React.FC<PayoutToastItemProps> = ({
         </div>
       </div>
 
-      {/* Shrinking Progress Timer Bar */}
+      {/* Lightweight CSS Animation progress line (0% JS CPU consumption) */}
       <div className="w-full bg-slate-800/50 h-1 overflow-hidden">
         <div
-          className={`h-full transition-all duration-75 ${
+          className={`h-full ${
             isReferral ? 'bg-amber-400' : 'bg-emerald-400'
           }`}
-          style={{ width: `${progress}%` }}
+          style={{
+            animation: `payoutToastShrink ${TOAST_DURATION_MS}ms linear forwards`
+          }}
         />
       </div>
+
+      <style>{`
+        @keyframes payoutToastShrink {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+      `}</style>
     </motion.div>
   );
 };
@@ -223,6 +206,9 @@ export const PayoutToastContainer: React.FC<PayoutToastContainerProps> = ({
   onDismiss,
   onNavigateToWallet
 }) => {
+  // Cap visible toasts to maximum 2 so screen is never crowded or blocked
+  const visibleToasts = toasts.slice(0, 2);
+
   return (
     <div 
       className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[9999] flex flex-col gap-3 pointer-events-none max-w-sm sm:max-w-md w-[calc(100vw-2rem)]"
@@ -230,7 +216,7 @@ export const PayoutToastContainer: React.FC<PayoutToastContainerProps> = ({
       aria-live="assertive"
     >
       <AnimatePresence mode="popLayout">
-        {toasts.map((toast) => (
+        {visibleToasts.map((toast) => (
           <PayoutToastItem
             key={toast.id}
             toast={toast}

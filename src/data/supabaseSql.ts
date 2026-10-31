@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS public.users (
     "createdAt" TEXT NOT NULL,
     "isDeactivated" BOOLEAN NOT NULL DEFAULT FALSE,
     "isMarketingAccount" BOOLEAN NOT NULL DEFAULT FALSE,
-    "marketingAllocatedBalance" DOUBLE PRECISION NOT NULL DEFAULT 0
+    "marketingAllocatedBalance" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "whatsappStatus" TEXT DEFAULT 'pending'
 );
 
 -- Safe column additions if tables already exist
@@ -36,6 +37,8 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password TEXT DEFAULT 'passwor
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS "isDeactivated" BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS "isMarketingAccount" BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS "marketingAllocatedBalance" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS "whatsappStatus" TEXT DEFAULT 'pending';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS "isTimerLocked" BOOLEAN DEFAULT FALSE;
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 CREATE INDEX IF NOT EXISTS idx_users_referral ON public.users("referralCode");
@@ -153,6 +156,7 @@ ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "cadastralId" TEXT;
 ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "makaniNumber" TEXT;
 ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "deedReferenceCode" TEXT;
 ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "autoReinvestLockedUntil" TEXT;
+ALTER TABLE public.investments ADD COLUMN IF NOT EXISTS "isTimerLocked" BOOLEAN DEFAULT FALSE;
 
 CREATE INDEX IF NOT EXISTS idx_investments_user ON public.investments("userId");
 CREATE INDEX IF NOT EXISTS idx_investments_status ON public.investments(status);
@@ -712,8 +716,45 @@ BEGIN
             WHEN duplicate_object THEN NULL;
             WHEN OTHERS THEN NULL;
         END;
-    END LOOP;
-END $$;
+-- 9. Atomic Admin Delete User Function (Permanent Purge with Cascade Support)
+CREATE OR REPLACE FUNCTION public.admin_delete_user(p_user_id TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_user_id = 'usr_admin' THEN
+        RETURN jsonb_build_object('success', FALSE, 'message', 'Super Administrator account cannot be deleted.');
+    END IF;
+
+    -- 1. Delete dependent financial records first (satisfying ON DELETE RESTRICT on wallets)
+    DELETE FROM public.wallet_transactions WHERE user_id = p_user_id;
+    DELETE FROM public.wallets WHERE user_id = p_user_id;
+
+    -- 2. Delete audit and protection logs
+    DELETE FROM public.investor_protection_logs WHERE user_id = p_user_id;
+    DELETE FROM public.admin_audit_logs WHERE target_user_id = p_user_id;
+
+    -- 3. Delete gamification, quests and progress
+    DELETE FROM public.user_daily_progress WHERE user_id = p_user_id;
+    DELETE FROM public.task_submissions WHERE "userId" = p_user_id;
+
+    -- 4. Delete transactions and investments
+    DELETE FROM public.transactions WHERE "userId" = p_user_id;
+    DELETE FROM public.investments WHERE "userId" = p_user_id;
+
+    -- 5. Delete user from core users table
+    DELETE FROM public.users WHERE id = p_user_id;
+
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'message', 'User account ' || p_user_id || ' and all associated ledger records permanently purged.'
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_delete_user(TEXT) TO postgres, anon, authenticated, service_role;
+GRANT DELETE ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
 
 COMMIT;
 `;

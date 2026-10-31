@@ -32,6 +32,12 @@ import {
   PropertyPitchDetails
 } from '../data/canvassingPitches';
 import { useTheme } from '../context/ThemeContext';
+import { useAppState } from '../context/StateContext';
+import { 
+  WhatsAppStatus, 
+  getWhatsAppStatusInfo, 
+  formatPhoneDisplay 
+} from '../lib/phoneSanitizer';
 
 interface AdminBroadcastReengagementModalProps {
   isOpen: boolean;
@@ -69,9 +75,11 @@ export const AdminBroadcastReengagementModal: React.FC<AdminBroadcastReengagemen
   const [templateText, setTemplateText] = useState<string>('');
   const [isCustomized, setIsCustomized] = useState<boolean>(false);
 
+  const { updateUserWhatsAppStatus } = useAppState();
+
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [contactFilter, setContactFilter] = useState<'all' | 'has_phone' | 'missing_phone' | 'not_dispatched' | 'dispatched'>('all');
+  const [contactFilter, setContactFilter] = useState<'all' | 'has_phone' | 'wa_verified' | 'wa_pending' | 'not_on_whatsapp' | 'missing_phone' | 'not_dispatched' | 'dispatched'>('all');
 
   // Session tracking of contacted leads
   const [dispatchedLeadIds, setDispatchedLeadIds] = useState<Set<string>>(new Set());
@@ -98,6 +106,18 @@ export const AdminBroadcastReengagementModal: React.FC<AdminBroadcastReengagemen
     return unfundedLeads.filter(l => !cleanPhoneForWhatsApp(l.phone));
   }, [unfundedLeads]);
 
+  const waVerifiedLeads = useMemo(() => {
+    return unfundedLeads.filter(l => l.whatsappStatus === 'verified');
+  }, [unfundedLeads]);
+
+  const waPendingLeads = useMemo(() => {
+    return unfundedLeads.filter(l => Boolean(cleanPhoneForWhatsApp(l.phone)) && (!l.whatsappStatus || l.whatsappStatus === 'pending'));
+  }, [unfundedLeads]);
+
+  const waNotOnWaLeads = useMemo(() => {
+    return unfundedLeads.filter(l => l.whatsappStatus === 'not_on_whatsapp');
+  }, [unfundedLeads]);
+
   // Filtered leads based on search and contactFilter
   const filteredLeads = useMemo(() => {
     return unfundedLeads.filter(lead => {
@@ -115,6 +135,9 @@ export const AdminBroadcastReengagementModal: React.FC<AdminBroadcastReengagemen
       const isDispatched = dispatchedLeadIds.has(lead.id);
 
       if (contactFilter === 'has_phone') return hasPhone;
+      if (contactFilter === 'wa_verified') return lead.whatsappStatus === 'verified';
+      if (contactFilter === 'wa_pending') return Boolean(hasPhone) && (!lead.whatsappStatus || lead.whatsappStatus === 'pending');
+      if (contactFilter === 'not_on_whatsapp') return lead.whatsappStatus === 'not_on_whatsapp';
       if (contactFilter === 'missing_phone') return !hasPhone;
       if (contactFilter === 'dispatched') return isDispatched;
       if (contactFilter === 'not_dispatched') return !isDispatched;
@@ -604,14 +627,36 @@ export const AdminBroadcastReengagementModal: React.FC<AdminBroadcastReengagemen
                 </button>
                 <button
                   type="button"
-                  onClick={() => setContactFilter('has_phone')}
+                  onClick={() => setContactFilter('wa_verified')}
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                    contactFilter === 'has_phone'
-                      ? isChampagne ? 'bg-white text-slate-900 shadow-xs' : 'bg-amber-500 text-slate-950 font-bold'
-                      : isChampagne ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
+                    contactFilter === 'wa_verified'
+                      ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                      : isChampagne ? 'text-slate-600 hover:text-emerald-700' : 'text-slate-400 hover:text-emerald-300'
                   }`}
                 >
-                  WhatsApp Ready ({leadsWithPhone.length})
+                  ✓ Verified WA ({waVerifiedLeads.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setContactFilter('wa_pending')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                    contactFilter === 'wa_pending'
+                      ? 'bg-amber-600 text-white font-bold shadow-xs'
+                      : isChampagne ? 'text-slate-600 hover:text-amber-700' : 'text-slate-400 hover:text-amber-300'
+                  }`}
+                >
+                  ⏳ Pending WA ({waPendingLeads.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setContactFilter('not_on_whatsapp')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                    contactFilter === 'not_on_whatsapp'
+                      ? 'bg-rose-600 text-white font-bold shadow-xs'
+                      : isChampagne ? 'text-slate-600 hover:text-rose-700' : 'text-slate-400 hover:text-rose-300'
+                  }`}
+                >
+                  🚫 Not on WA ({waNotOnWaLeads.length})
                 </button>
                 <button
                   type="button"
@@ -622,7 +667,7 @@ export const AdminBroadcastReengagementModal: React.FC<AdminBroadcastReengagemen
                       : isChampagne ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Pending ({unfundedLeads.length - dispatchedLeadIds.size})
+                  Pending Send ({unfundedLeads.length - dispatchedLeadIds.size})
                 </button>
                 <button
                   type="button"
@@ -656,10 +701,10 @@ export const AdminBroadcastReengagementModal: React.FC<AdminBroadcastReengagemen
                         isChampagne ? 'bg-[#f7f0e3] border-[#e2d5c2] text-slate-600' : 'bg-[#0a0e18] border-slate-800 text-slate-400'
                       }`}>
                         <th className="py-3 px-4">Lead Name &amp; Email</th>
-                        <th className="py-3 px-3">Phone &amp; Channel</th>
+                        <th className="py-3 px-3">Phone &amp; WhatsApp Status</th>
                         <th className="py-3 px-3">Registered</th>
-                        <th className="py-3 px-3 text-center">Status</th>
-                        <th className="py-3 px-4 text-right">Re-engagement Action</th>
+                        <th className="py-3 px-3 text-center">Campaign</th>
+                        <th className="py-3 px-4 text-right">Re-engagement &amp; Status Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200/50 dark:divide-slate-800/60 font-sans">
@@ -668,6 +713,7 @@ export const AdminBroadcastReengagementModal: React.FC<AdminBroadcastReengagemen
                         const hasPhone = Boolean(cleanPhone);
                         const isDispatched = dispatchedLeadIds.has(lead.id);
                         const isCopied = copiedLeadId === lead.id;
+                        const statusInfo = getWhatsAppStatusInfo(lead.whatsappStatus);
 
                         return (
                           <tr 
@@ -696,19 +742,27 @@ export const AdminBroadcastReengagementModal: React.FC<AdminBroadcastReengagemen
 
                             <td className="py-3 px-3">
                               {hasPhone ? (
-                                <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                                  <span className={isChampagne ? 'text-slate-800 font-bold' : 'text-slate-200 font-bold'}>
-                                    {lead.phone}
-                                  </span>
-                                  <a
-                                    href={`tel:${lead.phone}`}
-                                    className={`p-1 rounded transition-colors ${
-                                      isChampagne ? 'hover:bg-slate-200 text-blue-600' : 'hover:bg-slate-800 text-blue-400'
-                                    }`}
-                                    title="Voice call"
-                                  >
-                                    <PhoneCall className="w-3 h-3" />
-                                  </a>
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                                    <span className={isChampagne ? 'text-slate-800 font-bold' : 'text-slate-200 font-bold'}>
+                                      {formatPhoneDisplay(lead.phone)}
+                                    </span>
+                                    <a
+                                      href={`tel:${lead.phone}`}
+                                      className={`p-1 rounded transition-colors ${
+                                        isChampagne ? 'hover:bg-slate-200 text-blue-600' : 'hover:bg-slate-800 text-blue-400'
+                                      }`}
+                                      title="Voice call"
+                                    >
+                                      <PhoneCall className="w-3 h-3" />
+                                    </a>
+                                  </div>
+                                  <div>
+                                    <span className={`inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded font-bold border ${statusInfo.badgeClass}`}>
+                                      <span>{statusInfo.icon}</span>
+                                      <span>{statusInfo.label}</span>
+                                    </span>
+                                  </div>
                                 </div>
                               ) : (
                                 <span className="text-[11px] text-amber-600 dark:text-amber-400 italic font-mono flex items-center gap-1">
@@ -739,7 +793,43 @@ export const AdminBroadcastReengagementModal: React.FC<AdminBroadcastReengagemen
                             </td>
 
                             <td className="py-3 px-4 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
+                              <div className="flex items-center justify-end gap-1.5 flex-wrap sm:flex-nowrap">
+                                {/* 1-CLICK WHATSAPP STATUS TAGGING BUTTONS */}
+                                {hasPhone && (
+                                  <div className="flex items-center gap-1 mr-1">
+                                    {lead.whatsappStatus !== 'verified' && (
+                                      <button
+                                        type="button"
+                                        onClick={() => updateUserWhatsAppStatus(lead.id, 'verified')}
+                                        className="text-[10px] font-mono font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900 border border-emerald-300 dark:border-emerald-700 px-2 py-1 rounded transition-all cursor-pointer shadow-2xs"
+                                        title="Mark as confirmed active WhatsApp number"
+                                      >
+                                        ✓ Verify
+                                      </button>
+                                    )}
+                                    {lead.whatsappStatus !== 'not_on_whatsapp' && (
+                                      <button
+                                        type="button"
+                                        onClick={() => updateUserWhatsAppStatus(lead.id, 'not_on_whatsapp')}
+                                        className="text-[10px] font-mono font-bold bg-rose-50 hover:bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-900 border border-rose-300 dark:border-rose-700 px-2 py-1 rounded transition-all cursor-pointer shadow-2xs"
+                                        title="Flag number as NOT on WhatsApp (e.g. invalid on WhatsApp Web)"
+                                      >
+                                        ✕ Not on WA
+                                      </button>
+                                    )}
+                                    {(lead.whatsappStatus === 'verified' || lead.whatsappStatus === 'not_on_whatsapp') && (
+                                      <button
+                                        type="button"
+                                        onClick={() => updateUserWhatsAppStatus(lead.id, 'pending')}
+                                        className="text-[9px] font-mono text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline px-1 py-1 cursor-pointer"
+                                        title="Reset status back to Pending"
+                                      >
+                                        Reset
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+
                                 {/* COPY PERSONALIZED PITCH BUTTON */}
                                 <button
                                   type="button"
@@ -762,8 +852,16 @@ export const AdminBroadcastReengagementModal: React.FC<AdminBroadcastReengagemen
                                   <button
                                     type="button"
                                     onClick={() => handleOpenWhatsApp(lead)}
-                                    className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
-                                    title={`Send ${activeProperty.name} announcement to ${lead.name} via WhatsApp`}
+                                    className={`font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer ${
+                                      lead.whatsappStatus === 'not_on_whatsapp'
+                                        ? 'bg-slate-600/70 hover:bg-slate-600 text-slate-200 line-through opacity-80'
+                                        : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white'
+                                    }`}
+                                    title={
+                                      lead.whatsappStatus === 'not_on_whatsapp'
+                                        ? 'Number flagged as Not on WhatsApp. Click if you want to retry anyway.'
+                                        : `Send ${activeProperty.name} announcement to ${lead.name} via WhatsApp`
+                                    }
                                   >
                                     <MessageSquare className="w-3.5 h-3.5" />
                                     <span>WhatsApp</span>

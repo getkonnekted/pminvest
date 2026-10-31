@@ -135,17 +135,8 @@ export const getPersonalFollowupPitch = (
   }
 };
 
-/**
- * Helper to clean and format phone numbers for WhatsApp API links.
- */
-export const cleanPhoneForWhatsApp = (phone?: string): string => {
-  if (!phone) return '';
-  const cleaned = phone.replace(/[^0-9]/g, '');
-  if (cleaned.startsWith('0') && cleaned.length === 11) {
-    return `234${cleaned.slice(1)}`;
-  }
-  return cleaned;
-};
+import { cleanPhoneForWhatsApp } from '../lib/phoneSanitizer';
+export { cleanPhoneForWhatsApp };
 
 export interface PropertyPitchDetails {
   name: string;
