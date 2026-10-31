@@ -19,7 +19,7 @@ import { UaeFlag } from './UaeFlag';
 
 import { useTheme } from '../context/ThemeContext';
 
-export const BrandingHeader: React.FC<{ onOpenDIFCModal?: () => void }> = ({ onOpenDIFCModal }) => {
+export const BrandingHeader: React.FC = () => {
   const { currentUser, logout } = useAppState();
   const { isChampagne } = useTheme();
 
@@ -57,13 +57,7 @@ export const BrandingHeader: React.FC<{ onOpenDIFCModal?: () => void }> = ({ onO
           </button>
           <button
             type="button"
-            onClick={() => {
-              if (onOpenDIFCModal) {
-                onOpenDIFCModal();
-              } else {
-                scrollToSection('difc_trust_section');
-              }
-            }}
+            onClick={() => scrollToSection('difc_trust_section')}
             className="hover:text-[#D4AF37] transition-colors cursor-pointer text-[#D4AF37]/90 font-semibold"
           >
             Legal Custody &amp; DIFC

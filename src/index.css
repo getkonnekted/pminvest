@@ -1,6 +1,39 @@
 @import "tailwindcss";
 
 /* =========================================================================
+   ARCHITECTURAL MINIMALIST LUXURY DESIGN TOKENS
+   ========================================================================= */
+:root {
+  --color-obsidian-bg: #0B0C10;
+  --color-obsidian-surface: #111319;
+  --color-obsidian-surface-elevated: #161922;
+  --color-alabaster-bg: #FAF8F5;
+  --color-alabaster-surface: #FFFFFF;
+  --color-alabaster-surface-elevated: #F3EFE8;
+  --color-bronze-hairline: rgba(184, 150, 78, 0.2);
+  --color-bronze-primary: #B8964E;
+  --color-gold-accent: #D4AF37;
+}
+
+/* =========================================================================
+   STRICT TABULAR FIGURE TYPOGRAPHY & NUMERICAL INTEGRITY
+   ========================================================================= */
+html,
+body,
+button,
+input,
+select,
+textarea,
+table,
+.font-mono,
+.tabular-nums,
+[data-tabular-num] {
+  font-variant-numeric: tabular-nums lining-nums;
+  -webkit-font-feature-settings: "tnum" 1, "lnum" 1;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* =========================================================================
    HARDWARE-ACCELERATED NATIVE SCROLLING & PERF ENGINE
    ========================================================================= */
 html {
@@ -12,7 +45,7 @@ html {
 body {
   margin: 0;
   padding: 0;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* Off-screen card & section paint deferral: renders smoothly on demand */
@@ -33,11 +66,11 @@ body {
 @keyframes goldPulse {
   0%, 100% {
     opacity: 1;
-    border-color: rgba(245, 158, 11, 0.35);
+    border-color: rgba(184, 150, 78, 0.35);
   }
   50% {
     opacity: 0.6;
-    border-color: rgba(245, 158, 11, 0.15);
+    border-color: rgba(184, 150, 78, 0.15);
   }
 }
 
@@ -50,25 +83,56 @@ body {
   animation: goldPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* =========================================================================
+   ARCHITECTURAL HAIRLINE BRONZE UTILITIES
+   ========================================================================= */
+.border-hairline-bronze {
+  border: 1px solid rgba(184, 150, 78, 0.2) !important;
+}
+
+.border-b-hairline-bronze {
+  border-bottom: 1px solid rgba(184, 150, 78, 0.2) !important;
+}
+
+.border-t-hairline-bronze {
+  border-top: 1px solid rgba(184, 150, 78, 0.2) !important;
+}
+
+.divide-hairline-bronze > * + * {
+  border-color: rgba(184, 150, 78, 0.2) !important;
+}
+
+.hairline-divider {
+  height: 1px;
+  background-color: rgba(184, 150, 78, 0.2);
+  width: 100%;
+}
+
 /* Luxury gold text clip utility */
 .gold-gradient-text {
-  background: linear-gradient(135deg, #fef3c7 0%, #f59e0b 50%, #d97706 100%);
+  background: linear-gradient(135deg, #FAF8F5 0%, #D4AF37 50%, #B8964E 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .champagne-gradient-text {
-  background: linear-gradient(135deg, #ffffff 0%, #f7ecd5 45%, #d4af37 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 45%, #D4AF37 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 /* =========================================================================
-   THEME STYLES: OBSIDIAN GOLD (DEFAULT)
+   THEME STYLES: OBSIDIAN SLATE (DARK DEFAULT)
    ========================================================================= */
 html.theme-obsidian,
 [data-theme="obsidian"] {
   color-scheme: dark;
+}
+
+html.theme-obsidian body,
+[data-theme="obsidian"] body {
+  background-color: #0B0C10 !important;
+  color: #FAF8F5 !important;
 }
 
 /* Obsidian luxury scrollbar */
@@ -82,24 +146,24 @@ html.theme-obsidian ::-webkit-scrollbar,
 html.theme-obsidian ::-webkit-scrollbar-track,
 [data-theme="obsidian"] ::-webkit-scrollbar-track,
 ::-webkit-scrollbar-track {
-  background: #06080e;
+  background: #0B0C10;
 }
 
 html.theme-obsidian ::-webkit-scrollbar-thumb,
 [data-theme="obsidian"] ::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-thumb {
-  background: rgba(245, 158, 11, 0.3);
+  background: rgba(184, 150, 78, 0.35);
   border-radius: 9999px;
 }
 
 html.theme-obsidian ::-webkit-scrollbar-thumb:hover,
 [data-theme="obsidian"] ::-webkit-scrollbar-thumb:hover,
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 158, 11, 0.55);
+  background: rgba(212, 175, 55, 0.6);
 }
 
 /* =========================================================================
-   THEME STYLES: CHAMPAGNE LIGHT LUXURY
+   THEME STYLES: ALABASTER TRAVERTINE LIGHT LUXURY
    ========================================================================= */
 html.theme-champagne,
 [data-theme="champagne"] {
@@ -108,11 +172,11 @@ html.theme-champagne,
 
 html.theme-champagne body,
 [data-theme="champagne"] body {
-  background-color: #f7f4ed !important;
-  color: #1c1917 !important;
+  background-color: #FAF8F5 !important;
+  color: #14171F !important;
 }
 
-/* Champagne luxury scrollbar */
+/* Alabaster Travertine luxury scrollbar */
 html.theme-champagne ::-webkit-scrollbar,
 [data-theme="champagne"] ::-webkit-scrollbar {
   width: 7px;
@@ -121,21 +185,21 @@ html.theme-champagne ::-webkit-scrollbar,
 
 html.theme-champagne ::-webkit-scrollbar-track,
 [data-theme="champagne"] ::-webkit-scrollbar-track {
-  background: #ede6d8;
+  background: #FAF8F5;
 }
 
 html.theme-champagne ::-webkit-scrollbar-thumb,
 [data-theme="champagne"] ::-webkit-scrollbar-thumb {
-  background: rgba(197, 160, 89, 0.5);
+  background: rgba(184, 150, 78, 0.35);
   border-radius: 9999px;
 }
 
 html.theme-champagne ::-webkit-scrollbar-thumb:hover,
 [data-theme="champagne"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(179, 143, 70, 0.8);
+  background: rgba(184, 150, 78, 0.6);
 }
 
-/* Champagne Light surface overrides */
+/* Alabaster Travertine Light surface overrides */
 html.theme-champagne .bg-slate-950,
 [data-theme="champagne"] .bg-slate-950,
 html.theme-champagne .bg-slate-900,
@@ -145,8 +209,12 @@ html.theme-champagne .bg-\[\#06080e\],
 html.theme-champagne .bg-\[\#06080e\]\/90,
 [data-theme="champagne"] .bg-\[\#06080e\]\/90,
 html.theme-champagne .bg-\[\#06080e\]\/85,
-[data-theme="champagne"] .bg-\[\#06080e\]\/85 {
-  background-color: #f7f4ed !important;
+[data-theme="champagne"] .bg-\[\#06080e\]\/85,
+html.theme-champagne .bg-\[\#0B0C10\],
+[data-theme="champagne"] .bg-\[\#0B0C10\],
+html.theme-champagne .bg-\[\#0B0C10\]\/95,
+[data-theme="champagne"] .bg-\[\#0B0C10\]\/95 {
+  background-color: #FAF8F5 !important;
 }
 
 html.theme-champagne .bg-\[\#070a12\],
@@ -168,41 +236,49 @@ html.theme-champagne .bg-\[\#111728\],
 html.theme-champagne .bg-\[\#131b2e\],
 [data-theme="champagne"] .bg-\[\#131b2e\],
 html.theme-champagne .bg-\[\#141b2e\],
-[data-theme="champagne"] .bg-\[\#141b2e\] {
-  background-color: #ffffff !important;
+[data-theme="champagne"] .bg-\[\#141b2e\],
+html.theme-champagne .bg-\[\#10121A\],
+[data-theme="champagne"] .bg-\[\#10121A\],
+html.theme-champagne .bg-\[\#111319\],
+[data-theme="champagne"] .bg-\[\#111319\],
+html.theme-champagne .bg-\[\#161922\],
+[data-theme="champagne"] .bg-\[\#161922\] {
+  background-color: #FFFFFF !important;
 }
 
 /* Admin sub-bar styling */
 html.theme-champagne .bg-\[\#1e293b\],
 [data-theme="champagne"] .bg-\[\#1e293b\] {
-  background-color: #ede5d8 !important;
+  background-color: #F3EFE8 !important;
 }
 
 html.theme-champagne .bg-\[\#0f172a\],
 [data-theme="champagne"] .bg-\[\#0f172a\] {
-  background-color: #dfd5c2 !important;
+  background-color: #EAE3D6 !important;
 }
 
 html.theme-champagne .border-slate-700,
 [data-theme="champagne"] .border-slate-700,
 html.theme-champagne .border-slate-700\/80,
-[data-theme="champagne"] .border-slate-700\/80 {
-  border-color: rgba(197, 160, 89, 0.35) !important;
+[data-theme="champagne"] .border-slate-700\/80,
+html.theme-champagne .border-slate-800,
+[data-theme="champagne"] .border-slate-800 {
+  border-color: rgba(184, 150, 78, 0.25) !important;
 }
 
-/* Transform obsidian gradients to warm champagne alabaster gradients */
+/* Transform obsidian gradients to warm alabaster travertine gradients */
 html.theme-champagne .from-\[\#0c101c\],
 [data-theme="champagne"] .from-\[\#0c101c\],
 html.theme-champagne .from-\[\#0e1424\],
 [data-theme="champagne"] .from-\[\#0e1424\] {
-  --tw-gradient-from: #fbf9f4 !important;
+  --tw-gradient-from: #FAF8F5 !important;
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
 
 html.theme-champagne .via-\[\#090d18\],
 [data-theme="champagne"] .via-\[\#090d18\] {
-  --tw-gradient-via: #f6efe3 !important;
-  --tw-gradient-stops: var(--tw-gradient-from), #f6efe3, var(--tw-gradient-to) !important;
+  --tw-gradient-via: #F3EFE8 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), #F3EFE8, var(--tw-gradient-to) !important;
 }
 
 html.theme-champagne .to-\[\#06080e\],
@@ -211,28 +287,30 @@ html.theme-champagne .to-\[\#070a12\],
 [data-theme="champagne"] .to-\[\#070a12\],
 html.theme-champagne .to-\[\#120a24\],
 [data-theme="champagne"] .to-\[\#120a24\] {
-  --tw-gradient-to: #ede4d3 !important;
+  --tw-gradient-to: #EAE3D6 !important;
 }
 
 /* Gold text gradient in light mode */
 html.theme-champagne .gold-gradient-text,
 [data-theme="champagne"] .gold-gradient-text {
-  background: linear-gradient(135deg, #78350f 0%, #b45309 45%, #92400e 100%) !important;
+  background: linear-gradient(135deg, #4A3B18 0%, #8C6D33 50%, #B8964E 100%) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
 }
 
-/* In Champagne mode, convert light gold/champagne text to deep high-contrast tones */
+/* In Alabaster Travertine mode, convert light gold/champagne text to deep high-contrast tones */
 html.theme-champagne .text-\[\#f7ecd5\],
-[data-theme="champagne"] .text-\[\#f7ecd5\] {
-  color: #0f172a !important;
+[data-theme="champagne"] .text-\[\#f7ecd5\],
+html.theme-champagne .text-\[\#FAF8F5\],
+[data-theme="champagne"] .text-\[\#FAF8F5\] {
+  color: #14171F !important;
 }
 
 html.theme-champagne .text-slate-100,
 [data-theme="champagne"] .text-slate-100,
 html.theme-champagne .text-slate-200,
 [data-theme="champagne"] .text-slate-200 {
-  color: #1e293b !important;
+  color: #1E2433 !important;
 }
 
 html.theme-champagne .text-slate-300,
@@ -242,19 +320,19 @@ html.theme-champagne .text-slate-400,
   color: #475569 !important;
 }
 
-/* High-contrast amber/yellow text in light mode */
+/* High-contrast bronze/amber text in light mode */
 html.theme-champagne .text-amber-400,
 [data-theme="champagne"] .text-amber-400,
 html.theme-champagne .text-amber-300,
 [data-theme="champagne"] .text-amber-300,
 html.theme-champagne .text-yellow-400,
 [data-theme="champagne"] .text-yellow-400 {
-  color: #92400e !important;
+  color: #8C6D33 !important;
 }
 
 html.theme-champagne .text-amber-500,
 [data-theme="champagne"] .text-amber-500 {
-  color: #b45309 !important;
+  color: #9E7D3B !important;
 }
 
 /* High-contrast emerald text in light mode */
@@ -268,9 +346,10 @@ html.theme-champagne .text-emerald-300,
 /* Ensure text-white on light surfaces turns dark, except on colored action buttons */
 html.theme-champagne .text-white:not([class*="bg-emerald-"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-blue-"]):not([class*="bg-amber-"]):not([class*="bg-slate-9"]):not([class*="bg-black"]):not([class*="from-"]):not(button.bg-emerald-600):not(button.bg-purple-600),
 [data-theme="champagne"] .text-white:not([class*="bg-emerald-"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-blue-"]):not([class*="bg-amber-"]):not([class*="bg-slate-9"]):not([class*="bg-black"]):not([class*="from-"]):not(button.bg-emerald-600):not(button.bg-purple-600) {
-  color: #0f172a !important;
+  color: #14171F !important;
 }
 
+/* Hairline bronze border overrides */
 html.theme-champagne .border-amber-500\/20,
 [data-theme="champagne"] .border-amber-500\/20,
 html.theme-champagne .border-amber-500\/25,
@@ -278,8 +357,14 @@ html.theme-champagne .border-amber-500\/25,
 html.theme-champagne .border-amber-500\/30,
 [data-theme="champagne"] .border-amber-500\/30,
 html.theme-champagne .border-amber-500\/40,
-[data-theme="champagne"] .border-amber-500\/40 {
-  border-color: rgba(197, 160, 89, 0.45) !important;
+[data-theme="champagne"] .border-amber-500\/40,
+html.theme-champagne .border-\[\#B8964E\]\/20,
+[data-theme="champagne"] .border-\[\#B8964E\]\/20,
+html.theme-champagne .border-\[\#B8964E\]\/25,
+[data-theme="champagne"] .border-\[\#B8964E\]\/25,
+html.theme-champagne .border-\[\#B8964E\]\/30,
+[data-theme="champagne"] .border-\[\#B8964E\]\/30 {
+  border-color: rgba(184, 150, 78, 0.28) !important;
 }
 
 /* Form controls in light mode */
@@ -289,14 +374,14 @@ html.theme-champagne select,
 [data-theme="champagne"] select,
 html.theme-champagne textarea,
 [data-theme="champagne"] textarea {
-  background-color: #faf7f2 !important;
-  color: #0f172a !important;
-  border-color: #d8c8ae !important;
+  background-color: #FFFFFF !important;
+  color: #14171F !important;
+  border-color: rgba(184, 150, 78, 0.3) !important;
 }
 
 html.theme-champagne input::placeholder,
 [data-theme="champagne"] input::placeholder,
 html.theme-champagne textarea::placeholder,
 [data-theme="champagne"] textarea::placeholder {
-  color: #94a3b8 !important;
+  color: #94A3B8 !important;
 }

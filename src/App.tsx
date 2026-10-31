@@ -47,7 +47,6 @@ import { UaeFlag } from './components/UaeFlag';
 import { PayoutCountdown } from './components/PayoutCountdown';
 import { WHATSAPP_COMMUNITY_URL } from './components/CommunityBanner';
 import { sanitizeAndValidatePhone } from './lib/phoneSanitizer';
-import { DIFCTrustRegistryModal } from './components/DIFCTrustRegistryModal';
 import { UaeDeedModal } from './components/UaeDeedModal';
 
 const UserDashboard = React.lazy(() => import('./components/UserDashboard').then(module => ({ default: module.UserDashboard })));
@@ -74,7 +73,6 @@ function MainAppContent() {
     dismissPayoutToast
   } = useAppState();
   const [isRegistering, setIsRegistering] = useState(false);
-  const [isDIFCModalOpen, setIsDIFCModalOpen] = useState(false);
   const [inspectingDeedPlan, setInspectingDeedPlan] = useState<any | null>(null);
   const [adminView, setAdminView] = useState<'admin' | 'investor' | 'marketer'>('admin');
   const [currentPage, setCurrentPage] = useState<'pminvest' | 'aujoten'>(() => {
@@ -276,7 +274,7 @@ function MainAppContent() {
         />
 
         {/* Top Bar with Strict 3-Zone Contract */}
-        <BrandingHeader onOpenDIFCModal={() => setIsDIFCModalOpen(true)} />
+        <BrandingHeader />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start flex-grow relative z-10">
           {/* LEFT PANEL: Architectural Headline & Institutional Metrics */}
@@ -303,13 +301,12 @@ function MainAppContent() {
               >
                 View Real Estate Dossiers →
               </a>
-              <button
-                type="button"
-                onClick={() => setIsDIFCModalOpen(true)}
+              <a
+                href="#difc_trust_section"
                 className={`px-5 py-2.5 rounded-xl border ${isChampagne ? 'border-[#B8964E]/40 bg-white hover:bg-slate-50 text-slate-800' : 'border-[#B8964E]/30 bg-[#0E1017] hover:bg-[#161822] text-[#D4AF37]'} text-xs font-mono uppercase tracking-wider transition-all cursor-pointer`}
               >
-                Review DIFC SPV Trust Charter
-              </button>
+                Legal Framework Details
+              </a>
             </div>
 
             {/* 4 Quiet Tabular Trust Metrics */}
@@ -949,7 +946,7 @@ function MainAppContent() {
         {/* SECTION: INSTITUTIONAL CUSTODY & DIFC SPV REGISTRY STRIP */}
         <section id="difc_trust_section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
           <div className={`${isChampagne ? 'bg-white border-[#B8964E]/30' : 'bg-[#10121A] border-[#B8964E]/25'} border rounded-2xl p-6 sm:p-8 shadow-xl space-y-6`}>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#B8964E]/20 pb-4">
+            <div className="border-b border-[#B8964E]/20 pb-4">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-widest text-[#B8964E] font-bold">
                   Institutional Fiduciary Architecture
@@ -958,14 +955,6 @@ function MainAppContent() {
                   DIFC SPV Legal Trust &amp; Dubai Land Department (DLD) Custody
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsDIFCModalOpen(true)}
-                className="self-start md:self-auto px-4 py-2 rounded-xl bg-[#0B0C10] hover:bg-[#181B26] border border-[#B8964E]/40 text-[#D4AF37] text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-sm"
-              >
-                <span>Inspect Official Charter</span>
-                <span>→</span>
-              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1285,11 +1274,6 @@ function MainAppContent() {
           <LegalDisclosures />
         </div>
 
-        <DIFCTrustRegistryModal
-          isOpen={isDIFCModalOpen}
-          onClose={() => setIsDIFCModalOpen(false)}
-        />
-
         {inspectingDeedPlan && (
           <UaeDeedModal
             isOpen={!!inspectingDeedPlan}
@@ -1341,7 +1325,7 @@ function MainAppContent() {
         }}
       />
       <div>
-        <BrandingHeader onOpenDIFCModal={() => setIsDIFCModalOpen(true)} />
+        <BrandingHeader />
         
         {currentUser.role === 'admin' && (
           <div className={`${isChampagne ? 'bg-[#ede5d8] border-b border-[#c5a059]/35 text-slate-800' : 'bg-[#1e293b] border-b border-slate-700'} py-3 px-4 transition-colors`}>
@@ -1410,11 +1394,6 @@ function MainAppContent() {
 
       <OfflineIndicator />
       <LegalDisclosures />
-
-      <DIFCTrustRegistryModal
-        isOpen={isDIFCModalOpen}
-        onClose={() => setIsDIFCModalOpen(false)}
-      />
     </div>
   );
 }

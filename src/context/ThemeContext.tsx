@@ -35,13 +35,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (theme === 'champagne') {
       root.classList.add('theme-champagne');
       root.classList.remove('theme-obsidian');
-      document.body.style.backgroundColor = '#f7f4ed';
-      document.body.style.color = '#1c1917';
+      document.body.style.backgroundColor = '#FAF8F5';
+      document.body.style.color = '#14171F';
     } else {
       root.classList.add('theme-obsidian');
       root.classList.remove('theme-champagne');
-      document.body.style.backgroundColor = '#06080e';
-      document.body.style.color = '#f8fafc';
+      document.body.style.backgroundColor = '#0B0C10';
+      document.body.style.color = '#FAF8F5';
     }
 
     try {

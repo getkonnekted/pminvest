@@ -50,7 +50,6 @@ import { PayoutCountdown } from './PayoutCountdown';
 import { InvestmentPayoutButton } from './InvestmentPayoutButton';
 import { CommunityBanner, WHATSAPP_COMMUNITY_URL } from './CommunityBanner';
 import { UaeDeedModal } from './UaeDeedModal';
-import { DIFCTrustRegistryModal } from './DIFCTrustRegistryModal';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 import { InsufficientFundsModal } from './InsufficientFundsModal';
 import { MultilingualPitchModal } from './MultilingualPitchModal';
@@ -267,7 +266,6 @@ export const UserDashboard: React.FC = () => {
   const [copiedAccount2, setCopiedAccount2] = useState(false);
   const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(null);
   const [isPitchModalOpen, setIsPitchModalOpen] = useState(false);
-  const [isDIFCModalOpen, setIsDIFCModalOpen] = useState(false);
 
   const faqItems = [
     {
@@ -792,15 +790,6 @@ export const UserDashboard: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2 font-mono text-[10px] text-slate-400">
-                <button
-                  type="button"
-                  onClick={() => setIsDIFCModalOpen(true)}
-                  className="border border-[#B8964E]/40 bg-[#06080e] hover:bg-[#111728] text-amber-300 hover:text-amber-200 px-2.5 py-1 rounded-sm uppercase tracking-wider font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-                  title="Inspect DIFC SPV Trust Charter and Legal Framework"
-                >
-                  <Landmark className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>Inspect DIFC Trust</span>
-                </button>
                 <span className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-2 py-1 rounded-sm uppercase tracking-wider font-bold">
                   DLD VERIFIED
                 </span>
@@ -2151,12 +2140,6 @@ export const UserDashboard: React.FC = () => {
         marketerName={currentUser.name}
         referralCode={currentUser.referralCode}
         referralLink={typeof window !== 'undefined' ? `${window.location.origin}/?ref=${currentUser.referralCode}` : `https://treasurehomes.ng/?ref=${currentUser.referralCode}`}
-      />
-
-      {/* DIFC SPV Trust Charter & Registry Modal */}
-      <DIFCTrustRegistryModal
-        isOpen={isDIFCModalOpen}
-        onClose={() => setIsDIFCModalOpen(false)}
       />
     </div>
   );
