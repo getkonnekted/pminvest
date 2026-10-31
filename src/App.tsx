@@ -40,7 +40,6 @@ import {
 } from 'lucide-react';
 import { INVESTMENT_PLANS } from './types';
 import { PayoutToastContainer } from './components/PayoutToast';
-import { LiveActivityToast } from './components/LiveActivityToast';
 import { LiveReserveCounter } from './components/LiveReserveCounter';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
@@ -271,7 +270,6 @@ function MainAppContent() {
           toasts={payoutToasts}
           onDismiss={dismissPayoutToast}
         />
-        <LiveActivityToast />
 
         {/* Affiliation & Live Accreting Reserve Header bar */}
         <div className={`${isChampagne ? 'bg-[#ede5d8] border-b border-[#c5a059]/35 text-slate-700 shadow-sm' : 'bg-[#070a12] border-b border-amber-500/20 text-slate-300 shadow-md'} px-4 py-2.5 text-center text-xs flex flex-wrap items-center justify-between gap-x-4 gap-y-2`}>
@@ -1237,7 +1235,6 @@ function MainAppContent() {
           }
         }}
       />
-      <LiveActivityToast />
       <div>
         <BrandingHeader />
         

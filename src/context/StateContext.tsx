@@ -22,6 +22,8 @@ import {
   syncInvestmentPlansToSupabase,
   recordWalletAuditToSupabase,
   subscribeToSupabaseRealtime,
+  subscribeToInvestorRealtime,
+  fetchInvestorData,
   getSupabaseConfig,
   saveSupabaseCredentials,
   getSupabaseClient,
@@ -411,7 +413,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Gentle periodic update in root context to avoid unnecessary re-renders across the whole component tree
     const timer = setInterval(() => {
       setLiveLiquidityReserve(calculateContinuousLiquidity(virtualDayOffset));
-    }, 3000);
+    }, 30000);
     return () => clearInterval(timer);
   }, [virtualDayOffset]);
 
@@ -441,17 +443,101 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isDbLoaded, setIsDbLoaded] = useState<boolean>(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const isRemoteSyncingRef = useRef(false);
+  const lastSyncTimestampRef = useRef<number>(Date.now());
+  const currentUserRef = useRef<User | null>(currentUser);
 
-  // Live Refresh from Supabase (Realtime + Heartbeat)
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+
+  // Live Refresh from Supabase (Scoped for Investors, Global for Admin)
   const refreshFromSupabase = useCallback(async () => {
     if (!isSupabaseConfigured()) return;
     try {
+      const activeUser = currentUserRef.current;
+
+      // High-concurrency optimization: standard investors fetch ONLY their personal rows
+      if (activeUser && activeUser.role !== 'admin') {
+        const invData = await fetchInvestorData(activeUser.id);
+        if (!invData) return;
+
+        isRemoteSyncingRef.current = true;
+        setSupabaseStatus('connected');
+        setLastSyncedAt(new Date().toLocaleTimeString());
+        lastSyncTimestampRef.current = Date.now();
+
+        if (invData.user) {
+          const freshUser = invData.user;
+          setCurrentUser(prevUser => {
+            if (!prevUser) return null;
+            return { ...prevUser, ...freshUser };
+          });
+          setUsers(prev => {
+            const idx = prev.findIndex(u => u.id === freshUser.id);
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = { ...next[idx], ...freshUser };
+              return next;
+            }
+            return [...prev, freshUser];
+          });
+        }
+
+        if (invData.investments && Array.isArray(invData.investments)) {
+          setInvestments(prev => {
+            const otherInvs = prev.filter(i => i.userId !== activeUser.id);
+            return [...otherInvs, ...invData.investments];
+          });
+        }
+
+        if (invData.transactions && Array.isArray(invData.transactions)) {
+          setTransactions(prev => {
+            const otherTxs = prev.filter(t => t.userId !== activeUser.id);
+            const remoteIds = new Set(invData.transactions.map((t: Transaction) => t.id));
+            const recentLocalPending = prev.filter(t => {
+              if (t.userId !== activeUser.id) return false;
+              if (remoteIds.has(t.id)) return false;
+              const ageMs = Date.now() - new Date(t.createdAt).getTime();
+              return ageMs < 180000;
+            });
+
+            const merged = [...otherTxs, ...recentLocalPending, ...invData.transactions];
+            merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            return merged;
+          });
+        }
+
+        if (invData.settings) {
+          const dynamicReserve = calculateContinuousLiquidity(virtualDayOffset);
+          setSettings(prev => ({
+            ...prev,
+            ...invData.settings,
+            liquidityReserve: Math.max(invData.settings?.liquidityReserve || 0, dynamicReserve)
+          }));
+        }
+
+        if (invData.currentWeek !== null) {
+          setCurrentWeek(invData.currentWeek);
+        }
+
+        if (invData.investmentPlans && invData.investmentPlans.length >= 6) {
+          setInvestmentPlans(invData.investmentPlans);
+        }
+
+        setTimeout(() => {
+          isRemoteSyncingRef.current = false;
+        }, 500);
+        return;
+      }
+
+      // Admin or initial unauthenticated session: fetch complete administrative state
       const dbData = await fetchAllSupabaseData();
       if (!dbData) return;
 
       isRemoteSyncingRef.current = true;
       setSupabaseStatus('connected');
       setLastSyncedAt(new Date().toLocaleTimeString());
+      lastSyncTimestampRef.current = Date.now();
 
       if (dbData.users) {
         // Filter out demo investor and any deleted user IDs
@@ -477,13 +563,69 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
       }
 
-      if (dbData.investments !== null) {
-        // An empty array is authoritative only when the Supabase query succeeded.
-        setInvestments(dbData.investments);
+      if (dbData.investments !== null && Array.isArray(dbData.investments)) {
+        // Only update state if data has changed to prevent unnecessary re-render flickering
+        setInvestments(prev => {
+          if (prev.length === dbData.investments!.length) {
+            let isIdentical = true;
+            for (let i = 0; i < prev.length; i++) {
+              const p = prev[i];
+              const d = dbData.investments![i];
+              if (
+                p.id !== d.id ||
+                p.weeksPaid !== d.weeksPaid ||
+                p.status !== d.status ||
+                p.autoReinvest !== d.autoReinvest ||
+                p.nextPayoutDate !== d.nextPayoutDate
+              ) {
+                isIdentical = false;
+                break;
+              }
+            }
+            if (isIdentical) return prev;
+          }
+          return dbData.investments!;
+        });
       }
 
-      if (dbData.transactions) {
-        setTransactions(dbData.transactions);
+      if (dbData.transactions && Array.isArray(dbData.transactions)) {
+        // Prevent transaction list flickering by performing deep referential equality
+        // and merging local in-flight transactions that haven't propagated to remote yet
+        setTransactions(prev => {
+          if (prev.length === dbData.transactions!.length) {
+            let isIdentical = true;
+            for (let i = 0; i < prev.length; i++) {
+              const p = prev[i];
+              const d = dbData.transactions![i];
+              if (
+                p.id !== d.id ||
+                p.status !== d.status ||
+                p.amount !== d.amount ||
+                p.description !== d.description
+              ) {
+                isIdentical = false;
+                break;
+              }
+            }
+            if (isIdentical) return prev;
+          }
+
+          // Protect recent local transactions created within the last 3 minutes so they don't vanish & reappear
+          const remoteIds = new Set(dbData.transactions!.map((t: Transaction) => t.id));
+          const recentLocalPending = prev.filter(t => {
+            if (remoteIds.has(t.id)) return false;
+            const ageMs = Date.now() - new Date(t.createdAt).getTime();
+            return ageMs < 180000;
+          });
+
+          if (recentLocalPending.length === 0) {
+            return dbData.transactions!;
+          }
+
+          const merged = [...recentLocalPending, ...dbData.transactions!];
+          merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          return merged;
+        });
       }
 
       if (dbData.settings) {
@@ -532,77 +674,120 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       setSupabaseStatus('loading');
       try {
-        const dbData = await fetchAllSupabaseData();
-
-        if (dbData) {
-          setSupabaseStatus('connected');
-          setLastSyncedAt(new Date().toLocaleTimeString());
-          
-          if (dbData.users.length === 0) {
-            const defaultSeed = getSeedUsers();
-            if (defaultSeed.length > 0) {
-              await syncMultipleUsersToSupabase(defaultSeed);
-              setUsers(defaultSeed);
+        const activeUser = currentUserRef.current;
+        if (activeUser && activeUser.role !== 'admin') {
+          const invData = await fetchInvestorData(activeUser.id);
+          if (invData) {
+            setSupabaseStatus('connected');
+            setLastSyncedAt(new Date().toLocaleTimeString());
+            lastSyncTimestampRef.current = Date.now();
+            if (invData.user) {
+              setCurrentUser(invData.user);
             }
-            await syncSettingsToSupabase(settings);
-            await syncWeekToSupabase(currentWeek);
-          } else {
-            const sanitizedUsers = dbData.users.filter((u: any) => u.id !== 'usr_demo_investor' && !deletedUserIdsRef.current.has(u.id));
-            setUsers(sanitizedUsers);
-            try {
-              localStorage.setItem('pm_prod_users_v1', JSON.stringify(sanitizedUsers));
-            } catch (e) {}
-
-            if (dbData.investments !== null) {
-              // Preserve locally loaded plans if the initial investments query failed.
-              setInvestments(dbData.investments);
+            if (invData.investments) {
+              setInvestments(invData.investments);
             }
-            setTransactions(dbData.transactions);
-            if (dbData.settings) {
+            if (invData.transactions) {
+              setTransactions(invData.transactions);
+            }
+            if (invData.settings) {
               const dynamicReserve = calculateContinuousLiquidity(virtualDayOffset);
               setSettings(prev => ({
                 ...prev,
-                ...dbData.settings,
-                liquidityReserve: Math.max(dbData.settings.liquidityReserve || 0, dynamicReserve)
+                ...invData.settings,
+                liquidityReserve: Math.max(invData.settings?.liquidityReserve || 0, dynamicReserve)
               }));
             }
-            if (dbData.currentWeek !== null) {
-              setCurrentWeek(dbData.currentWeek);
+            if (invData.currentWeek !== null) {
+              setCurrentWeek(invData.currentWeek);
             }
-            if (dbData.taskSubmissions) {
-              setTaskSubmissions(dbData.taskSubmissions);
-            }
-            if (dbData.userDailyProgress && Object.keys(dbData.userDailyProgress).length > 0) {
-              setUserDailyProgress(prev => ({ ...prev, ...dbData.userDailyProgress }));
-            }
-            if (dbData.investmentPlans && dbData.investmentPlans.length >= 6) {
-              setInvestmentPlans(dbData.investmentPlans);
-            } else {
-              // Ensure default 6 plans exist in Supabase
-              await syncInvestmentPlansToSupabase(investmentPlans);
-            }
-
-            const savedUser = localStorage.getItem('pm_prod_current_user_v1');
-            if (savedUser) {
-              try {
-                const parsed = JSON.parse(savedUser);
-                const freshUser = sanitizedUsers.find(u => u.id === parsed.id);
-                if (freshUser) {
-                  setCurrentUser(freshUser);
-                }
-              } catch (e) {
-                // Ignore parse errors
-              }
+            if (invData.investmentPlans && invData.investmentPlans.length >= 6) {
+              setInvestmentPlans(invData.investmentPlans);
             }
           }
-
-          // 1. Establish Live Supabase Realtime WebSocket Connection
-          unsubscribeRealtime = subscribeToSupabaseRealtime((table) => {
-            console.log(`[Supabase Live Event] Realtime push on ${table}`);
-            refreshFromSupabase();
-          });
         } else {
-          setSupabaseStatus('error');
+          const dbData = await fetchAllSupabaseData();
+
+          if (dbData) {
+            setSupabaseStatus('connected');
+            setLastSyncedAt(new Date().toLocaleTimeString());
+            lastSyncTimestampRef.current = Date.now();
+            
+            if (dbData.users.length === 0) {
+              const defaultSeed = getSeedUsers();
+              if (defaultSeed.length > 0) {
+                await syncMultipleUsersToSupabase(defaultSeed);
+                setUsers(defaultSeed);
+              }
+              await syncSettingsToSupabase(settings);
+              await syncWeekToSupabase(currentWeek);
+            } else {
+              const sanitizedUsers = dbData.users.filter((u: any) => u.id !== 'usr_demo_investor' && !deletedUserIdsRef.current.has(u.id));
+              setUsers(sanitizedUsers);
+              try {
+                localStorage.setItem('pm_prod_users_v1', JSON.stringify(sanitizedUsers));
+              } catch (e) {}
+
+              if (dbData.investments !== null) {
+                setInvestments(dbData.investments);
+              }
+              setTransactions(dbData.transactions);
+              if (dbData.settings) {
+                const dynamicReserve = calculateContinuousLiquidity(virtualDayOffset);
+                setSettings(prev => ({
+                  ...prev,
+                  ...dbData.settings,
+                  liquidityReserve: Math.max(dbData.settings.liquidityReserve || 0, dynamicReserve)
+                }));
+              }
+              if (dbData.currentWeek !== null) {
+                setCurrentWeek(dbData.currentWeek);
+              }
+              if (dbData.taskSubmissions) {
+                setTaskSubmissions(dbData.taskSubmissions);
+              }
+              if (dbData.userDailyProgress && Object.keys(dbData.userDailyProgress).length > 0) {
+                setUserDailyProgress(prev => ({ ...prev, ...dbData.userDailyProgress }));
+              }
+              if (dbData.investmentPlans && dbData.investmentPlans.length >= 6) {
+                setInvestmentPlans(dbData.investmentPlans);
+              } else {
+                await syncInvestmentPlansToSupabase(investmentPlans);
+              }
+
+              const savedUser = localStorage.getItem('pm_prod_current_user_v1');
+              if (savedUser) {
+                try {
+                  const parsed = JSON.parse(savedUser);
+                  const freshUser = sanitizedUsers.find(u => u.id === parsed.id);
+                  if (freshUser) {
+                    setCurrentUser(freshUser);
+                  }
+                } catch (e) {
+                  // Ignore parse errors
+                }
+              }
+            }
+          } else {
+            setSupabaseStatus('error');
+          }
+        }
+
+        // Establish Scoped Live Supabase Realtime WebSocket Connection with Debounce
+        let realtimeDebounceTimer: any = null;
+        const onRealtimeUpdate = (table: string) => {
+          if (isRemoteSyncingRef.current) return;
+          if (realtimeDebounceTimer) clearTimeout(realtimeDebounceTimer);
+          realtimeDebounceTimer = setTimeout(() => {
+            refreshFromSupabase();
+          }, 800);
+        };
+
+        const activeUserNow = currentUserRef.current;
+        if (activeUserNow && activeUserNow.role !== 'admin') {
+          unsubscribeRealtime = subscribeToInvestorRealtime(activeUserNow.id, onRealtimeUpdate);
+        } else {
+          unsubscribeRealtime = subscribeToSupabaseRealtime(onRealtimeUpdate);
         }
       } catch (err) {
         console.error('Supabase setup exception:', err);
@@ -613,14 +798,32 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     initSupabase();
 
-    // 2. Background Heartbeat Poll every 12 seconds for guaranteed consistency
+    // Fallback Tab-Visibility-Aware Heartbeat: 90 seconds (never spams background tabs)
     const pollInterval = setInterval(() => {
-      refreshFromSupabase();
-    }, 12000);
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        refreshFromSupabase();
+      }
+    }, 90000);
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        // Refresh when returning to tab if more than 45 seconds have passed
+        if (Date.now() - lastSyncTimestampRef.current > 45000) {
+          refreshFromSupabase();
+        }
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
 
     return () => {
       unsubscribeRealtime();
       clearInterval(pollInterval);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
     };
   }, [refreshFromSupabase]);
 
@@ -637,13 +840,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [currentUser, isDbLoaded]);
 
+  // Sync investments to localStorage for instant local access
+  // (Individual investment purchases, claims, and rollovers sync directly to Supabase via syncInvestmentToSupabase)
   useEffect(() => {
-    localStorage.setItem('pm_prod_investments_v1', JSON.stringify(investments));
-    if (isDbLoaded && isSupabaseConfigured()) {
-      if (isRemoteSyncingRef.current) return;
-      syncMultipleInvestmentsToSupabase(investments);
-    }
-  }, [investments, isDbLoaded]);
+    try {
+      localStorage.setItem('pm_prod_investments_v1', JSON.stringify(investments));
+    } catch (e) {}
+  }, [investments]);
 
   useEffect(() => {
     if (isDbLoaded && isSupabaseConfigured() && investmentPlans.length > 0) {
@@ -652,13 +855,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [investmentPlans, isDbLoaded]);
 
+  // Sync transactions to localStorage for instant local access
+  // (Individual transaction mutations sync directly to Supabase via syncTransactionToSupabase)
   useEffect(() => {
-    localStorage.setItem('pm_prod_transactions_v1', JSON.stringify(transactions));
-    if (isDbLoaded && isSupabaseConfigured()) {
-      if (isRemoteSyncingRef.current) return;
-      syncMultipleTransactionsToSupabase(transactions);
-    }
-  }, [transactions, isDbLoaded]);
+    try {
+      localStorage.setItem('pm_prod_transactions_v1', JSON.stringify(transactions));
+    } catch (e) {}
+  }, [transactions]);
 
   useEffect(() => {
     localStorage.setItem('pm_prod_settings_v1', JSON.stringify(settings));
@@ -1575,12 +1778,14 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setTransactions(prev => [newTx, ...prev]);
+    syncTransactionToSupabase(newTx);
 
     if (settings.autoApproveDeposits) {
       // Instantly credit cleanly
       const updatedUser = { ...currentUser, walletBalance: currentUser.walletBalance + amount };
       setCurrentUser(updatedUser);
       setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+      syncUserToSupabase(updatedUser);
       setSuccessMsg(`Deposit of ₦${amount.toLocaleString()} has been automatically credited!`);
     } else {
       setSuccessMsg(`Deposit request of ₦${amount.toLocaleString()} submitted. Our compliance and treasury desk will confirm the bank transfer alert and credit your wallet within 10 to 30 minutes.`);
@@ -1613,11 +1818,13 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setTransactions(prev => [newTx, ...prev]);
+    syncTransactionToSupabase(newTx);
 
     // Instantly credit user balance cleanly
     const updatedUser = { ...currentUser, walletBalance: currentUser.walletBalance + amount };
     setCurrentUser(updatedUser);
     setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+    syncUserToSupabase(updatedUser);
 
     setSuccessMsg(`⚡ Instant Automated Deposit Approved! ₦${amount.toLocaleString()} has been credited to your wallet via Paystack (${channel}).`);
   };
@@ -1676,6 +1883,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     setTransactions(prev => [newTx, ...prev]);
+    syncTransactionToSupabase(newTx);
+    syncUserToSupabase(updatedUser);
     setSuccessMsg(`Withdrawal request of ₦${amount.toLocaleString()} submitted. Our finance team will review and disburse to ${accountDetails} within 1-24 hours.`);
     return true;
   };
@@ -2343,15 +2552,18 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const finalAmount = (typeof adjustedAmount === 'number' && adjustedAmount > 0) ? adjustedAmount : tx.amount;
     const wasAdjusted = finalAmount !== tx.amount;
 
-    // Update transaction
-    setTransactions(prev => prev.map(t => t.id === txId ? { 
-      ...t, 
+    const updatedTx: Transaction = {
+      ...tx,
       amount: finalAmount,
       status: 'completed',
       description: wasAdjusted
-        ? `${t.description || 'Bank Transfer Deposit'} (Reconciled from ₦${tx.amount.toLocaleString()} to ₦${finalAmount.toLocaleString()})`
-        : t.description
-    } : t));
+        ? `${tx.description || 'Bank Transfer Deposit'} (Reconciled from ₦${tx.amount.toLocaleString()} to ₦${finalAmount.toLocaleString()})`
+        : tx.description
+    };
+
+    // Update transaction
+    setTransactions(prev => prev.map(t => t.id === txId ? updatedTx : t));
+    syncTransactionToSupabase(updatedTx);
 
     // Credit user wallet with verified receipt amount
     setUsers(prev => prev.map(u => {
@@ -2360,6 +2572,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (currentUser && currentUser.id === u.id) {
           setCurrentUser(updated);
         }
+        syncUserToSupabase(updated);
         return updated;
       }
       return u;
@@ -2388,7 +2601,9 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const tx = transactions.find(t => t.id === txId);
     if (!tx || tx.type !== 'deposit' || tx.status !== 'pending') return;
 
-    setTransactions(prev => prev.map(t => t.id === txId ? { ...t, status: 'rejected' } : t));
+    const updatedTx: Transaction = { ...tx, status: 'rejected' };
+    setTransactions(prev => prev.map(t => t.id === txId ? updatedTx : t));
+    syncTransactionToSupabase(updatedTx);
     setSuccessMsg(`Rejected deposit of ₦${tx.amount.toLocaleString()} for ${tx.userName}.`);
   };
 
@@ -2397,11 +2612,14 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const tx = transactions.find(t => t.id === txId);
     if (!tx || tx.type !== 'withdrawal' || tx.status !== 'pending') return;
 
-    setTransactions(prev => prev.map(t => t.id === txId ? { 
-      ...t, 
+    const updatedTx: Transaction = {
+      ...tx,
       status: 'completed',
-      description: `${t.description} (Manually Disbursed by Finance Admin)`
-    } : t));
+      description: `${tx.description} (Manually Disbursed by Finance Admin)`
+    };
+
+    setTransactions(prev => prev.map(t => t.id === txId ? updatedTx : t));
+    syncTransactionToSupabase(updatedTx);
 
     setSuccessMsg(`Approved and marked withdrawal of ₦${tx.amount.toLocaleString()} as disbursed to ${tx.accountDetails} for ${tx.userName}.`);
 
@@ -2422,14 +2640,18 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const tx = transactions.find(t => t.id === txId);
     if (!tx || tx.type !== 'withdrawal' || tx.status !== 'pending') return;
 
+    const updatedTx: Transaction = { ...tx, status: 'rejected' };
     // Refund wallet balance!
-    setTransactions(prev => prev.map(t => t.id === txId ? { ...t, status: 'rejected' } : t));
+    setTransactions(prev => prev.map(t => t.id === txId ? updatedTx : t));
+    syncTransactionToSupabase(updatedTx);
+
     setUsers(prev => prev.map(u => {
       if (u.id === tx.userId) {
         const updated = { ...u, walletBalance: u.walletBalance + tx.amount };
         if (currentUser && currentUser.id === u.id) {
           setCurrentUser(updated);
         }
+        syncUserToSupabase(updated);
         return updated;
       }
       return u;

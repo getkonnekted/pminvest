@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { 
   TrendingUp, 
@@ -37,19 +37,18 @@ import {
   Activity,
   Maximize2,
   BarChart2,
-  MapPin
+  MapPin,
+  Shield,
+  FileCheck
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
 import { INVESTMENT_PLANS, InvestmentPlan, UserInvestment } from '../types';
-import { DailyTasksHub } from './DailyTasksHub';
 import { NIGERIAN_BANKS, resolveNigerianAccount } from '../lib/paystack';
 import { PmLogo } from './PmLogo';
 import { PayoutCountdown } from './PayoutCountdown';
 import { InvestmentPayoutButton } from './InvestmentPayoutButton';
 import { CommunityBanner, WHATSAPP_COMMUNITY_URL } from './CommunityBanner';
-import { LivePropertyTradingModal } from './LivePropertyTradingModal';
 import { UaeDeedModal } from './UaeDeedModal';
-import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 import { InsufficientFundsModal } from './InsufficientFundsModal';
 import { MultilingualPitchModal } from './MultilingualPitchModal';
@@ -78,7 +77,7 @@ const AutoRenewControl: React.FC<{ investment: UserInvestment; onToggle: (id: st
         <div>
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-bold text-[#f7ecd5] block leading-tight">Auto-Renew</span>
-            <span className="text-[9px] font-bold bg-amber-500/10 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-500/30">+3% on Payout</span>
+            <span className="text-[9px] font-mono font-semibold tracking-wider bg-amber-500/10 text-amber-300 px-1.5 py-0.5 rounded-sm border border-amber-500/30 uppercase">+3% on Payout</span>
           </div>
           <span className="text-[9px] text-slate-400 block mt-0.5">
             {isLocked
@@ -139,7 +138,7 @@ export const UserDashboard: React.FC = () => {
     pendingQueueLength 
   } = useSupabaseSync();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'trading' | 'tasks' | 'finance' | 'referrals' | 'kyc'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'finance' | 'referrals' | 'kyc'>('overview');
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isRefreshingInvestments, setIsRefreshingInvestments] = useState<boolean>(false);
 
@@ -158,7 +157,7 @@ export const UserDashboard: React.FC = () => {
 
   // Dashboard Menu Items for Hamburger & Tab Navigation
   const menuItems: {
-    id: 'overview' | 'invest' | 'trading' | 'tasks' | 'finance' | 'referrals' | 'kyc';
+    id: 'overview' | 'invest' | 'finance' | 'referrals' | 'kyc';
     label: string;
     description: string;
     icon: React.ComponentType<{ className?: string }>;
@@ -172,21 +171,10 @@ export const UserDashboard: React.FC = () => {
     },
     {
       id: 'invest',
-      label: 'Buy Plans',
+      label: 'Acquire Stakes',
       description: 'Choose a property plan starting from ₦30,000',
       icon: Sparkles,
-      badge: <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">From ₦30k</span>
-    },
-    {
-      id: 'tasks',
-      label: 'Daily Tasks',
-      description: 'Check in daily, share on WhatsApp & earn bonuses',
-      icon: Flame,
-      badge: currentUser && (
-        <span className="bg-amber-500/20 text-amber-900 border border-amber-400/40 text-[10px] font-bold px-1.5 py-0.2 rounded-full font-mono">
-          🔥 {getUserProgress(currentUser.id).streakCount}d
-        </span>
-      )
+      badge: <span className="border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-sm">FROM ₦30K</span>
     },
     {
       id: 'finance',
@@ -196,22 +184,22 @@ export const UserDashboard: React.FC = () => {
     },
     {
       id: 'referrals',
-      label: 'Referral 7.5%',
-      description: 'Invite friends and earn 7.5% every Friday',
+      label: 'Partner Share (7.5%)',
+      description: 'Invite institutional co-investors and earn 7.5% weekly',
       icon: Users,
-      badge: <span className="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-2 py-0.5 rounded-full">7.5%</span>
+      badge: <span className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-sm">7.5%</span>
     },
     {
       id: 'kyc',
-      label: 'KYC Verification',
+      label: 'Identity Verification',
       description: 'Verify your ID for fast bank withdrawals',
       icon: FileText,
       badge: currentUser?.kycStatus === 'verified' ? (
-        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">Verified</span>
+        <span className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded-sm uppercase">Verified</span>
       ) : currentUser?.kycStatus === 'pending' ? (
-        <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">Pending</span>
+        <span className="border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded-sm uppercase">Pending</span>
       ) : (
-        <span className="bg-slate-100 text-slate-600 text-[10px] font-medium px-1.5 py-0.5 rounded-full">Unverified</span>
+        <span className="border border-slate-700 bg-slate-800 text-slate-400 text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded-sm uppercase">Unverified</span>
       )
     }
   ];
@@ -276,7 +264,6 @@ export const UserDashboard: React.FC = () => {
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [copiedAccount2, setCopiedAccount2] = useState(false);
   const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(null);
-  const [isTradingTerminalOpen, setIsTradingTerminalOpen] = useState(false);
   const [isPitchModalOpen, setIsPitchModalOpen] = useState(false);
 
   const faqItems = [
@@ -304,36 +291,44 @@ export const UserDashboard: React.FC = () => {
 
   if (!currentUser) return null;
 
-  // Calculate stats
-  const userInvestments = investments.filter(i => i.userId === currentUser.id);
-  const activeInvestments = userInvestments.filter(i => i.status === 'active');
-  const completedInvestments = userInvestments.filter(i => i.status === 'completed');
+  // Calculate stats with memoization for rock-solid stability and zero flickering
+  const userInvestments = useMemo(() => investments.filter(i => i.userId === currentUser.id), [investments, currentUser.id]);
+  const activeInvestments = useMemo(() => userInvestments.filter(i => i.status === 'active'), [userInvestments]);
+  const completedInvestments = useMemo(() => userInvestments.filter(i => i.status === 'completed'), [userInvestments]);
   
-  const totalInvested = userInvestments.reduce((sum, i) => sum + i.cost, 0);
-  const totalEarnedPayouts = transactions
+  const totalInvested = useMemo(() => userInvestments.reduce((sum, i) => sum + i.cost, 0), [userInvestments]);
+  const totalEarnedPayouts = useMemo(() => transactions
     .filter(t => t.userId === currentUser.id && t.type === 'payout' && t.status === 'completed')
-    .reduce((sum, t) => sum + t.amount, 0);
-  const totalReferralBonus = transactions
+    .reduce((sum, t) => sum + t.amount, 0), [transactions, currentUser.id]);
+  const totalReferralBonus = useMemo(() => transactions
     .filter(t => t.userId === currentUser.id && t.type === 'referral_bonus' && t.status === 'completed')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + t.amount, 0), [transactions, currentUser.id]);
 
-  const pendingDeposits = transactions
-    .filter(t => t.userId === currentUser.id && t.type === 'deposit' && t.status === 'pending');
-  const pendingWithdrawals = transactions
-    .filter(t => t.userId === currentUser.id && t.type === 'withdrawal' && t.status === 'pending');
+  const pendingDeposits = useMemo(() => transactions
+    .filter(t => t.userId === currentUser.id && t.type === 'deposit' && t.status === 'pending'), [transactions, currentUser.id]);
+  const pendingWithdrawals = useMemo(() => transactions
+    .filter(t => t.userId === currentUser.id && t.type === 'withdrawal' && t.status === 'pending'), [transactions, currentUser.id]);
 
   // Real Investor status: Paid to top up wallet (not marketing, deposit completed)
-  const userPaidDeposits = transactions.filter(t => 
+  const userPaidDeposits = useMemo(() => transactions.filter(t => 
     t.userId === currentUser.id && 
     t.type === 'deposit' && 
     t.status === 'completed' && 
     !t.isMarketing
-  );
-  const totalPaidTopup = userPaidDeposits.reduce((sum, t) => sum + t.amount, 0);
+  ), [transactions, currentUser.id]);
+  const totalPaidTopup = useMemo(() => userPaidDeposits.reduce((sum, t) => sum + t.amount, 0), [userPaidDeposits]);
   const isRealInvestor = totalPaidTopup > 0;
   const hasFundingActivity = totalPaidTopup > 0 || currentUser.walletBalance > 0;
 
-  const referredUsers = users.filter(u => u.referredByCode === currentUser.referralCode);
+  const referredUsers = useMemo(() => users.filter(u => u.referredByCode === currentUser.referralCode), [users, currentUser.referralCode]);
+
+  // Rock-solid memoized Recent Transactions for user
+  const userRecentTransactions = useMemo(() => {
+    return transactions
+      .filter(t => t.userId === currentUser.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 8);
+  }, [transactions, currentUser.id]);
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(currentUser.referralCode);
@@ -770,43 +765,7 @@ export const UserDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Daily Task Quick Quest Snapshot */}
-          {currentUser && (
-            <div className="bg-gradient-to-r from-[#0c101c] via-[#090d18] to-[#0c101c] border border-amber-500/25 text-white rounded-2xl p-5 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0">
-                  <Flame className="w-6 h-6 fill-amber-400" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-amber-400 font-mono">
-                      🔥 {getUserProgress(currentUser.id).streakCount}-DAY CONSISTENCY STREAK
-                    </span>
-                    <span className="text-[10px] bg-[#06080e] border border-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-mono">
-                      {getUserProgress(currentUser.id).completedTaskIds.length}/{dailyTasks.length} Done Today
-                    </span>
-                  </div>
-                  <h4 className="text-sm font-bold text-[#f7ecd5] mt-0.5">
-                    Daily Cash Rewards &amp; Check-In
-                  </h4>
-                  <p className="text-xs text-slate-400">
-                    Check in every day, share on WhatsApp, and collect extra cash in your wallet.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => { setActiveTab('tasks'); clearMessages(); }}
-                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs py-2.5 px-4 rounded-xl transition-all shrink-0 flex items-center justify-center gap-1.5 shadow-md active:scale-95 cursor-pointer"
-                id="btn_overview_jump_to_tasks"
-              >
-                <span>Go to Daily Tasks</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          {/* Active Investments and the single Global Property Markets launcher */}
+          {/* Active Investments Registry */}
           <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#070a12] border border-amber-500/25 rounded-2xl p-6 shadow-2xl relative overflow-hidden backdrop-blur-md">
             <div id="active_investments_section" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-amber-500/20 pb-3">
               <div>
@@ -829,25 +788,55 @@ export const UserDashboard: React.FC = () => {
                   Verified UAE property deeds, payout schedules, and cadastral co-ownership records.
                 </p>
               </div>
-              {userInvestments.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setIsTradingTerminalOpen(true)}
-                  className="bg-[#06080e] hover:bg-[#111728] border border-amber-500/30 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-95"
-                  title="Open Global Property Markets"
-                >
-                  <Activity className="w-4 h-4 text-emerald-400" />
-                  <span>Global Property Markets</span>
-                  <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
-                </button>
-              )}
+              <div className="flex items-center gap-2 font-mono text-[10px] text-slate-400">
+                <span className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-2 py-1 rounded-sm uppercase tracking-wider font-bold">
+                  DLD VERIFIED
+                </span>
+                <span className="border border-amber-500/30 bg-amber-500/10 text-amber-300 px-2 py-1 rounded-sm uppercase tracking-wider font-bold">
+                  DIFC SPV ESCROW
+                </span>
+              </div>
             </div>
 
-            {/* Real-time Institutional UAE Property Trading Ticker */}
-            <LiveTradingSimulationCard 
-              variant="compact"
-              onExpandTerminal={() => setIsTradingTerminalOpen(true)}
-            />
+            {/* Institutional DIFC SPV Trust & DLD Cadastral Verification Ledger */}
+            <div className="bg-[#06080e]/95 border border-amber-500/20 rounded-xl p-4 my-3 text-xs shadow-inner">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-500/15 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="font-mono font-bold uppercase tracking-wider text-[#f7ecd5] text-[11px]">
+                    DIFC SPV Trust &amp; Dubai Land Department (DLD) Registry
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 font-mono text-[10px] text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    SPV Structure: DIFC Law No. 4
+                  </span>
+                  <span className="hidden sm:inline text-amber-500/40">|</span>
+                  <span className="text-amber-300/80">Custodian: Treasure Homes Prime SPV</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 text-[11px] text-slate-300">
+                <div className="bg-[#090d18] border border-amber-500/15 p-2.5 rounded-lg space-y-1">
+                  <span className="text-[10px] font-mono uppercase text-slate-500 block">Asset Freehold Title</span>
+                  <p className="font-semibold text-[#f7ecd5]">DLD Registered Co-Ownership</p>
+                  <p className="text-[10px] text-slate-400">Every fractional stake is backed by registered real estate titles in Dubai.</p>
+                </div>
+
+                <div className="bg-[#090d18] border border-amber-500/15 p-2.5 rounded-lg space-y-1">
+                  <span className="text-[10px] font-mono uppercase text-slate-500 block">Rental Yield Clearing</span>
+                  <p className="font-semibold text-emerald-400">Friday Automated Settlements</p>
+                  <p className="text-[10px] text-slate-400">24-week distribution schedule settled directly via secure banking escrow.</p>
+                </div>
+
+                <div className="bg-[#090d18] border border-amber-500/15 p-2.5 rounded-lg space-y-1">
+                  <span className="text-[10px] font-mono uppercase text-slate-500 block">Cadastral Makani Audit</span>
+                  <p className="font-semibold text-amber-300">Official Municipal Geotag</p>
+                  <p className="text-[10px] text-slate-400">Directly inspect title deeds, cadastral plot numbers, and escrow certificates.</p>
+                </div>
+              </div>
+            </div>
 
             <div className="space-y-4 mt-4">
               {/* SKELETON SCREEN LOADER: Mimics property card layout while investment data is being fetched/synchronized */}
@@ -914,8 +903,8 @@ export const UserDashboard: React.FC = () => {
                                 <span className="text-sm font-black text-[#f7ecd5] uppercase tracking-tight truncate">
                                   {propName}
                                 </span>
-                                <span className="bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold text-[9px] shrink-0 font-mono">
-                                  ACTIVE
+                                <span className="bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-sm font-bold text-[9px] shrink-0 font-mono tracking-wider uppercase">
+                                  ACTIVE DEED
                                 </span>
                               </div>
                               <div className="flex items-center gap-1 text-[11px] text-slate-400 truncate mt-0.5">
@@ -1074,7 +1063,7 @@ export const UserDashboard: React.FC = () => {
               Recent Transactions
             </h3>
 
-            {transactions.filter(t => t.userId === currentUser.id).length === 0 ? (
+            {userRecentTransactions.length === 0 ? (
               <p className="text-xs text-slate-400 text-center py-6">No transaction history found.</p>
             ) : (
               <div className="overflow-x-auto">
@@ -1089,41 +1078,38 @@ export const UserDashboard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-amber-500/10">
-                    {transactions
-                      .filter(t => t.userId === currentUser.id)
-                      .slice(0, 8)
-                      .map((tx) => {
-                        let typeColor = 'text-amber-400';
-                        if (tx.type === 'deposit') typeColor = 'text-emerald-400';
-                        if (tx.type === 'referral_bonus') typeColor = 'text-amber-300';
-                        if (tx.type === 'withdrawal' && tx.status === 'completed') typeColor = 'text-rose-400';
+                    {userRecentTransactions.map((tx) => {
+                      let typeColor = 'text-amber-400';
+                      if (tx.type === 'deposit') typeColor = 'text-emerald-400';
+                      if (tx.type === 'referral_bonus') typeColor = 'text-amber-300';
+                      if (tx.type === 'withdrawal' && tx.status === 'completed') typeColor = 'text-rose-400';
 
-                        return (
-                          <tr key={tx.id} className="hover:bg-amber-500/5 transition-colors">
-                            <td className="py-3 font-mono text-[11px] text-slate-400">
-                              {new Date(tx.createdAt).toLocaleDateString()}
-                            </td>
-                            <td className={`py-3 font-semibold capitalize ${typeColor}`}>
-                              {tx.type.replace('_', ' ')}
-                            </td>
-                            <td className="py-3 text-slate-300 text-[11px]">
-                              {tx.description}
-                            </td>
-                            <td className="py-3 text-right font-bold font-mono text-white">
-                              ₦{tx.amount.toLocaleString(undefined, { minimumFractionDigits: 1 })}
-                            </td>
-                            <td className="py-3 text-center">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-medium ${
-                                tx.status === 'completed' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' :
-                                tx.status === 'pending' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse' :
-                                'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-                              }`}>
-                                {tx.status.toUpperCase()}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      return (
+                        <tr key={tx.id} className="hover:bg-amber-500/5 transition-colors">
+                          <td className="py-3 font-mono text-[11px] text-slate-400 whitespace-nowrap">
+                            {new Date(tx.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className={`py-3 font-semibold capitalize whitespace-nowrap ${typeColor}`}>
+                            {tx.type.replace('_', ' ')}
+                          </td>
+                          <td className="py-3 text-slate-300 text-[11px] max-w-xs truncate">
+                            {tx.description}
+                          </td>
+                          <td className="py-3 text-right font-bold font-mono text-white whitespace-nowrap">
+                            ₦{tx.amount.toLocaleString(undefined, { minimumFractionDigits: 1 })}
+                          </td>
+                          <td className="py-3 text-center whitespace-nowrap">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-medium ${
+                              tx.status === 'completed' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' :
+                              tx.status === 'pending' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' :
+                              'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                            }`}>
+                              {tx.status.toUpperCase()}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1935,10 +1921,6 @@ export const UserDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* DAILY TASKS TAB */}
-      {activeTab === 'tasks' && (
-        <DailyTasksHub onNavigateToInvest={() => setActiveTab('invest')} />
-      )}
 
       {/* Investment FAQ Accordion Section */}
       <div className="mt-12 pt-8 border-t border-amber-500/20">
@@ -2131,16 +2113,6 @@ export const UserDashboard: React.FC = () => {
         }
       />
 
-      {/* Full Institutional Property Trading Terminal Modal */}
-      <LivePropertyTradingModal
-        isOpen={isTradingTerminalOpen}
-        onClose={() => setIsTradingTerminalOpen(false)}
-        userInvestments={userInvestments}
-        onExplorePlans={() => {
-          setIsTradingTerminalOpen(false);
-          setActiveTab('invest');
-        }}
-      />
 
       {/* Insufficient Funds Modal */}
       {shortfallPlan && (
