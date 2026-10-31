@@ -19,68 +19,109 @@ import { UaeFlag } from './UaeFlag';
 
 import { useTheme } from '../context/ThemeContext';
 
-export const BrandingHeader: React.FC = () => {
+export const BrandingHeader: React.FC<{ onOpenDIFCModal?: () => void }> = ({ onOpenDIFCModal }) => {
   const { currentUser, logout } = useAppState();
   const { isChampagne } = useTheme();
 
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <header className={`w-full ${isChampagne ? 'bg-white border-b border-[#c5a059]/35 text-slate-900 shadow-sm' : 'bg-[#070a12] border-b border-amber-500/20 text-white shadow-xl'} backdrop-blur-md`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4">
-        {/* Brand logo & tagline */}
-        <div className="flex items-center gap-3">
-          <PmLogo className="w-11 h-11 drop-shadow-md" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className={`text-xl font-black tracking-tight uppercase font-sans ${isChampagne ? 'text-slate-950' : 'text-white'}`}>
-                PM <span className={isChampagne ? 'text-amber-700' : 'text-amber-400'}>Invest</span>
-              </span>
-              <span className={`text-[10px] uppercase tracking-widest ${isChampagne ? 'text-amber-800' : 'text-amber-500/80'} font-mono font-bold leading-none`}>
-                By Treasure Homes
-              </span>
-            </div>
-            <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} font-normal mt-0.5 flex items-center gap-1.5`}>
-              <UaeFlag size="xs" />
-              <span>Sovereign UAE Luxury Property Wealth &amp; Steady Friday Payouts</span>
-            </p>
+    <header className={`w-full ${isChampagne ? 'bg-[#FAF8F5]/95 border-b border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#0B0C10]/95 border-b border-[#B8964E]/20 text-white shadow-xl'} backdrop-blur-md sticky top-0 z-40`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+        {/* Zone 1: Brand Wordmark */}
+        <div className="flex items-center gap-3 shrink-0">
+          <PmLogo className="w-9 h-9 drop-shadow-sm" />
+          <div className="flex flex-col">
+            <span className={`text-sm sm:text-base font-black tracking-widest uppercase font-mono ${isChampagne ? 'text-slate-950' : 'text-[#FAF8F5]'}`}>
+              PM INVEST <span className="text-[#B8964E]">·</span> TREASURE HOMES
+            </span>
+            <span className={`text-[9px] uppercase tracking-widest ${isChampagne ? 'text-slate-500' : 'text-slate-400'} font-mono leading-none mt-0.5`}>
+              DIFC SPV Legal Trust &amp; Dubai Land Department Co-Ownership
+            </span>
           </div>
         </div>
 
-        {/* Current logged in user view / actions & Luxury Theme Switcher */}
-        <div className="flex items-center gap-3 flex-wrap justify-end">
-          <PWAInstallButton />
+        {/* Zone 2: Editorial Navigation Links (Desktop) */}
+        <nav className="hidden lg:flex items-center gap-6 text-xs font-mono uppercase tracking-wider text-slate-400">
+          <button
+            type="button"
+            onClick={() => scrollToSection('properties_catalog')}
+            className="hover:text-[#D4AF37] transition-colors cursor-pointer"
+          >
+            Portfolio Dossiers
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (onOpenDIFCModal) {
+                onOpenDIFCModal();
+              } else {
+                scrollToSection('difc_trust_section');
+              }
+            }}
+            className="hover:text-[#D4AF37] transition-colors cursor-pointer text-[#D4AF37]/90 font-semibold"
+          >
+            Legal Custody &amp; DIFC
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollToSection('distribution_schedule')}
+            className="hover:text-[#D4AF37] transition-colors cursor-pointer"
+          >
+            Distribution Ledger
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollToSection('legal_disclosures')}
+            className="hover:text-[#D4AF37] transition-colors cursor-pointer"
+          >
+            Disclosures
+          </button>
+        </nav>
+
+        {/* Zone 3: Executive CTA & Account Access */}
+        <div className="flex items-center gap-3 shrink-0">
           <ThemeToggle />
 
-          {currentUser && (
-            <div className={`flex items-center gap-4 ${isChampagne ? 'bg-[#fcfaf7] border-[#c5a059]/40 text-slate-900 shadow-sm' : 'bg-[#0d1222] border-amber-500/25 text-white shadow-md'} p-2.5 rounded-xl border`}>
+          {currentUser ? (
+            <div className={`flex items-center gap-3 ${isChampagne ? 'bg-white border-[#B8964E]/30 text-slate-900 shadow-xs' : 'bg-[#13151F] border-[#B8964E]/25 text-white shadow-md'} px-3 py-1.5 rounded-xl border`}>
               <div className="text-right">
-                <p className={`text-sm font-bold ${isChampagne ? 'text-slate-900' : 'text-white'} flex items-center justify-end gap-1`}>
+                <p className={`text-xs font-bold ${isChampagne ? 'text-slate-900' : 'text-white'} flex items-center justify-end gap-1 font-mono`}>
                   {currentUser.name}
                   {currentUser.role === 'admin' && (
-                    <span className="text-[9px] bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 px-2 py-0.5 rounded font-black uppercase tracking-wider">Admin</span>
+                    <span className="text-[8px] bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded-sm font-black uppercase tracking-wider">Admin</span>
                   )}
                 </p>
-              </div>
-              <div className={`h-8 w-px ${isChampagne ? 'bg-[#e5d8c3]' : 'bg-slate-800'}`} />
-              
-              {/* Wallet display */}
-              <div className="flex flex-col text-left">
-                <span className={`text-[10px] ${isChampagne ? 'text-amber-800 font-bold' : 'text-amber-400/80'} font-mono flex items-center gap-1`}>
-                  <Wallet className={`w-3 h-3 ${isChampagne ? 'text-amber-700' : 'text-amber-400'}`} /> Wallet
-                </span>
-                <span className={`text-sm font-extrabold ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'} font-mono tabular-nums`}>
+                <span className={`text-[11px] font-bold ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'} font-mono tabular-nums`}>
                   ₦{currentUser.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
 
+              <div className={`h-6 w-px ${isChampagne ? 'bg-slate-200' : 'bg-slate-800'}`} />
+
               <button 
                 onClick={logout}
-                className={`p-1.5 ${isChampagne ? 'text-slate-500 hover:text-rose-600 hover:bg-[#ede5d8]' : 'text-slate-400 hover:text-rose-400 hover:bg-slate-800/80'} rounded transition-colors cursor-pointer`}
+                className={`p-1.5 ${isChampagne ? 'text-slate-500 hover:text-rose-600' : 'text-slate-400 hover:text-rose-400'} rounded transition-colors cursor-pointer`}
                 title="Logout"
                 id="btn_logout_header"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
               </button>
             </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => scrollToSection('card_auth_panel')}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#B8964E] via-[#D4AF37] to-[#9C7B38] hover:from-[#D4AF37] hover:to-[#B8964E] text-slate-950 text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer active:scale-95"
+              id="btn_header_access_portal"
+            >
+              Access Private Portal
+            </button>
           )}
         </div>
       </div>

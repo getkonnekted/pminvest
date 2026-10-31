@@ -47,6 +47,8 @@ import { UaeFlag } from './components/UaeFlag';
 import { PayoutCountdown } from './components/PayoutCountdown';
 import { WHATSAPP_COMMUNITY_URL } from './components/CommunityBanner';
 import { sanitizeAndValidatePhone } from './lib/phoneSanitizer';
+import { DIFCTrustRegistryModal } from './components/DIFCTrustRegistryModal';
+import { UaeDeedModal } from './components/UaeDeedModal';
 
 const UserDashboard = React.lazy(() => import('./components/UserDashboard').then(module => ({ default: module.UserDashboard })));
 const MarketerDashboard = React.lazy(() => import('./components/MarketerDashboard').then(module => ({ default: module.MarketerDashboard })));
@@ -72,6 +74,8 @@ function MainAppContent() {
     dismissPayoutToast
   } = useAppState();
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isDIFCModalOpen, setIsDIFCModalOpen] = useState(false);
+  const [inspectingDeedPlan, setInspectingDeedPlan] = useState<any | null>(null);
   const [adminView, setAdminView] = useState<'admin' | 'investor' | 'marketer'>('admin');
   const [currentPage, setCurrentPage] = useState<'pminvest' | 'aujoten'>(() => {
     if (typeof window !== 'undefined') {
@@ -261,95 +265,89 @@ function MainAppContent() {
   // Unauthenticated Landing Page
   if (!currentUser) {
     return (
-      <div className={`min-h-screen ${isChampagne ? 'bg-[#f7f4ed] text-slate-900' : 'bg-[#06080e] text-slate-100'} flex flex-col justify-between font-sans selection:bg-amber-500/30 selection:text-amber-200 relative overflow-x-hidden`}>
-        {/* Ambient warm gold lighting blur */}
-        <div className={`absolute top-0 left-1/4 w-[500px] h-[500px] ${isChampagne ? 'bg-amber-500/5' : 'bg-amber-500/5'} rounded-full blur-[140px] pointer-events-none`} />
-        <div className={`absolute top-1/3 right-10 w-[450px] h-[450px] ${isChampagne ? 'bg-amber-600/5' : 'bg-amber-600/5'} rounded-full blur-[130px] pointer-events-none`} />
+      <div className={`min-h-screen ${isChampagne ? 'bg-[#FAF8F5] text-slate-900' : 'bg-[#0B0C10] text-slate-100'} flex flex-col justify-between font-sans selection:bg-[#B8964E]/30 selection:text-amber-200 relative overflow-x-hidden`}>
+        {/* Ambient subtle warm gold illumination */}
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#B8964E]/5 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-1/3 right-10 w-[450px] h-[450px] bg-[#D4AF37]/5 rounded-full blur-[130px] pointer-events-none" />
 
         <PayoutToastContainer
           toasts={payoutToasts}
           onDismiss={dismissPayoutToast}
         />
 
-        {/* Affiliation & Live Accreting Reserve Header bar */}
-        <div className={`${isChampagne ? 'bg-[#ede5d8] border-b border-[#c5a059]/35 text-slate-700 shadow-sm' : 'bg-[#070a12] border-b border-amber-500/20 text-slate-300 shadow-md'} px-4 py-2.5 text-center text-xs flex flex-wrap items-center justify-between gap-x-4 gap-y-2`}>
-          <div className="flex items-center gap-1.5">
-            <Sparkles className={`w-3.5 h-3.5 ${isChampagne ? 'text-amber-700' : 'text-amber-400'} animate-pulse`} />
-            <span>PM Invest is certified under <strong className={isChampagne ? 'text-slate-950 font-black' : 'text-white'}>TREASURE HOMES LTD</strong></span>
-          </div>
-          <div className="flex items-center gap-3">
-            <PWAInstallButton />
-            <div className="hidden sm:flex items-center gap-1.5 text-[11px]">
-              <span className={`${isChampagne ? 'text-amber-800 font-bold' : 'text-amber-400'} font-medium`}>Reserve Collateral:</span>
-              <LiveReserveCounter precision={0} showLivePulse={true} showRateBadge={false} className={`${isChampagne ? 'text-slate-950' : 'text-white'} font-bold font-mono`} />
-            </div>
-          </div>
-        </div>
+        {/* Top Bar with Strict 3-Zone Contract */}
+        <BrandingHeader onOpenDIFCModal={() => setIsDIFCModalOpen(true)} />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start flex-grow relative z-10">
-          {/* LEFT PANEL: Brand identity, executive headline & 4 live trust metrics */}
+          {/* LEFT PANEL: Architectural Headline & Institutional Metrics */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="flex items-center gap-3.5 sm:gap-4">
-              <PmLogo className="w-14 h-14 sm:w-18 sm:h-18 drop-shadow-[0_8px_20px_rgba(245,158,11,0.25)] shrink-0" />
-              <div>
-                <div className={`inline-flex items-center gap-1.5 ${isChampagne ? 'bg-amber-100/90 border-amber-300 text-amber-900 font-bold' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'} border text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full uppercase tracking-widest font-mono mb-1`}>
-                  <UaeFlag size="xs" />
-                  <span>Treasure Homes Sovereign Real Estate SPV</span>
-                </div>
-                <h1 className={`text-2xl sm:text-4xl font-black ${isChampagne ? 'text-slate-950' : 'text-white'} tracking-tight uppercase font-sans`}>
-                  PM <span className="gold-gradient-text">Invest</span> Platform
-                </h1>
-                <p className={`text-xs ${isChampagne ? 'text-amber-800 font-semibold' : 'text-amber-400/90 font-mono'} mt-0.5`}>
-                  Physical UAE Luxury Real Estate · Verified DLD Deeds · Friday Cash Yields
-                </p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-mono uppercase tracking-widest ${isChampagne ? 'text-[#9C7B38] font-bold' : 'text-[#D4AF37] font-semibold'} border-b border-[#B8964E]/40 pb-0.5`}>
+                  DIFC SPV LEGAL TRUST &amp; DUBAI LAND DEPARTMENT CO-OWNERSHIP
+                </span>
               </div>
-            </div>
-
-            <div className="space-y-3">
-              <h2 className={`text-xl sm:text-2xl lg:text-3xl font-extrabold ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} leading-snug`}>
-                Co-Own Prime Dubai Real Estate · Earn Direct Friday Cash Rental Payouts
-              </h2>
-              <p className={`text-xs sm:text-sm ${isChampagne ? 'text-slate-700' : 'text-slate-300'} leading-relaxed max-w-2xl`}>
-                Acquire fractional institutional stakes in Dubai Marina, DIFC, and Palm Jumeirah starting from ₦30,000. Rental profits collected from verified tenants are credited directly into your Nigerian bank account or digital wallet every Friday at 12:00 PM.
+              <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black ${isChampagne ? 'text-slate-950' : 'text-[#FAF8F5]'} tracking-tight leading-tight`} style={{ textWrap: 'balance' as any }}>
+                Architectural Co-Investment in Prime Dubai Real Estate
+              </h1>
+              <p className={`text-sm sm:text-base ${isChampagne ? 'text-slate-700' : 'text-slate-300'} leading-relaxed max-w-2xl font-sans`}>
+                Contractual Friday cash yields backed by physical DIFC and Palm Jumeirah luxury property under bankruptcy-remote SPV custody. Acquire direct fractional title stakes from ₦30,000.
               </p>
             </div>
 
-            {/* 4 Hero Institutional Metric Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-              <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-900 shadow-sm' : 'bg-[#0c101c] border-amber-500/25 text-white shadow-md'} border p-3 rounded-xl`}>
-                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500 font-semibold' : 'text-slate-400'} uppercase block`}>Liquid Backing</span>
-                <span className={`text-sm sm:text-base font-extrabold ${isChampagne ? 'text-amber-800' : 'text-amber-400'} font-mono block mt-0.5`}>
-                  ₦{(liveLiquidityReserve / 1000000000).toFixed(2)}B+
+            {/* High-Intent Architectural CTAs */}
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <a
+                href="#properties_catalog"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#B8964E] via-[#D4AF37] to-[#9C7B38] hover:from-[#D4AF37] hover:to-[#B8964E] text-slate-950 text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer active:scale-95"
+              >
+                View Real Estate Dossiers →
+              </a>
+              <button
+                type="button"
+                onClick={() => setIsDIFCModalOpen(true)}
+                className={`px-5 py-2.5 rounded-xl border ${isChampagne ? 'border-[#B8964E]/40 bg-white hover:bg-slate-50 text-slate-800' : 'border-[#B8964E]/30 bg-[#0E1017] hover:bg-[#161822] text-[#D4AF37]'} text-xs font-mono uppercase tracking-wider transition-all cursor-pointer`}
+              >
+                Review DIFC SPV Trust Charter
+              </button>
+            </div>
+
+            {/* 4 Quiet Tabular Trust Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-3.5 rounded-xl`}>
+                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>SPV Entity</span>
+                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} font-mono block mt-1`}>
+                  Reg #4982
                 </span>
-                <span className={`text-[9px] ${isChampagne ? 'text-emerald-700 font-semibold' : 'text-emerald-400'} font-mono`}>Treasure Homes SPV</span>
+                <span className={`text-[9px] ${isChampagne ? 'text-[#9C7B38]' : 'text-[#D4AF37]'} font-mono`}>DIFC Common Law</span>
               </div>
 
-              <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-900 shadow-sm' : 'bg-[#0c101c] border-amber-500/25 text-white shadow-md'} border p-3 rounded-xl`}>
-                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500 font-semibold' : 'text-slate-400'} uppercase block`}>Dubai Assets</span>
-                <span className={`text-sm sm:text-base font-extrabold ${isChampagne ? 'text-slate-950' : 'text-white'} font-mono block mt-0.5`}>
-                  6 Verified
+              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-3.5 rounded-xl`}>
+                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>Dubai Assets</span>
+                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} font-mono block mt-1`}>
+                  6 Freehold Deeds
                 </span>
-                <span className={`text-[9px] ${isChampagne ? 'text-slate-500' : 'text-slate-400'} font-mono`}>DLD Recorded</span>
+                <span className={`text-[9px] text-emerald-400 font-mono`}>DLD Recorded</span>
               </div>
 
-              <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-900 shadow-sm' : 'bg-[#0c101c] border-amber-500/25 text-white shadow-md'} border p-3 rounded-xl`}>
-                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500 font-semibold' : 'text-slate-400'} uppercase block`}>Payout Day</span>
-                <span className={`text-sm sm:text-base font-extrabold ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'} font-mono block mt-0.5`}>
+              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-3.5 rounded-xl`}>
+                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>Disbursement</span>
+                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'} font-mono block mt-1`}>
                   Every Friday
                 </span>
-                <span className={`text-[9px] ${isChampagne ? 'text-slate-500' : 'text-slate-400'} font-mono`}>12:00 PM Auto-Bank</span>
+                <span className={`text-[9px] ${isChampagne ? 'text-slate-500' : 'text-slate-400'} font-mono`}>12:00 PM Direct</span>
               </div>
 
-              <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-900 shadow-sm' : 'bg-[#0c101c] border-amber-500/25 text-white shadow-md'} border p-3 rounded-xl`}>
-                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500 font-semibold' : 'text-slate-400'} uppercase block`}>Partner Share</span>
-                <span className={`text-sm sm:text-base font-extrabold ${isChampagne ? 'text-amber-800' : 'text-amber-300'} font-mono block mt-0.5`}>
+              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-3.5 rounded-xl`}>
+                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>Partner Share</span>
+                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-[#9C7B38]' : 'text-amber-300'} font-mono block mt-1`}>
                   7.5% Weekly
                 </span>
-                <span className={`text-[9px] ${isChampagne ? 'text-emerald-700 font-semibold' : 'text-emerald-400'} font-mono`}>Liquid Override</span>
+                <span className={`text-[9px] text-emerald-400 font-mono`}>Liquid Override</span>
               </div>
             </div>
 
-            {/* Quick links & WhatsApp Community CTA */}
+            {/* Official Investor Community Links */}
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <a
                 href={WHATSAPP_COMMUNITY_URL}
@@ -363,7 +361,7 @@ function MainAppContent() {
 
               <a
                 href="#properties_catalog"
-                className={`inline-flex items-center gap-1.5 text-xs ${isChampagne ? 'text-amber-800 hover:text-amber-900' : 'text-amber-400 hover:text-amber-300'} font-mono font-bold hover:underline py-2 px-1 cursor-pointer`}
+                className={`inline-flex items-center gap-1.5 text-xs ${isChampagne ? 'text-[#9C7B38] hover:text-[#B8964E]' : 'text-[#D4AF37] hover:text-amber-300'} font-mono font-bold hover:underline py-2 px-1 cursor-pointer`}
               >
                 <span>Explore All 6 Properties ↓</span>
               </a>
@@ -948,6 +946,62 @@ function MainAppContent() {
           </div>
         </section>
 
+        {/* SECTION: INSTITUTIONAL CUSTODY & DIFC SPV REGISTRY STRIP */}
+        <section id="difc_trust_section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+          <div className={`${isChampagne ? 'bg-white border-[#B8964E]/30' : 'bg-[#10121A] border-[#B8964E]/25'} border rounded-2xl p-6 sm:p-8 shadow-xl space-y-6`}>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#B8964E]/20 pb-4">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[#B8964E] font-bold">
+                  Institutional Fiduciary Architecture
+                </span>
+                <h3 className={`text-lg sm:text-2xl font-bold ${isChampagne ? 'text-slate-950' : 'text-[#FAF8F5]'} tracking-tight mt-0.5`}>
+                  DIFC SPV Legal Trust &amp; Dubai Land Department (DLD) Custody
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDIFCModalOpen(true)}
+                className="self-start md:self-auto px-4 py-2 rounded-xl bg-[#0B0C10] hover:bg-[#181B26] border border-[#B8964E]/40 text-[#D4AF37] text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+              >
+                <span>Inspect Official Charter</span>
+                <span>→</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <span className="text-[10px] font-mono uppercase text-[#B8964E] block font-bold">01 · Sovereign Ring-Fencing</span>
+                <h4 className={`text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'}`}>
+                  DIFC Special Purpose Vehicle (SPV)
+                </h4>
+                <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
+                  Incorporated under DIFC Law No. 4 of 2019. Individual property titles are held in a ring-fenced legal vehicle, isolating investor capital entirely from corporate operating debt and outside claims.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-[10px] font-mono uppercase text-emerald-400 block font-bold">02 · Freehold Title Registration</span>
+                <h4 className={`text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'}`}>
+                  Dubai Land Department (DLD) Deeds
+                </h4>
+                <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
+                  All 6 assets hold authentic cadastral registrations with verified Makani municipal geotags. Beneficial co-owners hold contractually authenticated fractional title deeds.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-[10px] font-mono uppercase text-[#D4AF37] block font-bold">03 · Escrow Payout Clearing</span>
+                <h4 className={`text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'}`}>
+                  Contractual Friday Settlements
+                </h4>
+                <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
+                  Lease proceeds collected from corporate tenants are cleared through licensed banking escrow and paid every Friday at 12:00 PM WAT directly into user bank accounts.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* SECTION 3: HOW IT WORKS (3 PLAIN-LANGUAGE LAYMAN STEPS) */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-8 relative z-10">
           <div className="text-center max-w-2xl mx-auto space-y-2">
@@ -1102,29 +1156,44 @@ function MainAppContent() {
                     </div>
                   </div>
 
-                  {/* Quick CTA */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsRegistering(true);
-                      const authCard = document.getElementById('card_auth_panel');
-                      if (authCard) {
-                        authCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        setTimeout(() => {
-                          const nameInput = document.querySelector('#card_auth_panel input[type="text"]') as HTMLInputElement;
-                          if (nameInput) nameInput.focus();
-                        }, 250);
-                      }
-                    }}
-                    className={`w-full mt-3 py-2.5 px-3 rounded-xl ${
-                      isChampagne
-                        ? 'bg-amber-50 hover:bg-amber-500 border border-amber-300 hover:border-amber-500 text-amber-900 hover:text-slate-950 font-bold'
-                        : 'bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 hover:from-amber-500 hover:to-amber-600 border border-amber-500/30 hover:border-amber-400 text-amber-300 hover:text-slate-950 font-bold'
-                    } text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95`}
-                  >
-                    <Award className="w-3.5 h-3.5" />
-                    <span>Acquire Stake in {plan.name} →</span>
-                  </button>
+                  {/* Action Buttons: Acquire Stake & Inspect DLD Deed */}
+                  <div className="space-y-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsRegistering(true);
+                        const authCard = document.getElementById('card_auth_panel');
+                        if (authCard) {
+                          authCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          setTimeout(() => {
+                            const nameInput = document.querySelector('#card_auth_panel input[type="text"]') as HTMLInputElement;
+                            if (nameInput) nameInput.focus();
+                          }, 250);
+                        }
+                      }}
+                      className={`w-full py-2.5 px-3 rounded-xl ${
+                        isChampagne
+                          ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-black'
+                          : 'bg-gradient-to-r from-[#B8964E] via-[#D4AF37] to-[#9C7B38] hover:from-[#D4AF37] hover:to-[#B8964E] text-slate-950 font-black'
+                      } text-xs flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer active:scale-95`}
+                    >
+                      <Award className="w-3.5 h-3.5" />
+                      <span>Acquire Stake in {plan.name} →</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setInspectingDeedPlan(plan)}
+                      className={`w-full py-2 px-3 rounded-xl border ${
+                        isChampagne
+                          ? 'border-slate-300 hover:border-slate-400 bg-white text-slate-700'
+                          : 'border-white/10 hover:border-[#B8964E]/50 bg-[#0B0C10] text-slate-300 hover:text-white'
+                      } text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all cursor-pointer`}
+                    >
+                      <Building className="w-3.5 h-3.5 text-[#D4AF37]" />
+                      <span>Inspect DLD Deed &amp; Underwriting Dossier</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -1215,6 +1284,42 @@ function MainAppContent() {
           <OfflineIndicator />
           <LegalDisclosures />
         </div>
+
+        <DIFCTrustRegistryModal
+          isOpen={isDIFCModalOpen}
+          onClose={() => setIsDIFCModalOpen(false)}
+        />
+
+        {inspectingDeedPlan && (
+          <UaeDeedModal
+            isOpen={!!inspectingDeedPlan}
+            onClose={() => setInspectingDeedPlan(null)}
+            investment={{
+              id: 'deed_inspect_' + inspectingDeedPlan.id,
+              userId: 'guest',
+              userName: 'Verified Public Dossier',
+              planId: inspectingDeedPlan.id,
+              planName: inspectingDeedPlan.name,
+              propertyName: inspectingDeedPlan.propertyName,
+              propertyLocation: inspectingDeedPlan.propertyLocation,
+              propertyAddress: inspectingDeedPlan.propertyAddress,
+              propertyImage: inspectingDeedPlan.propertyImage,
+              propertyType: inspectingDeedPlan.propertyType,
+              occupancyRate: inspectingDeedPlan.occupancyRate,
+              deedTier: inspectingDeedPlan.deedTier,
+              cadastralId: inspectingDeedPlan.cadastralId,
+              makaniNumber: inspectingDeedPlan.makaniNumber,
+              deedReferenceCode: `UAE-DLD-2026-${inspectingDeedPlan.id.toUpperCase()}`,
+              cost: inspectingDeedPlan.cost,
+              weeklyPayout: inspectingDeedPlan.weeklyPayout,
+              totalReturns: inspectingDeedPlan.totalReturns,
+              weeksPaid: 0,
+              totalWeeks: inspectingDeedPlan.weeksDuration || 24,
+              status: 'active',
+              createdAt: new Date().toISOString()
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -1236,7 +1341,7 @@ function MainAppContent() {
         }}
       />
       <div>
-        <BrandingHeader />
+        <BrandingHeader onOpenDIFCModal={() => setIsDIFCModalOpen(true)} />
         
         {currentUser.role === 'admin' && (
           <div className={`${isChampagne ? 'bg-[#ede5d8] border-b border-[#c5a059]/35 text-slate-800' : 'bg-[#1e293b] border-b border-slate-700'} py-3 px-4 transition-colors`}>
@@ -1305,6 +1410,11 @@ function MainAppContent() {
 
       <OfflineIndicator />
       <LegalDisclosures />
+
+      <DIFCTrustRegistryModal
+        isOpen={isDIFCModalOpen}
+        onClose={() => setIsDIFCModalOpen(false)}
+      />
     </div>
   );
 }
