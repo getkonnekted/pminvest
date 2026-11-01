@@ -7,7 +7,6 @@ import React, { useState, useEffect } from 'react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { StateProvider, useAppState } from './context/StateContext';
 import { BrandingHeader, LegalDisclosures } from './components/BrandingHeader';
-import { PmLogo } from './components/PmLogo';
 import { 
   Building, 
   ShieldCheck, 
@@ -400,24 +399,17 @@ function MainAppContent() {
               </button>
             </div>
 
-            {/* Subtitle Header */}
-            <div className="mb-4">
-              <h3 className="text-base font-extrabold text-[#f7ecd5] uppercase tracking-tight">
-                {isResettingPassword
-                  ? 'Reset Your Password'
-                  : isRegistering
-                    ? 'Create Your Investor Account'
-                    : 'Welcome to PM Invest'}
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {isResettingPassword
-                  ? 'Enter your registered email to reset your password.'
-                  : isRegistering 
-                    ? 'Enter your credentials and your friend’s invite code to begin.'
-                    : 'Sign in to access your properties, wallet balance, and Friday yields.'
-                }
-              </p>
-            </div>
+            {/* Password Reset Notice (only when in reset mode) */}
+            {isResettingPassword && (
+              <div className="mb-4">
+                <h3 className="text-sm font-bold text-[#f7ecd5] uppercase tracking-tight">
+                  Reset Your Password
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Enter your registered email to reset your account password.
+                </p>
+              </div>
+            )}
 
             {/* Invite-Only Gating Banner for Registration */}
             {isRegistering && !isResettingPassword && (

@@ -4,7 +4,7 @@ import { ExternalLink, MessageCircle, Send } from 'lucide-react';
 export const WHATSAPP_PHONE_NUMBER = '+19375598074';
 export const WHATSAPP_SUPPORT_URL = 'https://wa.me/19375598074';
 export const WHATSAPP_COMMUNITY_URL = 'https://chat.whatsapp.com/GR83MZOLso4LtclK9xj0yN?s=sh&p=a&mlu=4&ilr=4';
-export const TELEGRAM_COMMUNITY_URL = 'https://t.me/+frJYSXYkeSkwYTEx';
+export const TELEGRAM_COMMUNITY_URL = 'https://t.me/+6OhZgN0BwI5lNTc5';
 
 export const CommunityBanner: React.FC = () => {
   return (
