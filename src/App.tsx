@@ -275,89 +275,89 @@ function MainAppContent() {
         {/* Top Bar with Strict 3-Zone Contract */}
         <BrandingHeader />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start flex-grow relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start flex-grow relative z-10">
           {/* LEFT PANEL: Architectural Headline & Institutional Metrics */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="space-y-4">
+          <div className="lg:col-span-7 space-y-5 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-mono uppercase tracking-widest ${isChampagne ? 'text-[#9C7B38] font-bold' : 'text-[#D4AF37] font-semibold'} border-b border-[#B8964E]/40 pb-0.5`}>
+                <span className={`text-[9px] sm:text-[10px] font-mono uppercase tracking-wider sm:tracking-widest ${isChampagne ? 'text-[#9C7B38] font-bold' : 'text-[#D4AF37] font-semibold'} border-b border-[#B8964E]/40 pb-0.5`}>
                   DIFC SPV LEGAL TRUST &amp; DUBAI LAND DEPARTMENT CO-OWNERSHIP
                 </span>
               </div>
-              <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black ${isChampagne ? 'text-slate-950' : 'text-[#FAF8F5]'} tracking-tight leading-tight`} style={{ textWrap: 'balance' as any }}>
+              <h1 className={`text-2xl sm:text-4xl lg:text-5xl font-black ${isChampagne ? 'text-slate-950' : 'text-[#FAF8F5]'} tracking-tight leading-tight`} style={{ textWrap: 'balance' as any }}>
                 Architectural Co-Investment in Prime Dubai Real Estate
               </h1>
-              <p className={`text-sm sm:text-base ${isChampagne ? 'text-slate-700' : 'text-slate-300'} leading-relaxed max-w-2xl font-sans`}>
+              <p className={`text-xs sm:text-base ${isChampagne ? 'text-slate-700' : 'text-slate-300'} leading-relaxed max-w-2xl font-sans`}>
                 Contractual Friday cash yields backed by physical DIFC and Palm Jumeirah luxury property under bankruptcy-remote SPV custody. Acquire direct fractional title stakes from ₦30,000.
               </p>
             </div>
 
             {/* High-Intent Architectural CTAs */}
-            <div className="flex flex-wrap items-center gap-3 pt-1">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1">
               <a
                 href="#properties_catalog"
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#B8964E] via-[#D4AF37] to-[#9C7B38] hover:from-[#D4AF37] hover:to-[#B8964E] text-slate-950 text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer active:scale-95"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#B8964E] via-[#D4AF37] to-[#9C7B38] hover:from-[#D4AF37] hover:to-[#B8964E] text-slate-950 text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer active:scale-95 text-center"
               >
                 View Real Estate Dossiers →
               </a>
               <a
                 href="#difc_trust_section"
-                className={`px-5 py-2.5 rounded-xl border ${isChampagne ? 'border-[#B8964E]/40 bg-white hover:bg-slate-50 text-slate-800' : 'border-[#B8964E]/30 bg-[#0E1017] hover:bg-[#161822] text-[#D4AF37]'} text-xs font-mono uppercase tracking-wider transition-all cursor-pointer`}
+                className={`px-5 py-2.5 rounded-xl border ${isChampagne ? 'border-[#B8964E]/40 bg-white hover:bg-slate-50 text-slate-800' : 'border-[#B8964E]/30 bg-[#0E1017] hover:bg-[#161822] text-[#D4AF37]'} text-xs font-mono uppercase tracking-wider transition-all cursor-pointer text-center`}
               >
                 Legal Framework Details
               </a>
             </div>
 
             {/* 4 Quiet Tabular Trust Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-3.5 rounded-xl`}>
-                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>SPV Entity</span>
-                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} font-mono block mt-1`}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-1">
+              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-2.5 sm:p-3.5 rounded-xl`}>
+                <span className={`text-[9px] sm:text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>SPV Entity</span>
+                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} font-mono block mt-0.5 sm:mt-1 truncate`}>
                   Reg #4982
                 </span>
-                <span className={`text-[9px] ${isChampagne ? 'text-[#9C7B38]' : 'text-[#D4AF37]'} font-mono`}>DIFC Common Law</span>
+                <span className={`text-[8px] sm:text-[9px] ${isChampagne ? 'text-[#9C7B38]' : 'text-[#D4AF37]'} font-mono block truncate`}>DIFC Common Law</span>
               </div>
 
-              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-3.5 rounded-xl`}>
-                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>Dubai Assets</span>
-                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} font-mono block mt-1`}>
+              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-2.5 sm:p-3.5 rounded-xl`}>
+                <span className={`text-[9px] sm:text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>Dubai Assets</span>
+                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} font-mono block mt-0.5 sm:mt-1 truncate`}>
                   6 Freehold Deeds
                 </span>
-                <span className={`text-[9px] text-emerald-400 font-mono`}>DLD Recorded</span>
+                <span className={`text-[8px] sm:text-[9px] text-emerald-400 font-mono block truncate`}>DLD Recorded</span>
               </div>
 
-              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-3.5 rounded-xl`}>
-                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>Disbursement</span>
-                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'} font-mono block mt-1`}>
+              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-2.5 sm:p-3.5 rounded-xl`}>
+                <span className={`text-[9px] sm:text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>Disbursement</span>
+                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'} font-mono block mt-0.5 sm:mt-1 truncate`}>
                   Every Friday
                 </span>
-                <span className={`text-[9px] ${isChampagne ? 'text-slate-500' : 'text-slate-400'} font-mono`}>12:00 PM Direct</span>
+                <span className={`text-[8px] sm:text-[9px] ${isChampagne ? 'text-slate-500' : 'text-slate-400'} font-mono block truncate`}>12:00 PM Direct</span>
               </div>
 
-              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-3.5 rounded-xl`}>
-                <span className={`text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>Partner Share</span>
-                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-[#9C7B38]' : 'text-amber-300'} font-mono block mt-1`}>
+              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-2.5 sm:p-3.5 rounded-xl`}>
+                <span className={`text-[9px] sm:text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>Partner Share</span>
+                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-[#9C7B38]' : 'text-amber-300'} font-mono block mt-0.5 sm:mt-1 truncate`}>
                   7.5% Weekly
                 </span>
-                <span className={`text-[9px] text-emerald-400 font-mono`}>Liquid Override</span>
+                <span className={`text-[8px] sm:text-[9px] text-emerald-400 font-mono block truncate`}>Liquid Override</span>
               </div>
             </div>
 
             {/* Official Investor Community Links */}
-            <div className="flex flex-wrap items-center gap-3 pt-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 pt-1">
               <a
                 href={WHATSAPP_COMMUNITY_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex items-center gap-2 ${isChampagne ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/40 text-emerald-300'} border text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm cursor-pointer`}
+                className={`inline-flex items-center justify-center gap-2 ${isChampagne ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/40 text-emerald-300'} border text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer`}
               >
-                <MessageSquare className="w-4 h-4 text-emerald-600" />
+                <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>Official WhatsApp Investor Group →</span>
               </a>
 
               <a
                 href="#properties_catalog"
-                className={`inline-flex items-center gap-1.5 text-xs ${isChampagne ? 'text-[#9C7B38] hover:text-[#B8964E]' : 'text-[#D4AF37] hover:text-amber-300'} font-mono font-bold hover:underline py-2 px-1 cursor-pointer`}
+                className={`inline-flex items-center justify-center gap-1.5 text-xs ${isChampagne ? 'text-[#9C7B38] hover:text-[#B8964E]' : 'text-[#D4AF37] hover:text-amber-300'} font-mono font-bold hover:underline py-1.5 px-1 cursor-pointer text-center`}
               >
                 <span>Explore All 6 Properties ↓</span>
               </a>
@@ -365,7 +365,7 @@ function MainAppContent() {
           </div>
 
           {/* RIGHT PANEL: Clean Auth Forms in Luxury Obsidian & Brushed Gold */}
-          <div className={`lg:col-span-5 ${isChampagne ? 'bg-white border-[#c5a059]/40 text-slate-900 shadow-xl' : 'bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border-amber-500/30 text-slate-100 shadow-2xl'} border rounded-2xl p-6 sm:p-7 relative overflow-hidden`} id="card_auth_panel">
+          <div className={`lg:col-span-5 ${isChampagne ? 'bg-white border-[#c5a059]/40 text-slate-900 shadow-xl' : 'bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border-amber-500/30 text-slate-100 shadow-2xl'} border rounded-2xl p-4 sm:p-7 relative overflow-hidden`} id="card_auth_panel">
             {/* Ambient accent background blur */}
             <div className="absolute top-0 right-0 w-44 h-44 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -929,7 +929,7 @@ function MainAppContent() {
                 Every Friday at 12:00 PM, tenant rental yields collected from our UAE luxury towers are automatically disbursed to investor wallets and local Nigerian bank accounts.
               </p>
             </div>
-            <div className="shrink-0">
+            <div className="shrink-0 w-full md:w-auto flex justify-center">
               <PayoutCountdown />
             </div>
           </div>
@@ -1365,7 +1365,7 @@ function MainAppContent() {
           </div>
         )}
         
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8">
           <React.Suspense fallback={<div className="rounded-2xl border border-amber-500/30 bg-[#090d18] p-8 text-center text-sm text-[#f7ecd5] font-mono shadow-xl">Loading your luxury portfolio…</div>}>
             {currentUser.role === 'admin' ? (
               adminView === 'admin' ? (

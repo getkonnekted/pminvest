@@ -389,7 +389,7 @@ export const AdminPanel: React.FC = () => {
       )}
 
       {/* Admin sub-tabs */}
-      <div className="flex flex-wrap overflow-x-auto pb-1 mb-6 border-b border-slate-200 gap-1">
+      <div className="flex overflow-x-auto no-scrollbar pb-1 mb-6 border-b border-slate-200 gap-1 scroll-smooth">
         <button
           onClick={() => { setAdminTab('analytics'); clearMessages(); }}
           className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${

@@ -125,21 +125,23 @@ export const PayoutCountdown: React.FC<PayoutCountdownProps> = ({
   }
 
   return (
-    <div className={`flex items-center gap-2 ${
+    <div className={`flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2 ${
       isChampagne 
         ? 'bg-white/95 border border-[#c5a059]/40 text-slate-900 shadow-sm' 
         : 'bg-[#0c101c]/90 border border-amber-500/30 text-amber-200 shadow-inner'
-    } rounded-xl px-3 py-2 text-xs font-mono ${className}`}>
-      <Clock className={`w-3.5 h-3.5 ${isChampagne ? 'text-amber-700' : 'text-amber-400'} shrink-0`} />
-      <span className={`text-[10px] ${isChampagne ? 'text-slate-700 font-bold' : 'text-amber-300'} font-sans uppercase tracking-wider`}>Next Payout in:</span>
-      <div className="flex items-center gap-1 font-bold">
-        <span className={`${isChampagne ? 'bg-[#f4ede0] text-slate-900 border border-[#c5a059]/30' : 'bg-[#131b2e] text-amber-300 border border-amber-500/20'} px-2 py-0.5 rounded text-[11px] font-mono font-bold`}>{timeLeft.days}d</span>
+    } rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-mono ${className}`}>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <Clock className={`w-3.5 h-3.5 ${isChampagne ? 'text-amber-700' : 'text-amber-400'} shrink-0`} />
+        <span className={`text-[10px] ${isChampagne ? 'text-slate-700 font-bold' : 'text-amber-300'} font-sans uppercase tracking-wider`}>Next Payout:</span>
+      </div>
+      <div className="flex items-center gap-1 font-bold shrink-0">
+        <span className={`${isChampagne ? 'bg-[#f4ede0] text-slate-900 border border-[#c5a059]/30' : 'bg-[#131b2e] text-amber-300 border border-amber-500/20'} px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono font-bold`}>{timeLeft.days}d</span>
         <span className={isChampagne ? 'text-slate-500' : 'text-amber-400/60'}>:</span>
-        <span className={`${isChampagne ? 'bg-[#f4ede0] text-slate-900 border border-[#c5a059]/30' : 'bg-[#131b2e] text-amber-300 border border-amber-500/20'} px-2 py-0.5 rounded text-[11px] font-mono font-bold`}>{String(timeLeft.hours).padStart(2, '0')}h</span>
+        <span className={`${isChampagne ? 'bg-[#f4ede0] text-slate-900 border border-[#c5a059]/30' : 'bg-[#131b2e] text-amber-300 border border-amber-500/20'} px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono font-bold`}>{String(timeLeft.hours).padStart(2, '0')}h</span>
         <span className={isChampagne ? 'text-slate-500' : 'text-amber-400/60'}>:</span>
-        <span className={`${isChampagne ? 'bg-[#f4ede0] text-slate-900 border border-[#c5a059]/30' : 'bg-[#131b2e] text-amber-300 border border-amber-500/20'} px-2 py-0.5 rounded text-[11px] font-mono font-bold`}>{String(timeLeft.minutes).padStart(2, '0')}m</span>
+        <span className={`${isChampagne ? 'bg-[#f4ede0] text-slate-900 border border-[#c5a059]/30' : 'bg-[#131b2e] text-amber-300 border border-amber-500/20'} px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono font-bold`}>{String(timeLeft.minutes).padStart(2, '0')}m</span>
         <span className={isChampagne ? 'text-slate-500' : 'text-amber-400/60'}>:</span>
-        <span className={`${isChampagne ? 'bg-amber-600 text-white shadow-xs' : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black'} px-2 py-0.5 rounded text-[11px] font-mono`}>{String(timeLeft.seconds).padStart(2, '0')}s</span>
+        <span className={`${isChampagne ? 'bg-amber-600 text-white shadow-xs' : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black'} px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono`}>{String(timeLeft.seconds).padStart(2, '0')}s</span>
       </div>
     </div>
   );

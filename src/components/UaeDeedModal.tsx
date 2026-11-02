@@ -174,38 +174,39 @@ export const UaeDeedModal: React.FC<UaeDeedModalProps> = ({
       <div className="bg-slate-950 border border-amber-500/40 rounded-2xl max-w-3xl w-full max-h-[94vh] flex flex-col shadow-2xl relative font-sans text-slate-100 overflow-hidden my-auto">
         
         {/* Top Sticky Header */}
-        <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between px-5 py-3.5 bg-slate-900/95 border-b border-slate-800 backdrop-blur">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
-              <Award className="w-4 h-4 text-amber-400" />
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-2 px-3 sm:px-5 py-2.5 sm:py-3.5 bg-slate-900/95 border-b border-slate-800 backdrop-blur">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
             </div>
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-400 font-mono block">
-                Official Property Backing Vault
+            <div className="min-w-0">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-amber-400 font-mono block truncate">
+                Official Backing Vault
               </span>
-              <span className="text-[11px] text-slate-400">
-                {propertyName} · {deedCode}
+              <span className="text-[10px] sm:text-[11px] text-slate-400 block truncate">
+                {propertyName}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={handlePrint}
-              className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
+              className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 whitespace-nowrap"
               title="Print official document"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print / Save PDF</span>
+              <span className="hidden sm:inline">Print / Save PDF</span>
+              <span className="sm:hidden">Print</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               aria-label="Close"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>

@@ -27,44 +27,43 @@ export const BrandingHeader: React.FC = () => {
 
   return (
     <header className={`w-full ${isChampagne ? 'bg-[#FAF8F5]/95 border-b border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#0B0C10]/95 border-b border-[#B8964E]/20 text-white shadow-xl'} backdrop-blur-md sticky top-0 z-40`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4">
         {/* Zone 1: Brand Wordmark */}
-        <div className="flex items-center gap-3 shrink-0">
-          <PmLogo className="w-10 h-10 drop-shadow-sm" />
-          <div className="flex flex-col">
-            <span className={`text-sm sm:text-base font-black tracking-widest uppercase font-mono ${isChampagne ? 'text-slate-950' : 'text-[#FAF8F5]'}`}>
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
+          <PmLogo className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 drop-shadow-sm" />
+          <div className="flex flex-col min-w-0">
+            <span className={`text-xs sm:text-base font-black tracking-wider sm:tracking-widest uppercase font-mono truncate ${isChampagne ? 'text-slate-950' : 'text-[#FAF8F5]'}`}>
               PM INVEST <span className="text-[#B8964E]">·</span> TREASURE HOMES
             </span>
-            <span className={`text-[9px] uppercase tracking-widest ${isChampagne ? 'text-slate-500' : 'text-slate-400'} font-mono leading-none mt-0.5`}>
+            <span className={`hidden md:block text-[9px] uppercase tracking-widest ${isChampagne ? 'text-slate-500' : 'text-slate-400'} font-mono leading-none mt-0.5 truncate`}>
               DIFC SPV Legal Trust &amp; Dubai Land Department Co-Ownership
             </span>
           </div>
         </div>
 
-
         {/* Zone 3: Executive CTA & Account Access */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <ThemeToggle />
 
           {currentUser ? (
-            <div className={`flex items-center gap-3 ${isChampagne ? 'bg-white border-[#B8964E]/30 text-slate-900 shadow-xs' : 'bg-[#13151F] border-[#B8964E]/25 text-white shadow-md'} px-3 py-1.5 rounded-xl border`}>
-              <div className="text-right">
-                <p className={`text-xs font-bold ${isChampagne ? 'text-slate-900' : 'text-white'} flex items-center justify-end gap-1 font-mono`}>
-                  {currentUser.name}
+            <div className={`flex items-center gap-2 sm:gap-3 ${isChampagne ? 'bg-white border-[#B8964E]/30 text-slate-900 shadow-xs' : 'bg-[#13151F] border-[#B8964E]/25 text-white shadow-md'} px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border`}>
+              <div className="text-right min-w-0">
+                <p className={`text-[11px] sm:text-xs font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} flex items-center justify-end gap-1 font-mono`}>
+                  <span className="max-w-[70px] xs:max-w-[110px] sm:max-w-none truncate">{currentUser.name}</span>
                   {currentUser.role === 'admin' && (
-                    <span className="text-[8px] bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded-sm font-black uppercase tracking-wider">Admin</span>
+                    <span className="text-[8px] bg-amber-500 text-slate-950 px-1 py-0.2 rounded-sm font-black uppercase tracking-wider shrink-0">Admin</span>
                   )}
                 </p>
-                <span className={`text-[11px] font-bold ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'} font-mono tabular-nums`}>
+                <span className={`text-[10px] sm:text-[11px] font-bold ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'} font-mono tabular-nums block`}>
                   ₦{currentUser.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
 
-              <div className={`h-6 w-px ${isChampagne ? 'bg-slate-200' : 'bg-slate-800'}`} />
+              <div className={`h-5 sm:h-6 w-px ${isChampagne ? 'bg-slate-200' : 'bg-slate-800'}`} />
 
               <button 
                 onClick={logout}
-                className={`p-1.5 ${isChampagne ? 'text-slate-500 hover:text-rose-600' : 'text-slate-400 hover:text-rose-400'} rounded transition-colors cursor-pointer`}
+                className={`p-1 sm:p-1.5 ${isChampagne ? 'text-slate-500 hover:text-rose-600' : 'text-slate-400 hover:text-rose-400'} rounded transition-colors cursor-pointer shrink-0`}
                 title="Logout"
                 id="btn_logout_header"
               >
@@ -75,10 +74,10 @@ export const BrandingHeader: React.FC = () => {
             <button
               type="button"
               onClick={() => scrollToSection('card_auth_panel')}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#B8964E] via-[#D4AF37] to-[#9C7B38] hover:from-[#D4AF37] hover:to-[#B8964E] text-slate-950 text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer active:scale-95"
+              className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#B8964E] via-[#D4AF37] to-[#9C7B38] hover:from-[#D4AF37] hover:to-[#B8964E] text-slate-950 text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer active:scale-95 whitespace-nowrap"
               id="btn_header_access_portal"
             >
-              Access Private Portal
+              <span className="hidden xs:inline">Access </span>Portal
             </button>
           )}
         </div>
