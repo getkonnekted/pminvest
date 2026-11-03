@@ -400,7 +400,7 @@ export const MarketerDashboard: React.FC = () => {
           <div className="mt-3 pt-3 border-t border-amber-500/15 animate-fadeIn lg:hidden">
             <div className="px-1 mb-2.5 flex items-center justify-between text-[11px] font-mono text-slate-400">
               <div className="flex items-center gap-2">
-                <PmLogo className="w-5 h-5" />
+                <PmLogo className="h-6 w-auto shrink-0" />
                 <span className="font-bold text-amber-300 uppercase tracking-wider">Marketer Suite Menus</span>
               </div>
               <span className="text-amber-400 font-semibold">{menuItems.length} Menus</span>
@@ -1031,7 +1031,7 @@ export const MarketerDashboard: React.FC = () => {
           <div className="bg-gradient-to-r from-[#0c101c] via-[#090d18] to-[#120a24] border border-amber-500/30 text-white rounded-2xl p-6 shadow-2xl space-y-4 backdrop-blur-md">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-amber-500/20 pb-4">
               <div className="flex items-center gap-3">
-                <PmLogo className="w-12 h-12" />
+                <PmLogo className="h-12 w-auto shrink-0" />
                 <div>
                   <span className="text-[10px] text-amber-400 font-mono tracking-widest uppercase font-bold block">
                     TREASURE HOMES ACCREDITED PRESENTATION SUITE

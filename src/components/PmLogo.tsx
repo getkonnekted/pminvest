@@ -10,31 +10,34 @@ interface PmLogoProps {
   imageUrl?: string;
 }
 
-// Official Platform Logo: 3D Architectural Monogram with Emerald, Sapphire & Gold Facets
+// Official Platform Logo: Clean transparent PM Invest logo without any background
 export const PLATFORM_LOGO_IMAGE = '/assets/pm-logo-official.png';
+export const PLATFORM_LOGO_FULL = '/assets/pm-logo-full.png';
 
 export const PmLogo: React.FC<PmLogoProps> = ({ 
-  className = "w-10 h-10", 
+  className = "h-10 w-auto", 
   size,
   showText = false,
   textColor = "text-white",
   subtextColor = "text-slate-400",
+  variant = 'mark',
   imageUrl
 }) => {
   const [imgError, setImgError] = useState(false);
-  const activeImage = !imgError ? (imageUrl || PLATFORM_LOGO_IMAGE) : null;
+  const defaultImg = variant === 'full' ? PLATFORM_LOGO_FULL : PLATFORM_LOGO_IMAGE;
+  const activeImage = !imgError ? (imageUrl || defaultImg) : null;
 
   return (
     <div className="inline-flex items-center gap-3">
       {activeImage ? (
         <div 
-          className={`shrink-0 relative overflow-hidden rounded-[22%] bg-[#07090E] border border-[#B8964E]/35 shadow-md flex items-center justify-center transition-all duration-300 hover:border-[#D4AF37] hover:shadow-[0_0_16px_rgba(212,175,55,0.3)] ${className}`}
-          style={size ? { width: size, height: size } : undefined}
+          className={`shrink-0 flex items-center justify-center ${className}`}
+          style={size ? { height: size, width: 'auto' } : undefined}
         >
           <img
             src={activeImage}
-            alt="PM Invest Official Architectural Logo"
-            className="w-full h-full object-contain select-none"
+            alt="PM Invest Official Logo"
+            className="h-full w-auto object-contain select-none block"
             loading="eager"
             decoding="async"
             onError={() => setImgError(true)}
@@ -42,8 +45,8 @@ export const PmLogo: React.FC<PmLogoProps> = ({
         </div>
       ) : (
         <div 
-          className={`shrink-0 rounded-xl bg-[#07090E] border border-[#B8964E]/40 flex items-center justify-center font-mono font-black text-xs text-[#D4AF37] ${className}`}
-          style={size ? { width: size, height: size } : undefined}
+          className={`shrink-0 flex items-center justify-center font-mono font-black text-xs text-[#0D8E5B] ${className}`}
+          style={size ? { height: size, width: 'auto' } : undefined}
         >
           PM
         </div>

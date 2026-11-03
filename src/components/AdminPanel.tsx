@@ -333,7 +333,7 @@ export const AdminPanel: React.FC = () => {
       {/* Admin Action Bar */}
       <div className="mb-6 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
         <div className="flex items-center gap-3">
-          <PmLogo className="w-10 h-10" />
+          <PmLogo className="h-11 sm:h-12 w-auto shrink-0" />
           <div>
             <span className="text-[10px] text-amber-600 font-mono tracking-widest block uppercase font-extrabold">Treasure Homes Control Centre</span>
             <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">

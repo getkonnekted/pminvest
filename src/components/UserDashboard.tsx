@@ -646,7 +646,7 @@ export const UserDashboard: React.FC = () => {
           <div className="mt-3 pt-3 border-t border-amber-500/15 animate-fadeIn">
             <div className="px-1 mb-2.5 flex items-center justify-between text-[11px] font-mono text-slate-400">
               <div className="flex items-center gap-2">
-                <PmLogo className="w-5 h-5" />
+                <PmLogo className="h-6 w-auto shrink-0" />
                 <span className="font-bold text-amber-300 uppercase tracking-wider">PM Invest Menus</span>
               </div>
               <div className="flex items-center gap-2">

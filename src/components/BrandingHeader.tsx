@@ -30,7 +30,7 @@ export const BrandingHeader: React.FC = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4">
         {/* Zone 1: Brand Wordmark */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
-          <PmLogo className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 drop-shadow-sm" />
+          <PmLogo className="h-10 sm:h-12 w-auto shrink-0" />
           <div className="flex flex-col min-w-0">
             <span className={`text-xs sm:text-base font-black tracking-wider sm:tracking-widest uppercase font-mono truncate ${isChampagne ? 'text-slate-950' : 'text-[#FAF8F5]'}`}>
               PM INVEST <span className="text-[#B8964E]">·</span> TREASURE HOMES
