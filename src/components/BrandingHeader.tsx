@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useAppState } from '../context/StateContext';
 import { PmLogo } from './PmLogo';
-import { WHATSAPP_COMMUNITY_URL, TELEGRAM_COMMUNITY_URL } from './CommunityBanner';
+import { WHATSAPP_COMMUNITY_URL, WHATSAPP_SUPPORT_URL, TELEGRAM_COMMUNITY_URL } from './CommunityBanner';
 import { WhatsAppGoldIcon, TelegramGoldIcon } from './CommunityIcons';
 import { LiveReserveCounter } from './LiveReserveCounter';
 import { ThemeToggle } from './ThemeToggle';
@@ -88,6 +88,7 @@ export const BrandingHeader: React.FC = () => {
 
 export const LegalDisclosures: React.FC = () => {
   const { isChampagne } = useTheme();
+  const { currentUser } = useAppState();
 
   return (
     <footer className={`w-full ${isChampagne ? 'bg-[#ede5d8] border-t border-[#c5a059]/30 text-slate-700' : 'bg-[#06080e] border-t border-amber-500/20 text-slate-400'} py-12 px-4 text-xs font-sans`}>
@@ -106,39 +107,41 @@ export const LegalDisclosures: React.FC = () => {
         <div>
           <h4 className={`text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-wider mb-3`}>OFFICIAL INVESTOR COMMUNITY</h4>
           <p className={`leading-relaxed mb-3 ${isChampagne ? 'text-slate-700' : 'text-slate-300'}`}>
-            Join our verified groups for daily payout alerts, announcements, land allocations, and 24/7 friendly support.
+            Join our verified community for daily payout alerts, announcements, land allocations, and proof of deeds.
           </p>
           <div className="space-y-2 mt-3">
-            <a
-              href={WHATSAPP_COMMUNITY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex items-center justify-between p-2.5 rounded-xl ${isChampagne ? 'bg-white hover:bg-[#fbf9f4] border border-[#c5a059]/35 text-slate-800' : 'bg-[#0c101c] hover:bg-[#111728] border border-amber-500/20 text-slate-200'} transition-colors group`}
-            >
-              <div className="flex items-center gap-2.5">
-                <WhatsAppGoldIcon className="w-5 h-5 shrink-0" />
-                <div className="flex flex-col text-left">
-                  <span className={`font-semibold text-xs ${isChampagne ? 'text-slate-950' : 'text-white'}`}>Join WhatsApp Group</span>
-                  <span className={`text-[11px] ${isChampagne ? 'text-slate-500' : 'text-slate-400'}`}>Official Community &amp; Updates</span>
-                </div>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-500" />
-            </a>
             <a
               href={TELEGRAM_COMMUNITY_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex items-center justify-between p-2.5 rounded-xl ${isChampagne ? 'bg-white hover:bg-[#fbf9f4] border border-[#c5a059]/35 text-slate-800' : 'bg-[#0c101c] hover:bg-[#111728] border border-amber-500/20 text-slate-200'} transition-colors group`}
+              className={`flex items-center justify-between p-2.5 rounded-xl ${isChampagne ? 'bg-white hover:bg-[#fbf9f4] border border-sky-400/40 text-slate-800' : 'bg-gradient-to-r from-[#0c1626] to-[#0c101c] hover:bg-[#111e33] border border-sky-500/35 text-slate-200'} transition-colors group shadow-sm`}
             >
               <div className="flex items-center gap-2.5">
                 <TelegramGoldIcon className="w-5 h-5 shrink-0" />
                 <div className="flex flex-col text-left">
-                  <span className={`font-semibold text-xs ${isChampagne ? 'text-slate-950' : 'text-white'}`}>Join Telegram Channel</span>
-                  <span className={`text-[11px] ${isChampagne ? 'text-slate-500' : 'text-slate-400'}`}>Official Announcements &amp; Payouts</span>
+                  <span className={`font-bold text-xs ${isChampagne ? 'text-slate-950' : 'text-white'}`}>
+                    Join Official Telegram
+                  </span>
                 </div>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-500" />
             </a>
+
+            {currentUser && (
+              <a
+                href={WHATSAPP_SUPPORT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex items-center justify-between p-2.5 rounded-xl ${isChampagne ? 'bg-white hover:bg-[#fbf9f4] border border-[#c5a059]/35 text-slate-800' : 'bg-[#0c101c] hover:bg-[#111728] border border-emerald-500/30 text-slate-200'} transition-colors group`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <WhatsAppGoldIcon className="w-5 h-5 shrink-0" />
+                  <div className="flex flex-col text-left">
+                    <span className={`font-semibold text-xs ${isChampagne ? 'text-slate-950' : 'text-white'}`}>Chat on WhatsApp</span>
+                    <span className={`text-[11px] ${isChampagne ? 'text-slate-500' : 'text-slate-400'}`}>1-on-1 Account Concierge</span>
+                  </div>
+                </div>
+              </a>
+            )}
           </div>
         </div>
 

@@ -48,13 +48,15 @@ import { NIGERIAN_BANKS, resolveNigerianAccount } from '../lib/paystack';
 import { PmLogo } from './PmLogo';
 import { PayoutCountdown } from './PayoutCountdown';
 import { InvestmentPayoutButton } from './InvestmentPayoutButton';
-import { CommunityBanner, WHATSAPP_COMMUNITY_URL } from './CommunityBanner';
+import { CommunityBanner, WHATSAPP_COMMUNITY_URL, WHATSAPP_SUPPORT_URL } from './CommunityBanner';
 import { UaeDeedModal } from './UaeDeedModal';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 import { InsufficientFundsModal } from './InsufficientFundsModal';
 import { MultilingualPitchModal } from './MultilingualPitchModal';
 import { PWAInstallButton } from './PWAInstallButton';
 import { UaeFlag } from './UaeFlag';
+import { LiveTradingSimulationCard } from './LiveTradingSimulationCard';
+import { LivePropertyTradingModal } from './LivePropertyTradingModal';
 import { recordInvestorProtectionEvent } from '../lib/supabase';
 import { useSupabaseSync } from '../hooks/useSupabaseSync';
 import { formatPhoneDisplay, getWhatsAppStatusInfo } from '../lib/phoneSanitizer';
@@ -139,7 +141,7 @@ export const UserDashboard: React.FC = () => {
     pendingQueueLength 
   } = useSupabaseSync();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'finance' | 'referrals' | 'kyc'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'invest' | 'finance' | 'referrals'>('overview');
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isRefreshingInvestments, setIsRefreshingInvestments] = useState<boolean>(false);
 
@@ -158,7 +160,7 @@ export const UserDashboard: React.FC = () => {
 
   // Dashboard Menu Items for Hamburger & Tab Navigation
   const menuItems: {
-    id: 'overview' | 'invest' | 'finance' | 'referrals' | 'kyc';
+    id: 'overview' | 'invest' | 'finance' | 'referrals';
     label: string;
     description: string;
     icon: React.ComponentType<{ className?: string }>;
@@ -189,19 +191,6 @@ export const UserDashboard: React.FC = () => {
       description: 'Invite institutional co-investors and earn 7.5% weekly',
       icon: Users,
       badge: <span className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-sm">7.5%</span>
-    },
-    {
-      id: 'kyc',
-      label: 'Identity Verification',
-      description: 'Verify your ID for fast bank withdrawals',
-      icon: FileText,
-      badge: currentUser?.kycStatus === 'verified' ? (
-        <span className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded-sm uppercase">Verified</span>
-      ) : currentUser?.kycStatus === 'pending' ? (
-        <span className="border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded-sm uppercase">Pending</span>
-      ) : (
-        <span className="border border-slate-700 bg-slate-800 text-slate-400 text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded-sm uppercase">Unverified</span>
-      )
     }
   ];
   
@@ -255,10 +244,8 @@ export const UserDashboard: React.FC = () => {
     }
   }, []);
 
-  // KYC state
-  const [kycName, setKycName] = useState<string>(currentUser?.name || '');
-  const [kycType, setKycType] = useState<string>('National ID Card');
-  const [kycNumber, setKycNumber] = useState<string>('');
+  // Candlestick Trading Simulation Terminal State
+  const [isTradingTerminalOpen, setIsTradingTerminalOpen] = useState<boolean>(false);
 
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -440,11 +427,6 @@ export const UserDashboard: React.FC = () => {
     }
   };
 
-  const handleKycSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    submitKyc(kycName, kycType, kycNumber);
-  };
-
   const [investingPlanId, setInvestingPlanId] = useState<string | null>(null);
   const [justActivatedPlanId, setJustActivatedPlanId] = useState<string | null>(null);
   const [activatedPlanModal, setActivatedPlanModal] = useState<{ plan: InvestmentPlan; nextPayoutDate: string } | null>(null);
@@ -519,25 +501,6 @@ export const UserDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* KYC Alert banner if unverified */}
-      {currentUser.kycStatus === 'unverified' && (
-        <div className="mb-5 bg-gradient-to-r from-[#141006] via-[#0d0f17] to-[#0c101c] border border-amber-500/35 text-amber-200 px-4 py-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xl">
-          <div className="flex items-start gap-2.5">
-            <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-[#f7ecd5] text-sm">Please Verify Your ID</p>
-              <p className="text-slate-400 mt-0.5">Verify your ID so you can withdraw money to your bank account anytime without clearance delays.</p>
-            </div>
-          </div>
-          <button 
-            onClick={() => setActiveTab('kyc')}
-            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-4 py-2 rounded-xl transition-all self-start sm:self-auto shrink-0 text-xs shadow-md shadow-amber-500/10 cursor-pointer active:scale-95"
-            id="btn_kyc_alert_action"
-          >
-            Verify Now
-          </button>
-        </div>
-      )}
 
       {/* Real Investor vs Unfunded Lead Status Callout */}
       {isRealInvestor ? (
@@ -765,6 +728,13 @@ export const UserDashboard: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Live Real Estate Liquidity & Yield Candlestick Ticker */}
+          <LiveTradingSimulationCard 
+            variant="compact"
+            onExpandTerminal={() => setIsTradingTerminalOpen(true)}
+            className="border-amber-500/25 bg-gradient-to-r from-[#0c101c] via-[#080c16] to-[#0c101c] shadow-xl"
+          />
 
           {/* Active Investments Registry */}
           <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#070a12] border border-amber-500/25 rounded-2xl p-6 shadow-2xl relative overflow-hidden backdrop-blur-md">
@@ -1135,6 +1105,25 @@ export const UserDashboard: React.FC = () => {
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
               <span>Backed by <strong className="text-amber-300">Dubai Land Department (DLD)</strong> Title Deeds &amp; Sovereign SPV Trust</span>
             </div>
+          </div>
+
+          {/* Real-time Candlestick Trading & Yield Simulation Terminal */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse" />
+                <h4 className="text-sm font-black text-[#f7ecd5] uppercase tracking-wider font-mono">
+                  Live Candlestick Trading &amp; Yield Simulation
+                </h4>
+              </div>
+              <span className="text-[11px] text-amber-400 font-mono hidden sm:inline">
+                Real-time Asset Liquidity Index · UAE-REIT / NGN
+              </span>
+            </div>
+            <LiveTradingSimulationCard 
+              onExpandTerminal={() => setIsTradingTerminalOpen(true)}
+              className="border-amber-500/25 bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] shadow-2xl"
+            />
           </div>
 
           {(!isDbLoaded || supabaseStatus === 'loading' || isRefreshingInvestments) ? (
@@ -1623,6 +1612,56 @@ export const UserDashboard: React.FC = () => {
                 ))}
               </div>
             )}
+
+            {/* Active WhatsApp Number & Verified Dispatch Channel Card */}
+            <div className="bg-[#06080e] border border-amber-500/25 rounded-2xl p-5 space-y-3.5 shadow-xl">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-[#f7ecd5] uppercase tracking-wider font-mono">
+                      Active WhatsApp Dispatch Channel
+                    </h4>
+                    <p className="text-[10px] text-slate-400">
+                      Official phone number designated for automated Friday distributions &amp; official deeds
+                    </p>
+                  </div>
+                </div>
+                {(() => {
+                  const waInfo = getWhatsAppStatusInfo(currentUser.whatsappStatus);
+                  return (
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border ${waInfo.badgeClass}`}>
+                      <span>{waInfo.icon}</span>
+                      <span>{waInfo.label}</span>
+                    </span>
+                  );
+                })()}
+              </div>
+
+              <div className="bg-[#0b0f19] border border-slate-800 p-3.5 rounded-xl flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <span className="text-[10px] text-slate-400 font-mono block">Registered Active WhatsApp</span>
+                  <span className="text-sm font-bold text-white font-mono mt-0.5 block">
+                    {formatPhoneDisplay(currentUser.phone)}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] font-mono text-emerald-400 block font-semibold">Priority Delivery Channel</span>
+                  <span className="text-[11px] text-slate-300 font-mono">Encrypted 256-bit</span>
+                </div>
+              </div>
+
+              {/* Clear Value Proposition */}
+              <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="text-xs text-slate-300 leading-relaxed">
+                  <strong className="text-amber-300 block font-semibold mb-0.5">Value Guarantee:</strong>
+                  Receive instant Friday yield receipts and deed documents directly to your WhatsApp inbox every Friday at 12:00 PM without manual follow-up.
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1671,15 +1710,14 @@ export const UserDashboard: React.FC = () => {
               </button>
 
               <a 
-                href={WHATSAPP_COMMUNITY_URL}
+                href={WHATSAPP_SUPPORT_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/40 text-emerald-300 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 shadow-sm transition-all cursor-pointer active:scale-95"
-                title="Join Official WhatsApp Group for live daily updates"
-                id="btn_user_join_whatsapp_group"
+                title="Chat with Dedicated WhatsApp Account Concierge"
+                id="btn_user_chat_whatsapp_advisor"
               >
-                <span>Join Official WhatsApp Group</span>
-                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Chat with Advisor on WhatsApp</span>
               </a>
             </div>
           </div>
@@ -1751,176 +1789,6 @@ export const UserDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* KYC TAB */}
-      {activeTab === 'kyc' && (
-        <div className="max-w-2xl mx-auto bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl space-y-6 backdrop-blur-md">
-          <div className="border-b border-amber-500/20 pb-3">
-            <h3 className="text-base font-bold text-[#f7ecd5] uppercase tracking-wider flex items-center gap-2 font-mono">
-              <ShieldCheck className="w-5 h-5 text-amber-400" />
-              Verify Your Identity
-            </h3>
-            <p className="text-xs text-slate-400 mt-1">
-              We verify every investor to protect your money and make sure your bank withdrawals are sent to the right person.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div className="bg-[#06080e] border border-amber-500/20 p-4 rounded-xl shadow-inner">
-              <span className="text-[10px] text-slate-400 font-mono block">Status</span>
-              <span className={`text-xs font-bold uppercase tracking-wider mt-1 block font-mono ${
-                currentUser.kycStatus === 'verified' ? 'text-emerald-400 font-bold' :
-                currentUser.kycStatus === 'pending' ? 'text-amber-400 font-bold animate-pulse' :
-                currentUser.kycStatus === 'rejected' ? 'text-rose-400 font-bold' :
-                'text-slate-400 font-bold'
-              }`}>
-                {currentUser.kycStatus}
-              </span>
-            </div>
-
-            <div className="bg-[#06080e] border border-amber-500/20 p-4 rounded-xl shadow-inner">
-              <span className="text-[10px] text-slate-400 font-mono block">Daily Clearance Limit</span>
-              <span className="text-xs font-bold text-white mt-1 block font-mono">
-                {currentUser.kycStatus === 'verified' ? '₦1,000,000' : '₦100,000'}
-              </span>
-            </div>
-
-            <div className="bg-[#06080e] border border-amber-500/20 p-4 rounded-xl shadow-inner">
-              <span className="text-[10px] text-slate-400 font-mono block">Verification Speed</span>
-              <span className="text-xs font-bold text-amber-400 mt-1 block font-sans">
-                {currentUser.kycStatus === 'verified' ? 'Priority 2 Hours' : 'Standard 24-48 Hours'}
-              </span>
-            </div>
-          </div>
-
-          {currentUser.kycStatus === 'unverified' || currentUser.kycStatus === 'rejected' ? (
-            <form onSubmit={handleKycSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs text-slate-400 font-medium mb-1">Full Legal Name</label>
-                  <input 
-                    type="text" 
-                    value={kycName}
-                    onChange={(e) => setKycName(e.target.value)}
-                    placeholder="Same as document"
-                    className="w-full bg-[#06080e] border border-amber-500/30 rounded-xl py-2 px-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs text-slate-400 font-medium mb-1">Identification Document Type</label>
-                  <select 
-                    value={kycType}
-                    onChange={(e) => setKycType(e.target.value)}
-                    className="w-full bg-[#06080e] border border-amber-500/30 rounded-xl py-2 px-3 text-sm text-slate-100 focus:outline-none focus:border-amber-400"
-                  >
-                    <option>National ID Card (NIN)</option>
-                    <option>International Passport</option>
-                    <option>Driver's License</option>
-                    <option>Voters Card</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 font-medium mb-1">Document Number / Unique ID</label>
-                <input 
-                  type="text" 
-                  value={kycNumber}
-                  onChange={(e) => setKycNumber(e.target.value)}
-                  placeholder="e.g. NIN-84739284729"
-                  className="w-full bg-[#06080e] border border-amber-500/30 rounded-xl py-2 px-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400 font-mono"
-                  required
-                />
-              </div>
-
-              <div className="bg-[#06080e] p-5 rounded-xl border border-dashed border-amber-500/30 text-center space-y-2">
-                <UploadCloud className="w-7 h-7 text-amber-400 mx-auto" />
-                <p className="text-xs text-[#f7ecd5] font-semibold">Upload Photo of ID Document</p>
-                <p className="text-[10px] text-slate-400">Please attach a clear photo or screenshot of your ID card.</p>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md shadow-amber-500/10 cursor-pointer active:scale-95"
-                id="btn_submit_kyc"
-              >
-                Submit My ID for Verification
-              </button>
-            </form>
-          ) : currentUser.kycStatus === 'pending' ? (
-            <div className="bg-[#171206] border border-amber-500/35 p-6 rounded-2xl text-center space-y-3">
-              <Clock className="w-8 h-8 text-amber-400 mx-auto animate-pulse" />
-              <h4 className="text-sm font-bold text-[#f7ecd5]">Under Verification Review</h4>
-              <p className="text-xs text-slate-300 max-w-md mx-auto">
-                Thank you. Your details ({currentUser.kycDetails?.idType}: {currentUser.kycDetails?.idNumber}) are being audited by the Treasure Homes Compliance team.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-[#061811] border border-emerald-500/35 p-6 rounded-2xl text-center space-y-3">
-              <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
-              <h4 className="text-sm font-bold text-emerald-300">Identity Verified</h4>
-              <p className="text-xs text-slate-300 max-w-md mx-auto">
-                Excellent. Your account is fully compliant under Treasure Homes regulatory mandates. Standard limit of ₦1,000,000/day is unlocked.
-              </p>
-              <div className="text-[11px] font-mono text-slate-200 bg-[#06080e] p-4 rounded-xl border border-emerald-500/20 inline-block text-left text-xs">
-                <p>• Verified Legal Name: {currentUser.kycDetails?.fullName}</p>
-                <p>• Verified ID: {currentUser.kycDetails?.idType} ({currentUser.kycDetails?.idNumber})</p>
-              </div>
-            </div>
-          )}
-
-          {/* Active WhatsApp Number & Verified Dispatch Channel Card */}
-          <div className="bg-[#06080e] border border-amber-500/25 rounded-2xl p-5 space-y-3.5 shadow-xl">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                  <MessageSquare className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-[#f7ecd5] uppercase tracking-wider font-mono">
-                    Active WhatsApp Dispatch Channel
-                  </h4>
-                  <p className="text-[10px] text-slate-400">
-                    Official phone number designated for automated Friday distributions &amp; official deeds
-                  </p>
-                </div>
-              </div>
-              {(() => {
-                const waInfo = getWhatsAppStatusInfo(currentUser.whatsappStatus);
-                return (
-                  <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border ${waInfo.badgeClass}`}>
-                    <span>{waInfo.icon}</span>
-                    <span>{waInfo.label}</span>
-                  </span>
-                );
-              })()}
-            </div>
-
-            <div className="bg-[#0b0f19] border border-slate-800 p-3.5 rounded-xl flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <span className="text-[10px] text-slate-400 font-mono block">Registered Active WhatsApp</span>
-                <span className="text-sm font-bold text-white font-mono mt-0.5 block">
-                  {formatPhoneDisplay(currentUser.phone)}
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-[9px] font-mono text-emerald-400 block font-semibold">Priority Delivery Channel</span>
-                <span className="text-[11px] text-slate-300 font-mono">Encrypted 256-bit</span>
-              </div>
-            </div>
-
-            {/* Clear Value Proposition */}
-            <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5">
-              <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <div className="text-xs text-slate-300 leading-relaxed">
-                <strong className="text-amber-300 block font-semibold mb-0.5">Value Guarantee:</strong>
-                Receive instant Friday yield receipts and deed documents directly to your WhatsApp inbox every Friday at 12:00 PM without manual follow-up.
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
 
       {/* Investment FAQ Accordion Section */}
@@ -2140,6 +2008,17 @@ export const UserDashboard: React.FC = () => {
         marketerName={currentUser.name}
         referralCode={currentUser.referralCode}
         referralLink={typeof window !== 'undefined' ? `${window.location.origin}/?ref=${currentUser.referralCode}` : `https://treasurehomes.ng/?ref=${currentUser.referralCode}`}
+      />
+
+      {/* Live Property Candlestick Trading Terminal Modal */}
+      <LivePropertyTradingModal
+        isOpen={isTradingTerminalOpen}
+        onClose={() => setIsTradingTerminalOpen(false)}
+        userInvestments={activeInvestments}
+        onExplorePlans={() => {
+          setIsTradingTerminalOpen(false);
+          setActiveTab('invest');
+        }}
       />
     </div>
   );

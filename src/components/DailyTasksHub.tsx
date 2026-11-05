@@ -34,7 +34,7 @@ import { useAppState } from '../context/StateContext';
 import { DailyTask } from '../types';
 import { getWatMillisecondsUntilMidnight, formatWatCountdown, getWatDate } from '../lib/watTime';
 import { MultilingualPitchModal } from './MultilingualPitchModal';
-import { WHATSAPP_COMMUNITY_URL } from './CommunityBanner';
+import { WHATSAPP_COMMUNITY_URL, WHATSAPP_SUPPORT_URL } from './CommunityBanner';
 
 export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRegisterModal?: () => void }> = ({ 
   onNavigateToInvest,
@@ -677,13 +677,14 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
 
         {/* NATIVE ONE-TAP SHARING TOOLS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 my-4">
-          {/* Join Official WhatsApp Group */}
+          {/* Direct 1-on-1 WhatsApp Concierge */}
           <a
-            href={WHATSAPP_COMMUNITY_URL}
+            href={WHATSAPP_SUPPORT_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="bg-[#081310] hover:bg-[#0c1f19] border border-emerald-500/50 text-emerald-200 p-4 rounded-xl flex items-center justify-between transition-all cursor-pointer group text-left shadow-lg hover:border-emerald-400"
-            id="btn_join_whatsapp_group_tasks"
+            id="btn_chat_whatsapp_tasks"
+            title="Chat 1-on-1 with Dedicated Account Concierge"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-[#25D366] text-slate-950 flex items-center justify-center font-bold text-sm shadow-xs">
@@ -691,10 +692,10 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
               </div>
               <div>
                 <span className="font-bold text-xs text-white block group-hover:text-emerald-300">
-                  Join WhatsApp Group
+                  Chat on WhatsApp
                 </span>
                 <span className="text-[10px] text-slate-400 block">
-                  Official community &amp; alerts
+                  1-on-1 Account Concierge
                 </span>
               </div>
             </div>

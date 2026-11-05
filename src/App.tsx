@@ -44,7 +44,7 @@ import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { UaeFlag } from './components/UaeFlag';
 import { PayoutCountdown } from './components/PayoutCountdown';
-import { WHATSAPP_COMMUNITY_URL } from './components/CommunityBanner';
+import { WHATSAPP_COMMUNITY_URL, WHATSAPP_SUPPORT_URL, TELEGRAM_COMMUNITY_URL } from './components/CommunityBanner';
 import { sanitizeAndValidatePhone } from './lib/phoneSanitizer';
 import { UaeDeedModal } from './components/UaeDeedModal';
 
@@ -343,23 +343,24 @@ function MainAppContent() {
               </div>
             </div>
 
-            {/* Official Investor Community Links */}
+            {/* Official Investor Community Links: Prioritized Telegram Channel & Registration Incentive */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 pt-1">
               <a
-                href={WHATSAPP_COMMUNITY_URL}
+                href={TELEGRAM_COMMUNITY_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex items-center justify-center gap-2 ${isChampagne ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/40 text-emerald-300'} border text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer`}
+                className={`inline-flex items-center justify-center gap-2 ${isChampagne ? 'bg-sky-600 hover:bg-sky-700 text-white' : 'bg-gradient-to-r from-[#0088cc] to-[#229ED9] hover:from-[#0077b5] hover:to-[#1d8cbf] text-white border border-sky-400/30'} text-xs font-black px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer`}
+                id="btn_hero_join_telegram"
+                title="Join Official Telegram Community for Live Friday Alerts"
               >
-                <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Official WhatsApp Investor Group →</span>
+                <span>⚡ Join Telegram Community</span>
               </a>
 
               <a
                 href="#properties_catalog"
                 className={`inline-flex items-center justify-center gap-1.5 text-xs ${isChampagne ? 'text-[#9C7B38] hover:text-[#B8964E]' : 'text-[#D4AF37] hover:text-amber-300'} font-mono font-bold hover:underline py-1.5 px-1 cursor-pointer text-center`}
               >
-                <span>Explore All 6 Properties ↓</span>
+                <span>Explore Properties</span>
               </a>
             </div>
           </div>
