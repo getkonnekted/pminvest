@@ -49,7 +49,7 @@ import {
   Download,
   FileSpreadsheet
 } from 'lucide-react';
-import { User, INVESTMENT_PLANS } from '../types';
+import { User, UserInvestment, Transaction, INVESTMENT_PLANS } from '../types';
 import { PmLogo } from './PmLogo';
 import { LiveReserveCounter } from './LiveReserveCounter';
 import { ThemeToggle } from './ThemeToggle';
@@ -258,22 +258,54 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
-  // Stats
-  const activeInvestments = investments.filter(i => i.status === 'active');
-  const realActiveInvestments = activeInvestments.filter(i => !i.isMarketing);
-  const marketingActiveInvestments = activeInvestments.filter(i => !!i.isMarketing);
-
-  const realActiveCapital = realActiveInvestments.reduce((sum, i) => sum + i.cost, 0);
-  const marketingActiveCapital = marketingActiveInvestments.reduce((sum, i) => sum + i.cost, 0);
-  // Marketers amount does not count as capital: Total Capital Under Management is 100% Real Organic Investor Capital
-  const totalActiveCapital = realActiveCapital;
-
   // Helper: calculate total paid completed top-up deposits for any user
   const getUserPaidTopup = (userId: string) => {
     return transactions
       .filter(t => t.userId === userId && t.type === 'deposit' && t.status === 'completed' && !t.isMarketing)
       .reduce((sum, t) => sum + t.amount, 0);
   };
+
+  // Helper: verify if user is marketing account or administrator
+  const isMarketingOrAdminUser = (userId: string) => {
+    const u = users.find(user => user.id === userId);
+    return !u || u.isMarketingAccount === true || u.role === 'admin';
+  };
+
+  // Helper: verify if user is a genuine real paid investor with completed deposit
+  const isRealPaidUser = (userId: string) => {
+    const u = users.find(user => user.id === userId);
+    if (!u || u.isMarketingAccount || u.role === 'admin') return false;
+    return getUserPaidTopup(userId) > 0;
+  };
+
+  // An investment is a Marketer Demo Allocation if:
+  // 1. It is explicitly flagged isMarketing === true, OR
+  // 2. The user holding it is a marketing canvasser or admin
+  const isInvestmentMarketing = (inv: UserInvestment) => {
+    if (inv.isMarketing === true) return true;
+    return isMarketingOrAdminUser(inv.userId);
+  };
+
+  // An investment is Real Organic Capital IF AND ONLY IF:
+  // 1. It is NOT a marketer or admin allocation, AND
+  // 2. The user holding it has actually funded their account with real deposits (isRealPaidUser)
+  const isInvestmentRealPaid = (inv: UserInvestment) => {
+    if (isInvestmentMarketing(inv)) return false;
+    return isRealPaidUser(inv.userId);
+  };
+
+  // Stats
+  const activeInvestments = investments.filter(i => i.status === 'active');
+  const realActiveInvestments = activeInvestments.filter(i => isInvestmentRealPaid(i));
+  const marketingActiveInvestments = activeInvestments.filter(i => isInvestmentMarketing(i));
+  const testDemoInvestments = activeInvestments.filter(i => !isInvestmentRealPaid(i) && !isInvestmentMarketing(i));
+
+  const realActiveCapital = realActiveInvestments.reduce((sum, i) => sum + i.cost, 0);
+  const marketingActiveCapital = marketingActiveInvestments.reduce((sum, i) => sum + i.cost, 0);
+  const testDemoCapital = testDemoInvestments.reduce((sum, i) => sum + i.cost, 0);
+
+  // Marketers and unbacked test amounts do not count as capital: Total Capital Under Management is 100% Real Organic Investor Capital
+  const totalActiveCapital = realActiveCapital;
 
   // Real Inflow: Sums all real paid wallet top-ups across the platform
   const totalRealInflow = transactions
@@ -285,8 +317,16 @@ export const AdminPanel: React.FC = () => {
     .filter(u => !!u.isMarketingAccount)
     .reduce((sum, u) => sum + (u.marketingAllocatedBalance || 0), 0);
 
+  // Real payouts only count completed yields to verified real paid accounts
+  const isTransactionRealPaid = (t: Transaction) => {
+    if (t.isMarketing) return false;
+    const owner = users.find(u => u.id === t.userId);
+    if (!owner || owner.isMarketingAccount || owner.role === 'admin') return false;
+    return getUserPaidTopup(t.userId) > 0;
+  };
+
   const totalAccumulatedPayouts = transactions
-    .filter(t => (t.type === 'payout' || t.type === 'referral_bonus') && t.status === 'completed' && !t.isMarketing)
+    .filter(t => (t.type === 'payout' || t.type === 'referral_bonus') && t.status === 'completed' && isTransactionRealPaid(t))
     .reduce((sum, t) => sum + t.amount, 0);
 
   const pendingDeposits = transactions.filter(t => t.type === 'deposit' && t.status === 'pending');
@@ -556,6 +596,12 @@ export const AdminPanel: React.FC = () => {
                     <span className="font-mono text-slate-400 line-through">₦{marketingActiveCapital.toLocaleString()}</span>
                   </div>
                 )}
+                {testDemoCapital > 0 && (
+                  <div className="flex justify-between text-amber-600 font-medium" title="Test investments on unfunded accounts not backed by completed deposits">
+                    <span>Test Demo Alloc (Excluded):</span>
+                    <span className="font-mono text-amber-600 line-through">₦{testDemoCapital.toLocaleString()}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -616,8 +662,11 @@ export const AdminPanel: React.FC = () => {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
               {INVESTMENT_PLANS.map(plan => {
-                const realCount = investments.filter(i => i.planId === plan.id && i.status === 'active' && !i.isMarketing).length;
-                const marketingCount = investments.filter(i => i.planId === plan.id && i.status === 'active' && !!i.isMarketing).length;
+                const planInvestments = activeInvestments.filter(i => i.planId === plan.id);
+                const realCount = planInvestments.filter(i => isInvestmentRealPaid(i)).length;
+                const marketingCount = planInvestments.filter(i => isInvestmentMarketing(i)).length;
+                const testCount = planInvestments.filter(i => !isInvestmentRealPaid(i) && !isInvestmentMarketing(i)).length;
+                const totalExcludedDemo = marketingCount + testCount;
                 return (
                   <div key={plan.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-1">
                     <span className="font-bold text-slate-900 block">{plan.name}</span>
@@ -626,9 +675,9 @@ export const AdminPanel: React.FC = () => {
                       <span className="text-[10px] text-emerald-600 font-medium">Real: {realCount}</span>
                       <span className="font-bold text-slate-900">₦{(realCount * plan.cost).toLocaleString()}</span>
                     </div>
-                    {marketingCount > 0 && (
+                    {totalExcludedDemo > 0 && (
                       <span className="text-[9px] text-slate-400 font-mono block pt-0.5">
-                        +{marketingCount} demo (excluded)
+                        +{totalExcludedDemo} demo (excluded)
                       </span>
                     )}
                   </div>
