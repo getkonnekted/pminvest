@@ -47,7 +47,11 @@ import {
   ExternalLink,
   AlertCircle,
   Download,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ChevronDown,
+  ChevronUp,
+  LayoutGrid,
+  LayoutList
 } from 'lucide-react';
 import { User, UserInvestment, Transaction, INVESTMENT_PLANS } from '../types';
 import { PmLogo } from './PmLogo';
@@ -186,6 +190,11 @@ export const AdminPanel: React.FC = () => {
 
   // Manual Database Sync State
   const [isManualSyncingUsers, setIsManualSyncingUsers] = useState(false);
+
+  // Mobile / Desktop View Mode for Users List: 'auto' (cards on mobile, table on desktop), 'cards', or 'table'
+  const [userListDisplayMode, setUserListDisplayMode] = useState<'auto' | 'cards' | 'table'>('auto');
+  const [expandedUserActions, setExpandedUserActions] = useState<Record<string, boolean>>({});
+  const toggleUserActions = (id: string) => setExpandedUserActions(prev => ({ ...prev, [id]: !prev[id] }));
 
   const handleCreateUserSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -382,19 +391,19 @@ export const AdminPanel: React.FC = () => {
   return (
     <div className="w-full text-slate-800 p-1" id="admin_panel_container">
       {/* Admin Action Bar */}
-      <div className="mb-6 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <PmLogo className="h-11 sm:h-12 w-auto shrink-0" />
-          <div>
-            <span className="text-[10px] text-amber-600 font-mono tracking-widest block uppercase font-extrabold">Treasure Homes Control Centre</span>
-            <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">
+      <div className="mb-6 bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <PmLogo className="h-10 sm:h-12 w-auto shrink-0" />
+          <div className="min-w-0 flex-1">
+            <span className="text-[9px] sm:text-[10px] text-amber-600 font-mono tracking-widest block uppercase font-extrabold truncate">Treasure Homes Control Centre</span>
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900 uppercase tracking-wider truncate">
               PM Invest Master Dashboard
             </h2>
           </div>
         </div>
 
-        {/* Live Simulator Quick Trigger, Quick Account Creator, Broadcast Campaign & Theme Switcher */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Quick Simulator Trigger, Quick Account Creator, Broadcast Campaign & Theme Switcher */}
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-end">
           <ThemeToggle compact />
           <button
             type="button"
@@ -402,12 +411,13 @@ export const AdminPanel: React.FC = () => {
               setBroadcastInitialLeadId(null);
               setShowBroadcastModal(true);
             }}
-            className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold px-3.5 py-2 rounded-lg text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+            className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm cursor-pointer whitespace-nowrap"
             id="btn_admin_header_broadcast"
             title="Launch Broadcast Re-engagement campaign for unfunded leads"
           >
             <Share2 className="w-3.5 h-3.5" />
-            <span>Broadcast Re-engagement</span>
+            <span className="hidden sm:inline">Broadcast Re-engagement</span>
+            <span className="sm:hidden">Broadcast</span>
             {unfundedLeadsCount > 0 && (
               <span className="bg-slate-950 text-amber-400 font-mono text-[10px] px-1.5 py-0.2 rounded-full font-bold">
                 {unfundedLeadsCount}
@@ -420,10 +430,12 @@ export const AdminPanel: React.FC = () => {
               setCreateUserError(null);
               setShowCreateUserModal(true);
             }}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-lg text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer whitespace-nowrap active:scale-95"
             id="btn_admin_header_create_user"
           >
-            <UserPlus className="w-3.5 h-3.5" /> Create Account
+            <UserPlus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Create Account</span>
+            <span className="sm:hidden">New User</span>
           </button>
         </div>
       </div>
@@ -440,7 +452,7 @@ export const AdminPanel: React.FC = () => {
       )}
 
       {/* Admin sub-tabs */}
-      <div className="flex overflow-x-auto no-scrollbar pb-1 mb-6 border-b border-slate-200 gap-1 scroll-smooth">
+      <div className="flex overflow-x-auto no-scrollbar pb-1.5 mb-6 border-b border-slate-200 gap-1 scroll-smooth -mx-1 px-1 sm:mx-0 sm:px-0">
         <button
           onClick={() => { setAdminTab('analytics'); clearMessages(); }}
           className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
@@ -1611,59 +1623,61 @@ export const AdminPanel: React.FC = () => {
       {adminTab === 'users' && (
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
           {/* Header & Quick Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-100 pb-4">
             <div>
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-amber-500" />
                 <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider">
-                  Investor & Account Backend Controls
+                  Investor &amp; Account Backend Controls
                 </h3>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Register new accounts, adjust balances, modify roles, or deactivate & reactivate account access.
+                Register new accounts, adjust balances, modify roles, or deactivate &amp; reactivate account access.
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
-              <button
-                type="button"
-                onClick={async () => {
-                  setIsManualSyncingUsers(true);
-                  await refreshFromSupabase();
-                  setTimeout(() => setIsManualSyncingUsers(false), 500);
-                }}
-                disabled={isManualSyncingUsers}
-                className="bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold text-xs px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap active:scale-95 disabled:opacity-60"
-                title="Force refresh from Supabase database to verify deleted accounts and new registrations"
-                id="btn_admin_sync_users_database"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${isManualSyncingUsers ? 'animate-spin text-amber-600' : ''}`} />
-                <span>{isManualSyncingUsers ? 'Syncing...' : 'Sync Database'}</span>
-              </button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsManualSyncingUsers(true);
+                    await refreshFromSupabase();
+                    setTimeout(() => setIsManualSyncingUsers(false), 500);
+                  }}
+                  disabled={isManualSyncingUsers}
+                  className="flex-1 sm:flex-initial bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold text-xs px-3 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap active:scale-95 disabled:opacity-60"
+                  title="Force refresh from Supabase database to verify deleted accounts and new registrations"
+                  id="btn_admin_sync_users_database"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${isManualSyncingUsers ? 'animate-spin text-amber-600' : ''}`} />
+                  <span>{isManualSyncingUsers ? 'Syncing...' : 'Sync Database'}</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setShowLeadsExportModal(true)}
-                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 font-black text-xs px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap"
-                title="Export leads to CSV spreadsheet, WhatsApp broadcast lists, or vCard contacts"
-                id="btn_admin_open_leads_export_modal"
-              >
-                <Download className="w-4 h-4 text-slate-950 stroke-[2.5]" />
-                <span>Export Leads</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setShowLeadsExportModal(true)}
+                  className="flex-1 sm:flex-initial bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 font-black text-xs px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap"
+                  title="Export leads to CSV spreadsheet, WhatsApp broadcast lists, or vCard contacts"
+                  id="btn_admin_open_leads_export_modal"
+                >
+                  <Download className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                  <span>Export Leads</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setCreateUserError(null);
-                  setShowCreateUserModal(true);
-                }}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap active:scale-95"
-                id="btn_admin_open_create_user_modal"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>Create New Account</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateUserError(null);
+                    setShowCreateUserModal(true);
+                  }}
+                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap active:scale-95"
+                  id="btn_admin_open_create_user_modal"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Create Account</span>
+                </button>
+              </div>
 
               {/* Search Input */}
               <div className="relative w-full sm:w-64 text-xs">
@@ -1680,51 +1694,52 @@ export const AdminPanel: React.FC = () => {
           </div>
 
           {/* Quick Backend Summary Metrics Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 sm:p-3.5">
               <span className="text-[10px] font-mono font-bold text-slate-500 uppercase block">Total Accounts</span>
-              <span className="text-xl font-extrabold text-slate-900 font-mono mt-0.5 block">{users.length}</span>
+              <span className="text-lg sm:text-xl font-extrabold text-slate-900 font-mono mt-0.5 block">{users.length}</span>
               <span className="text-[10px] text-slate-400">All registered profiles</span>
             </div>
-            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3.5">
+            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3 sm:p-3.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold text-emerald-800 uppercase block">Verified Real Investors</span>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-[10px] font-mono font-bold text-emerald-800 uppercase block truncate">Real Investors</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               </div>
-              <span className="text-xl font-extrabold text-emerald-700 font-mono mt-0.5 block">{realPaidInvestorsCount}</span>
+              <span className="text-lg sm:text-xl font-extrabold text-emerald-700 font-mono mt-0.5 block">{realPaidInvestorsCount}</span>
               <span className="text-[10px] text-emerald-700 font-semibold block truncate">₦{totalRealInflow.toLocaleString()} Total Paid Inflow</span>
             </div>
-            <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5">
+            <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 sm:p-3.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold text-amber-800 uppercase block">Unfunded Leads</span>
-                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                <span className="text-[10px] font-mono font-bold text-amber-800 uppercase block truncate">Unfunded Leads</span>
+                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
               </div>
-              <span className="text-xl font-extrabold text-amber-700 font-mono mt-0.5 block">{unfundedLeadsCount}</span>
-              <span className="text-[10px] text-amber-600">Awaiting first wallet deposit</span>
+              <span className="text-lg sm:text-xl font-extrabold text-amber-700 font-mono mt-0.5 block">{unfundedLeadsCount}</span>
+              <span className="text-[10px] text-amber-600 block truncate">Awaiting first wallet deposit</span>
             </div>
-            <div className="bg-purple-50/70 border border-purple-200/80 rounded-xl p-3.5">
+            <div className="bg-purple-50/70 border border-purple-200/80 rounded-xl p-3 sm:p-3.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold text-purple-800 uppercase block">Marketing Canvassers</span>
-                <Zap className="w-3.5 h-3.5 text-purple-600" />
+                <span className="text-[10px] font-mono font-bold text-purple-800 uppercase block truncate">Marketing Team</span>
+                <Zap className="w-3.5 h-3.5 text-purple-600 shrink-0" />
               </div>
-              <span className="text-xl font-extrabold text-purple-800 font-mono mt-0.5 block">{marketingUsersCount}</span>
-              <span className="text-[10px] text-purple-700 truncate block">₦{totalMarketingAllocations.toLocaleString()} Demo Allocations</span>
+              <span className="text-lg sm:text-xl font-extrabold text-purple-800 font-mono mt-0.5 block">{marketingUsersCount}</span>
+              <span className="text-[10px] text-purple-700 truncate block">₦{totalMarketingAllocations.toLocaleString()} Demo Alloc</span>
             </div>
           </div>
 
-          {/* Filter Segment Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-100 text-xs">
-            <button
-              type="button"
-              onClick={() => setUserStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap ${
-                userStatusFilter === 'all'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              All Accounts ({users.length})
-            </button>
+          {/* Filter Segment Tabs & View Mode Switcher */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-2">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs -mx-1 px-1 sm:mx-0 sm:px-0">
+              <button
+                type="button"
+                onClick={() => setUserStatusFilter('all')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  userStatusFilter === 'all'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                All Accounts ({users.length})
+              </button>
             <button
               type="button"
               onClick={() => setUserStatusFilter('real_paid')}
@@ -1825,7 +1840,7 @@ export const AdminPanel: React.FC = () => {
             <button
               type="button"
               onClick={() => setUserStatusFilter('wa_missing')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 shrink-0 ${
                 userStatusFilter === 'wa_missing'
                   ? 'bg-rose-600 text-white shadow-xs'
                   : 'text-rose-700 hover:bg-rose-50'
@@ -1836,6 +1851,50 @@ export const AdminPanel: React.FC = () => {
               <span>Not on WA ({waMissingCount})</span>
             </button>
           </div>
+
+          {/* View Mode Switcher: Cards vs Table vs Auto */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0 self-start sm:self-auto">
+            <span className="text-[10px] font-mono uppercase text-slate-500 px-1 font-bold hidden md:inline">View:</span>
+            <button
+              type="button"
+              onClick={() => setUserListDisplayMode('auto')}
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                userListDisplayMode === 'auto'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+              title="Responsive: Cards on Mobile, Table on Desktop"
+            >
+              Auto
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserListDisplayMode('cards')}
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                userListDisplayMode === 'cards'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+              title="Card View (Mobile Optimized)"
+            >
+              <LayoutGrid className="w-3.5 h-3.5 text-amber-600" />
+              <span>Cards</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserListDisplayMode('table')}
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                userListDisplayMode === 'table'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+              title="Table View (Full Data Columns)"
+            >
+              <LayoutList className="w-3.5 h-3.5 text-slate-600" />
+              <span>Table</span>
+            </button>
+          </div>
+        </div>
 
           {/* Unfunded Leads Re-engagement Campaign Banner */}
           {userStatusFilter === 'unfunded' && unfundedLeadsCount > 0 && (
@@ -1895,8 +1954,10 @@ export const AdminPanel: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-sans text-slate-600">
+            <>
+              {/* DESKTOP TABLE VIEW (Full data density, wide columns) */}
+              <div className={userListDisplayMode === 'cards' ? 'hidden' : userListDisplayMode === 'table' ? 'overflow-x-auto' : 'hidden lg:block overflow-x-auto'}>
+                <table className="w-full text-left text-xs font-sans text-slate-600">
                 <thead>
                   <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
                     <th className="pb-2.5">Name & Contact</th>
@@ -2267,6 +2328,345 @@ export const AdminPanel: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* MOBILE INVESTOR CARDS VIEW (Clean, touch-friendly, no horizontal side-scroll) */}
+            <div className={userListDisplayMode === 'table' ? 'hidden' : userListDisplayMode === 'cards' ? 'space-y-3' : 'lg:hidden space-y-3'}>
+              {filteredUsers.map((u) => {
+                const uInvestments = investments.filter(inv => inv.userId === u.id);
+                const activeCount = uInvestments.filter(i => i.status === 'active').length;
+                const referralsCount = users.filter(usr => usr.referredByCode === u.referralCode).length;
+                const isExpanded = !!expandedUserActions[u.id];
+
+                return (
+                  <div 
+                    key={u.id} 
+                    className={`bg-white border rounded-2xl p-4 transition-all shadow-2xs space-y-3 ${
+                      u.isDeactivated 
+                        ? 'border-rose-200 bg-rose-50/20' 
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {/* Top Header: Identity & Status Badges */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className={`font-extrabold text-sm ${u.isDeactivated ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
+                            {u.name}
+                          </h4>
+                          {u.id === currentUser?.id && (
+                            <span className="text-[9px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded font-mono font-bold">YOU</span>
+                          )}
+                          {u.isMarketingAccount && (
+                            <span className="text-[9px] bg-purple-100 text-purple-800 border border-purple-200 px-1.5 py-0.5 rounded font-mono font-bold flex items-center gap-0.5 shadow-2xs">
+                              <Zap className="w-2.5 h-2.5 text-purple-600 fill-purple-600" />
+                              <span>MARKETER</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono mt-0.5 break-all">{u.email}</div>
+                      </div>
+
+                      {/* Status Badges */}
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold ${
+                          u.kycStatus === 'verified' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                          u.kycStatus === 'pending' ? 'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse' :
+                          'bg-slate-100 text-slate-500 border border-slate-200'
+                        }`}>
+                          KYC {u.kycStatus.toUpperCase()}
+                        </span>
+                        {u.isDeactivated ? (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-rose-100 text-rose-800 border border-rose-200 inline-flex items-center gap-0.5">
+                            <ShieldBan className="w-2.5 h-2.5 text-rose-600" /> DEACTIVATED
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-0.5">
+                            <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" /> ACTIVE
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Role & Segment Chip */}
+                    <div>
+                      {u.role === 'admin' ? (
+                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-extrabold bg-amber-100 text-amber-900 border border-amber-300 inline-flex items-center gap-1 shadow-2xs">
+                          <ShieldAlert className="w-3 h-3 text-amber-700" />
+                          ADMINISTRATOR
+                        </span>
+                      ) : u.isMarketingAccount ? (
+                        <div className="inline-flex items-center gap-1.5 flex-wrap">
+                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-extrabold bg-purple-100 text-purple-900 border border-purple-300 inline-flex items-center gap-1 shadow-2xs">
+                            <Zap className="w-3 h-3 text-purple-600 fill-purple-600" />
+                            MARKETING CANVASSER
+                          </span>
+                          {(u.marketingAllocatedBalance || 0) > 0 && (
+                            <span className="text-[10px] text-purple-700 font-mono font-bold">
+                              ₦{(u.marketingAllocatedBalance || 0).toLocaleString()} Demo
+                            </span>
+                          )}
+                        </div>
+                      ) : getUserPaidTopup(u.id) > 0 ? (
+                        <div className="inline-flex items-center gap-1.5 flex-wrap">
+                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300 inline-flex items-center gap-1 shadow-2xs">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            VERIFIED REAL INVESTOR
+                          </span>
+                          <span className="text-[10px] text-emerald-700 font-mono font-bold">
+                            ₦{getUserPaidTopup(u.id).toLocaleString()} Inflow
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold bg-amber-50 text-amber-900 border border-amber-300 inline-flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-amber-600" />
+                          UNFUNDED LEAD &bull; Awaiting First Deposit
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Phone & WhatsApp Interactive Section */}
+                    {u.phone ? (
+                      <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 space-y-2">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <a 
+                            href={`tel:${u.phone}`} 
+                            className="text-xs text-slate-900 font-mono font-bold hover:text-amber-600 flex items-center gap-1.5"
+                          >
+                            <span>{sanitizeAndValidatePhone(u.phone).flag}</span>
+                            <span>{formatPhoneDisplay(u.phone)}</span>
+                          </a>
+
+                          {(() => {
+                            const waStatus: WhatsAppStatus = u.whatsappStatus || 'pending';
+                            const info = getWhatsAppStatusInfo(waStatus);
+                            return (
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold border inline-flex items-center gap-1 ${info.bgLight}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${info.dotColor}`} />
+                                <span>{info.label}</span>
+                              </span>
+                            );
+                          })()}
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 gap-1.5 text-[10px]">
+                          <div className="flex items-center gap-1">
+                            {u.whatsappStatus !== 'verified' && (
+                              <button
+                                type="button"
+                                onClick={() => updateUserWhatsAppStatus(u.id, 'verified')}
+                                className="px-2 py-0.5 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-semibold cursor-pointer border border-emerald-300 transition-colors"
+                              >
+                                ✓ Verify
+                              </button>
+                            )}
+                            {u.whatsappStatus !== 'not_on_whatsapp' && (
+                              <button
+                                type="button"
+                                onClick={() => updateUserWhatsAppStatus(u.id, 'not_on_whatsapp')}
+                                className="px-2 py-0.5 rounded bg-rose-100 hover:bg-rose-200 text-rose-800 font-semibold cursor-pointer border border-rose-300 transition-colors"
+                              >
+                                ✕ Not WA
+                              </button>
+                            )}
+                          </div>
+
+                          <a
+                            href={`https://wa.me/${sanitizeAndValidatePhone(u.phone).e164.replace('+', '')}?text=${encodeURIComponent(`Hello ${u.name}, this is Treasure Homes PM Invest support team.`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1"
+                          >
+                            <MessageSquare className="w-3 h-3 text-emerald-600" />
+                            <span>Direct WhatsApp &rarr;</span>
+                          </a>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-rose-600 font-mono italic bg-rose-50/50 p-2 rounded-lg border border-rose-100">
+                        ⚠️ No phone number on record
+                      </div>
+                    )}
+
+                    {/* Balance & Stats Strip */}
+                    <div className="grid grid-cols-3 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/80 text-center">
+                      <div>
+                        <span className="text-[9px] font-mono uppercase text-slate-500 block">Balance</span>
+                        <span className="text-xs font-black font-mono text-slate-900 block truncate">
+                          ₦{u.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 1 })}
+                        </span>
+                        {u.isMarketingAccount && <span className="text-[8px] text-purple-600 block">Promo</span>}
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-mono uppercase text-slate-500 block">Downlines</span>
+                        <span className="text-xs font-bold font-mono text-slate-900 block">
+                          👥 {referralsCount}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-mono uppercase text-slate-500 block">Active Plans</span>
+                        <span className="text-xs font-bold font-mono text-slate-900 block">
+                          🏢 {activeCount}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Referral Codes Strip */}
+                    <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono px-1">
+                      <span>Code: <strong className="text-amber-600 font-bold">{u.referralCode}</strong></span>
+                      <span>Sponsor: {u.referredByCode ? <strong className="text-slate-700">{u.referredByCode}</strong> : <span className="text-slate-400">Direct / Root</span>}</span>
+                    </div>
+
+                    {/* Primary Action Buttons */}
+                    <div className="pt-1 border-t border-slate-100 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (currentUser?.role === 'admin') {
+                              sessionStorage.setItem('pm_original_admin_id', currentUser.id);
+                            }
+                            switchUser(u.id);
+                          }}
+                          className="w-full bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-900 border border-amber-300 py-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-amber-700" />
+                          <span>View Dashboard</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedEditUser(u);
+                            setEditUserName(u.name);
+                            setEditUserEmail(u.email);
+                            setEditUserPhone(u.phone || '');
+                            setEditUserWhatsappStatus(u.whatsappStatus || (u.phone ? 'pending' : 'not_on_whatsapp'));
+                            setEditUserBalance(String(u.walletBalance));
+                            setEditUserRole(u.role);
+                            setEditUserKyc(u.kycStatus);
+                            setEditUserIsDeactivated(!!u.isDeactivated);
+                            setEditUserIsMarketing(!!u.isMarketingAccount);
+                            setEditUserPassword('');
+                            setShowEditUserModal(true);
+                          }}
+                          className="w-full bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 border border-slate-300 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Edit Account</span>
+                        </button>
+                      </div>
+
+                      {/* Special Role Action */}
+                      {!u.isMarketingAccount && u.role !== 'admin' && getUserPaidTopup(u.id) === 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBroadcastInitialLeadId(u.id);
+                            setShowBroadcastModal(true);
+                          }}
+                          className="w-full bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 border border-emerald-300 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>WhatsApp Re-engagement Desk</span>
+                        </button>
+                      )}
+
+                      {u.isMarketingAccount && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMarketingTopUpUser(u);
+                              setMarketingTopUpAmount('115000');
+                              setShowMarketingTopUpModal(true);
+                            }}
+                            className="bg-purple-100 hover:bg-purple-200 active:scale-95 text-purple-900 border border-purple-300 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                          >
+                            <Zap className="w-3.5 h-3.5 text-purple-700" />
+                            <span>Top Up Demo</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => adminFastYieldMarketer(u.id)}
+                            className="bg-emerald-100 hover:bg-emerald-200 active:scale-95 text-emerald-900 border border-emerald-300 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                          >
+                            <span>⚡ +Fast Yield</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Secondary Controls Accordion */}
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleUserActions(u.id)}
+                          className="w-full py-1.5 text-[11px] text-slate-500 hover:text-slate-800 font-semibold flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                        >
+                          <span>{isExpanded ? 'Hide Extra Controls' : 'More Controls (Delete, Role, Deactivate)'}</span>
+                          {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        </button>
+
+                        {isExpanded && (
+                          <div className="pt-2 border-t border-dashed border-slate-200 grid grid-cols-2 gap-2 animate-fadeIn">
+                            {u.role !== 'admin' && (
+                              <button
+                                type="button"
+                                onClick={() => adminToggleMarketingStatus(u.id, !u.isMarketingAccount)}
+                                className="py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-colors flex items-center justify-center gap-1 bg-purple-50 text-purple-800 border-purple-300 cursor-pointer"
+                              >
+                                <Zap className="w-3 h-3 text-purple-600" />
+                                <span>{u.isMarketingAccount ? 'Make Investor' : 'Set Marketer'}</span>
+                              </button>
+                            )}
+
+                            {u.role !== 'admin' && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDeactivateModal(u)}
+                                className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
+                                  u.isDeactivated
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                    : 'bg-rose-50 text-rose-700 border-rose-300'
+                                }`}
+                              >
+                                {u.isDeactivated ? <UserCheck className="w-3 h-3" /> : <UserX className="w-3 h-3" />}
+                                <span>{u.isDeactivated ? 'Reactivate' : 'Deactivate'}</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => switchUser(u.id)}
+                              disabled={u.isDeactivated}
+                              className="py-1.5 px-2 rounded-lg text-[10px] font-bold border bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-300 flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>Switch Session</span>
+                            </button>
+
+                            {u.role !== 'admin' && u.id !== currentUser?.id && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setUserToDelete(u);
+                                  setDeleteConfirmationInput('');
+                                  setDeleteErrorMessage(null);
+                                }}
+                                className="py-1.5 px-2 rounded-lg text-[10px] font-bold border bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 flex items-center justify-center gap-1 cursor-pointer"
+                              >
+                                <Trash2 className="w-3 h-3 text-rose-600" />
+                                <span>Delete User</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
           )}
         </div>
       )}
