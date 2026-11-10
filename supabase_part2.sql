@@ -35,7 +35,7 @@ END;
 $$;
 
 -- Create view with live continuous dynamic reserve
-CREATE OR REPLACE VIEW public.settings_with_live_reserve AS
+CREATE OR REPLACE VIEW public.settings_with_live_reserve WITH (security_invoker = true) AS
 SELECT 
     id,
     public.get_live_continuous_liquidity_reserve() AS "liquidityReserve",

@@ -12,3 +12,4 @@ coverage/
 public/assets/aistudio/*.mp4
 public/assets/aistudio/*.webm
 public/assets/aistudio/*.mov
+*.zip

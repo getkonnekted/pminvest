@@ -45,7 +45,9 @@ import {
   Code2,
   Terminal,
   ExternalLink,
-  AlertCircle
+  AlertCircle,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 import { User, INVESTMENT_PLANS } from '../types';
 import { PmLogo } from './PmLogo';
@@ -53,6 +55,7 @@ import { LiveReserveCounter } from './LiveReserveCounter';
 import { ThemeToggle } from './ThemeToggle';
 import { AdminAuditLogsTab } from './AdminAuditLogsTab';
 import { AdminBroadcastReengagementModal } from './AdminBroadcastReengagementModal';
+import { AdminLeadsExportModal } from './AdminLeadsExportModal';
 import { testSupabaseConnection, recordAdminSecurityAudit } from '../lib/supabase';
 import { SUPABASE_CORE_SQL, FULL_SUPABASE_SQL } from '../data/supabaseSql';
 import { 
@@ -172,6 +175,9 @@ export const AdminPanel: React.FC = () => {
   // Broadcast Re-engagement for Unfunded Leads State
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [broadcastInitialLeadId, setBroadcastInitialLeadId] = useState<string | null>(null);
+
+  // Leads Export Modal State
+  const [showLeadsExportModal, setShowLeadsExportModal] = useState(false);
 
   // Manual Database Sync State
   const [isManualSyncingUsers, setIsManualSyncingUsers] = useState(false);
@@ -1552,6 +1558,17 @@ export const AdminPanel: React.FC = () => {
 
               <button
                 type="button"
+                onClick={() => setShowLeadsExportModal(true)}
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 font-black text-xs px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap"
+                title="Export leads to CSV spreadsheet, WhatsApp broadcast lists, or vCard contacts"
+                id="btn_admin_open_leads_export_modal"
+              >
+                <Download className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                <span>Export Leads</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => {
                   setCreateUserError(null);
                   setShowCreateUserModal(true);
@@ -1751,17 +1768,28 @@ export const AdminPanel: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setBroadcastInitialLeadId(null);
-                  setShowBroadcastModal(true);
-                }}
-                className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                <span>Launch Broadcast Desk</span>
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowLeadsExportModal(true)}
+                  className="bg-white hover:bg-slate-50 text-slate-800 border border-amber-300 font-bold px-3 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
+                  title="Export unfunded leads to CSV spreadsheet or WhatsApp numbers"
+                >
+                  <Download className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Export Leads ({unfundedLeadsCount})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBroadcastInitialLeadId(null);
+                    setShowBroadcastModal(true);
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>Launch Broadcast Desk</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -3794,6 +3822,17 @@ export const AdminPanel: React.FC = () => {
         properties={INVESTMENT_PLANS}
         initialLeadId={broadcastInitialLeadId}
         adminName={currentUser?.name || 'Treasure Homes Admin'}
+      />
+
+      {/* Leads & Investor CRM Data Export Modal */}
+      <AdminLeadsExportModal
+        isOpen={showLeadsExportModal}
+        onClose={() => setShowLeadsExportModal(false)}
+        users={users}
+        investments={investments}
+        transactions={transactions}
+        currentFilterLabel={userStatusFilter}
+        filteredUsers={filteredUsers}
       />
     </div>
   );

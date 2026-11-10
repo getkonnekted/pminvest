@@ -64,27 +64,7 @@ export const DEFAULT_DAILY_TASKS: DailyTask[] = [
       keyTakeaway: 'Rollover investors maximize weekly yields with a 3% increment on every payout rolled over.'
     }
   },
-  {
-    id: 'task_kyc_bounty',
-    title: 'KYC Identity Verification Bounty',
-    subtitle: 'One-time compliance bonus. Awarded upon verified government ID approval by the compliance team.',
-    category: 'kyc',
-    rewardShare: 0,
-    fixedReward: 1000, // ₦1,000 one-time cash reward
-    verificationType: 'instant',
-    actionLabel: 'Claim KYC Bounty',
-    sponsorName: 'Treasure Homes Compliance Reserve',
-    sponsorBadge: 'COMPLIANCE',
-    detailsContent: {
-      headline: 'Tier-1 KYC Identity Verification & Anti-Fraud Compliance',
-      paragraphs: [
-        'Submit your National Identification Number (NIN), Voter ID, or International Passport.',
-        'Upon approval by the compliance team, you will receive an instant ₦1,000 cash bounty credited to your available balance.',
-        'Verified investors enjoy priority withdrawal clearances with zero manual holding delays.'
-      ],
-      keyTakeaway: 'Verified investor identities safeguard the platform against fraud and unlock instant cash rewards.'
-    }
-  },
+
   {
     id: 'task_social_advocacy',
     title: 'Social Advocacy & Proof-of-Work Bounty',

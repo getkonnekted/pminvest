@@ -50,8 +50,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
     completeInstantTask,
     submitTaskProof,
     claimStreakBonus,
-    toggleAutoReinvest,
-    submitKyc
+    toggleAutoReinvest
   } = useAppState();
 
   // West Africa Time (WAT) Midnight Countdown
@@ -71,13 +70,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
 
   // Image Lightbox Preview Modal State
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
-
-  // KYC Quick Submit Modal State
-  const [isKycModalOpen, setIsKycModalOpen] = useState<boolean>(false);
   const [isPitchModalOpen, setIsPitchModalOpen] = useState<boolean>(false);
-  const [kycFullName, setKycFullName] = useState<string>(currentUser?.name || '');
-  const [kycIdType, setKycIdType] = useState<string>('National ID (NIN)');
-  const [kycIdNumber, setKycIdNumber] = useState<string>('');
 
   // 1-second live countdown to midnight WAT
   useEffect(() => {
@@ -108,13 +101,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
     : [];
   const hasActivePlan = activeInvestments.length > 0;
   const hasAutoCompounding = activeInvestments.some(i => i.autoReinvest === true);
-  const isKycVerified = currentUser?.kycStatus === 'verified';
-  const isKycPending = currentUser?.kycStatus === 'pending';
 
-  // Check if KYC bounty has ever been claimed
-  const hasClaimedKycBounty = transactions.some(
-    t => t.userId === currentUser?.id && t.description?.includes('KYC Identity Verification Bounty')
-  ) || progress.completedTaskIds.includes('task_kyc_bounty');
 
   // Attendance & Consecutive Streak
   const hasCheckedInToday = progress.completedTaskIds.includes('task_daily_attendance');
@@ -218,12 +205,6 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
       setModalError(err?.message || 'An unexpected error occurred while submitting.');
       setIsSubmitting(false);
     }
-  };
-
-  const handleSubmitKycForm = (e: React.FormEvent) => {
-    e.preventDefault();
-    submitKyc(kycFullName, kycIdType, kycIdNumber);
-    setIsKycModalOpen(false);
   };
 
   // Helper to extract image from proof string
@@ -438,7 +419,7 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* QUEST 1: ACTIVE INVESTOR QUEST */}
           <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 shadow-xl flex flex-col justify-between hover:border-amber-400/40 transition-all">
             <div>
@@ -569,77 +550,6 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
             </div>
           </div>
 
-          {/* QUEST 3: KYC COMPLETION BOUNTY */}
-          <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 shadow-xl flex flex-col justify-between hover:border-amber-400/40 transition-all">
-            <div>
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <span className="bg-amber-500/15 text-amber-300 text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-amber-500/30">
-                  ID GIFT
-                </span>
-                <span className="text-xs font-mono font-bold text-amber-400">
-                  ₦1,000 One-Time
-                </span>
-              </div>
-
-              <h4 className="font-bold text-[#f7ecd5] text-sm">ID Verification Gift</h4>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                Get a free ₦1,000 cash bonus added to your wallet as soon as your ID is verified.
-              </p>
-
-              {/* Status display */}
-              <div className="my-3.5 bg-[#06080e] rounded-xl p-2.5 border border-amber-500/15 text-xs shadow-inner">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">Verification Status</span>
-                {isKycVerified ? (
-                  <span className="text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    ID Verified ✓
-                  </span>
-                ) : isKycPending ? (
-                  <span className="text-amber-400 font-bold flex items-center gap-1 mt-0.5">
-                    <Clock className="w-3.5 h-3.5 animate-spin-slow" />
-                    Under Review (~10 mins)
-                  </span>
-                ) : (
-                  <span className="text-slate-400 font-bold flex items-center gap-1 mt-0.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-                    Not Yet Verified
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-amber-500/15">
-              {hasClaimedKycBounty ? (
-                <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>Verified &amp; Claimed (₦1,000)</span>
-                </div>
-              ) : isKycVerified ? (
-                <button
-                  onClick={() => completeInstantTask('task_kyc_bounty')}
-                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs py-2.5 rounded-xl transition-all shadow-md cursor-pointer active:scale-95"
-                  id="btn_claim_kyc_bounty"
-                >
-                  Claim ₦1,000 Cash Gift
-                </button>
-              ) : isKycPending ? (
-                <button
-                  disabled
-                  className="w-full bg-[#06080e] border border-amber-500/20 text-slate-500 font-bold text-xs py-2.5 rounded-xl cursor-not-allowed opacity-60"
-                >
-                  Review in Progress
-                </button>
-              ) : (
-                <button
-                  onClick={() => setIsKycModalOpen(true)}
-                  className="w-full bg-[#06080e] hover:bg-[#111728] border border-amber-500/30 text-amber-300 font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
-                >
-                  <span>Verify ID for ₦1,000</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -1055,85 +965,6 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
         </div>
       )}
 
-      {/* QUICK KYC SUBMIT MODAL */}
-      {isKycModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-gradient-to-b from-[#0e1424] via-[#090d18] to-[#06080e] border border-amber-500/30 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative text-slate-200">
-            <div className="flex items-center justify-between pb-3 border-b border-amber-500/20 mb-4">
-              <div>
-                <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-widest block">Identity Compliance</span>
-                <h3 className="text-base font-bold text-[#f7ecd5] font-mono">Submit KYC Verification (₦1,000 Bounty)</h3>
-              </div>
-              <button 
-                onClick={() => setIsKycModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-900 border border-amber-500/20 hover:border-amber-400 text-slate-400 hover:text-amber-300 flex items-center justify-center cursor-pointer transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitKycForm} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">Full Legal Name (as shown on ID)</label>
-                <input
-                  type="text"
-                  required
-                  value={kycFullName}
-                  onChange={(e) => setKycFullName(e.target.value)}
-                  placeholder="e.g. Babatunde Olumide Adeleke"
-                  className="w-full bg-[#070a13] border border-amber-500/25 rounded-xl py-2 px-3 text-slate-100 font-sans focus:outline-none focus:border-amber-400 placeholder:text-slate-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">Government ID Type</label>
-                <select
-                  value={kycIdType}
-                  onChange={(e) => setKycIdType(e.target.value)}
-                  className="w-full bg-[#070a13] border border-amber-500/25 rounded-xl py-2 px-3 text-slate-100 font-sans focus:outline-none focus:border-amber-400"
-                >
-                  <option value="National ID (NIN)" className="bg-[#090d18] text-white">National Identity Number (NIN)</option>
-                  <option value="Voter ID" className="bg-[#090d18] text-white">Permanent Voter's Card (PVC)</option>
-                  <option value="International Passport" className="bg-[#090d18] text-white">International Passport</option>
-                  <option value="Driver License" className="bg-[#090d18] text-white">FRSC Driver's License</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-bold mb-1">Document Identification Number</label>
-                <input
-                  type="text"
-                  required
-                  value={kycIdNumber}
-                  onChange={(e) => setKycIdNumber(e.target.value)}
-                  placeholder="e.g. 58392019482"
-                  className="w-full bg-[#070a13] border border-amber-500/25 rounded-xl py-2 px-3 text-slate-100 font-mono focus:outline-none focus:border-amber-400 placeholder:text-slate-600"
-                />
-              </div>
-
-              <div className="bg-[#121626] border border-amber-500/25 rounded-xl p-3 text-[11px] text-amber-200/90 leading-relaxed">
-                Your ID verification ensures anti-fraud compliance and priority withdrawal clearance. Once approved by the compliance team in the Admin Panel, you can claim the <strong className="text-emerald-400">₦1,000 cash bounty</strong> directly into your wallet.
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsKycModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-slate-200 font-bold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-5 py-2 rounded-xl shadow-lg cursor-pointer active:scale-95"
-                >
-                  Submit Identification Details
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Multilingual Canvassing Pitch Modal */}
       <MultilingualPitchModal

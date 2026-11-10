@@ -160,6 +160,7 @@ function MainAppContent() {
       if (refParam) {
         const cleanRef = refParam.toUpperCase().trim();
         setRegRef(cleanRef);
+        localStorage.setItem('pm_invite_code', cleanRef);
         setIsRegistering(true); // Takes visitor directly to CREATE ACCOUNT
         setTimeout(() => {
           const authElement = document.getElementById('card_auth_panel');
@@ -167,9 +168,14 @@ function MainAppContent() {
             authElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }, 100);
+      } else {
+        const cachedRef = localStorage.getItem('pm_invite_code');
+        if (cachedRef) {
+          setRegRef(cachedRef.toUpperCase().trim());
+        }
       }
     } catch {
-      // Ignore if URLSearchParams is unavailable
+      // Ignore if URLSearchParams or localStorage is unavailable
     }
   }, []);
 
