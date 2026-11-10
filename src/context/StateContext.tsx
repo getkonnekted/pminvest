@@ -147,6 +147,10 @@ interface StateContextType {
   simulateWeek: () => void;
   simulateNextDay: () => void;
   resetAll: () => void;
+  resetInvestmentsAndPayoutsOnly: () => void;
+  adminImpersonateUser: (userId: string) => boolean;
+  exitImpersonation: () => boolean;
+  isImpersonating: boolean;
   clearMessages: () => void;
 }
 
@@ -3421,6 +3425,102 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const [isImpersonating, setIsImpersonating] = useState<boolean>(() => {
+    return typeof window !== 'undefined' ? !!sessionStorage.getItem('pm_original_admin_id') : false;
+  });
+
+  // Safe Reset: Clears test investments & payout transactions to ₦0, but PRESERVES all 24 registered users & leads!
+  const resetInvestmentsAndPayoutsOnly = () => {
+    localStorage.removeItem('pm_prod_investments_v1');
+    localStorage.removeItem('pm_prod_transactions_v1');
+    localStorage.removeItem('pm_prod_task_submissions_v1');
+    localStorage.removeItem('pm_prod_daily_progress_v1');
+    localStorage.removeItem('pm_investor_protection_logs');
+    localStorage.removeItem('pm_admin_audit_logs');
+    localStorage.removeItem('pm_prod_current_week_v1');
+
+    setInvestments([]);
+    setTransactions([]);
+    setTaskSubmissions([]);
+    setUserDailyProgress({});
+    setCurrentWeek(1);
+
+    // Reset wallet balances of all accounts to 0, but KEEP ALL USERS & LEADS COMPLETELY INTACT!
+    setUsers(prev => {
+      const sanitized = prev.map(u => ({
+        ...u,
+        walletBalance: 0,
+        marketingAllocatedBalance: u.isMarketingAccount ? (u.marketingAllocatedBalance || 500000) : 0
+      }));
+      try {
+        localStorage.setItem('pm_prod_users_v1', JSON.stringify(sanitized));
+      } catch (e) {}
+      return sanitized;
+    });
+
+    if (currentUser) {
+      setCurrentUser(prev => prev ? { ...prev, walletBalance: 0 } : null);
+      try {
+        localStorage.setItem('pm_prod_current_user_v1', JSON.stringify({ ...currentUser, walletBalance: 0 }));
+      } catch (e) {}
+    }
+
+    clearMessages();
+    setSuccessMsg('Test investments, deposits, and payout yields have been reset to ₦0. All registered users and leads remain safely preserved!');
+
+    // In Supabase, delete investments & transactions while keeping users table safe
+    const client = getSupabaseClient();
+    if (client) {
+      Promise.allSettled([
+        client.from('investments').delete().neq('id', 'keep_none'),
+        client.from('transactions').delete().neq('id', 'keep_none'),
+        client.from('task_submissions').delete().neq('id', 'keep_none'),
+        client.from('wallet_transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+        client.from('user_daily_progress').delete().neq('user_id', 'keep_none'),
+        client.from('users').update({ "walletBalance": 0 }).neq('id', 'usr_admin'),
+        client.from('wallets').update({ balance: 0 }).neq('user_id', 'keep_none'),
+        client.from('system_state').upsert({ key: 'current_week', value: '1' }),
+        client.from('system_state').upsert({ key: 'virtual_day_offset', value: '0' })
+      ]).catch(err => console.warn('Supabase reset investments notice:', err));
+    }
+  };
+
+  const adminImpersonateUser = (targetUserId: string): boolean => {
+    const target = users.find(u => u.id === targetUserId);
+    if (!target) return false;
+
+    if (currentUser && currentUser.role === 'admin' && !sessionStorage.getItem('pm_original_admin_id')) {
+      sessionStorage.setItem('pm_original_admin_id', currentUser.id);
+    }
+
+    setCurrentUser(target);
+    setIsImpersonating(true);
+    try {
+      localStorage.setItem('pm_prod_current_user_v1', JSON.stringify(target));
+    } catch {}
+
+    clearMessages();
+    setSuccessMsg(`Now previewing dashboard as ${target.name} (${target.isMarketingAccount ? 'Marketing Canvasser' : 'Investor Lead'}).`);
+    return true;
+  };
+
+  const exitImpersonation = (): boolean => {
+    const originalAdminId = sessionStorage.getItem('pm_original_admin_id') || 'usr_admin';
+    const adminUser = users.find(u => u.id === originalAdminId && u.role === 'admin') || users.find(u => u.role === 'admin');
+    if (!adminUser) return false;
+
+    sessionStorage.removeItem('pm_original_admin_id');
+    setCurrentUser(adminUser);
+    setIsImpersonating(false);
+    try {
+      localStorage.setItem('pm_prod_current_user_v1', JSON.stringify(adminUser));
+    } catch {}
+
+    clearMessages();
+    setSuccessMsg('Exited preview mode. Returned to Admin Control Panel.');
+    return true;
+  };
+
   const refreshFromDatabase = async (): Promise<void> => {
     clearMessages();
     setSuccessMsg('Fetching fresh user records directly from Supabase...');
@@ -3502,6 +3602,10 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       simulateWeek,
       simulateNextDay,
       resetAll,
+      resetInvestmentsAndPayoutsOnly,
+      adminImpersonateUser,
+      exitImpersonation,
+      isImpersonating,
       clearMessages
     }}>
       {children}

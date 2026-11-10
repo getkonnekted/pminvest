@@ -96,6 +96,7 @@ export const AdminPanel: React.FC = () => {
     simulateWeek,
     simulateNextDay,
     resetAll,
+    resetInvestmentsAndPayoutsOnly,
     successMsg,
     errorMsg,
     clearMessages,
@@ -178,6 +179,10 @@ export const AdminPanel: React.FC = () => {
 
   // Leads Export Modal State
   const [showLeadsExportModal, setShowLeadsExportModal] = useState(false);
+
+  // Safe Reset Test Investments State
+  const [showResetInvestmentsModal, setShowResetInvestmentsModal] = useState(false);
+  const [resetInvestmentsInput, setResetInvestmentsInput] = useState('');
 
   // Manual Database Sync State
   const [isManualSyncingUsers, setIsManualSyncingUsers] = useState(false);
@@ -1219,15 +1224,46 @@ export const AdminPanel: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* Reset Database */}
+                    {/* Safe Reset: Clear Test Investments & Payouts (Keeps All Users) */}
+                    <div className="p-4 bg-amber-50/70 border border-amber-300 rounded-xl flex flex-col justify-between gap-3 shadow-2xs">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <RefreshCw className="w-4 h-4 text-amber-700" />
+                            <h5 className="font-bold text-xs text-amber-950 uppercase tracking-wide">Reset Test Investments to ₦0</h5>
+                          </div>
+                          <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">
+                            KEEPS ALL {users.length} ACCOUNTS
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-amber-900/80 mt-1 leading-normal">
+                          Safely purges test investments (₦460,000) and accumulated Friday payouts (₦196,170) to <strong>₦0</strong>.
+                          <strong className="block text-emerald-800 font-bold mt-0.5">✓ All {unfundedLeadsCount} unfunded leads, emails, and passwords are 100% preserved.</strong>
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetInvestmentsInput('');
+                          setShowResetInvestmentsModal(true);
+                        }}
+                        className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 font-black px-3.5 py-2.5 rounded-lg text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        id="btn_safe_reset_test_investments"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" />
+                        <span>Reset Test Investments to ₦0</span>
+                      </button>
+                    </div>
+
+                    {/* Reset Entire Database (Destructive) */}
                     <div className="p-4 bg-rose-50/60 border border-rose-200 rounded-xl flex flex-col justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4 text-rose-600" />
-                          <h5 className="font-bold text-xs text-rose-950 uppercase tracking-wide">Reset Database</h5>
+                          <h5 className="font-bold text-xs text-rose-950 uppercase tracking-wide">Reset Entire Database (Wipe All)</h5>
                         </div>
                         <p className="text-[11px] text-rose-900/80 mt-1 leading-normal">
-                          Destructive action: erases all users, investments, transactions, and daily progress, returning database state to clean baseline.
+                          Nuclear action: erases all users, investments, transactions, and daily progress, returning database state to clean baseline.
                         </p>
                       </div>
                       <button
@@ -2019,6 +2055,21 @@ export const AdminPanel: React.FC = () => {
                               title={`Edit account and wallet balance for ${u.name}`}
                             >
                               <Edit3 className="w-3 h-3 text-amber-600" /> Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (currentUser?.role === 'admin') {
+                                  sessionStorage.setItem('pm_original_admin_id', currentUser.id);
+                                }
+                                switchUser(u.id);
+                              }}
+                              className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-2 py-1 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                              title={`Access and preview ${u.name}'s user dashboard`}
+                            >
+                              <Eye className="w-3 h-3 text-amber-700" />
+                              <span>View</span>
                             </button>
 
                             {!u.isMarketingAccount && u.role !== 'admin' && getUserPaidTopup(u.id) === 0 && (
@@ -3316,6 +3367,91 @@ export const AdminPanel: React.FC = () => {
                 }`}
               >
                 Reset Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Safe Reset Test Investments Confirmation Modal (Keeps All Users) */}
+      {showResetInvestmentsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl text-slate-900">
+            <div className="flex items-center gap-3 mb-4 text-amber-600">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                <RefreshCw className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-950">Reset Test Investments to ₦0</h3>
+                <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 font-mono font-bold px-2 py-0.5 rounded-full inline-block mt-0.5">
+                  PRESERVES ALL {users.length} REGISTERED ACCOUNTS
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-950 space-y-2">
+              <p>
+                This will reset:
+              </p>
+              <ul className="list-disc list-inside space-y-0.5 font-semibold text-slate-800">
+                <li>Total Capital Under Management &rarr; <strong>₦0</strong></li>
+                <li>Accumulated Payout Yields &rarr; <strong>₦0</strong></li>
+                <li>All active test property stakes &rarr; <strong>0 Real</strong></li>
+                <li>User wallet balances &rarr; <strong>₦0.00</strong></li>
+              </ul>
+              <p className="text-emerald-800 font-bold pt-1 border-t border-amber-200/80">
+                ✓ Your {unfundedLeadsCount} unfunded leads, emails, and passwords are completely safe and will NOT be deleted.
+              </p>
+            </div>
+
+            <div className="mt-5 border-t border-slate-100 pt-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                  Type or paste <span className="font-mono text-amber-600 font-extrabold select-all">RESET TEST DATA</span>:
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setResetInvestmentsInput('RESET TEST DATA')}
+                  className="text-[10px] text-amber-800 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded font-mono font-bold transition-colors cursor-pointer"
+                >
+                  Fill Word
+                </button>
+              </div>
+              <input
+                type="text"
+                value={resetInvestmentsInput}
+                onChange={(e) => setResetInvestmentsInput(e.target.value)}
+                placeholder="RESET TEST DATA"
+                className="w-full font-mono text-sm border border-slate-300 rounded-xl px-4 py-2.5 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition-all text-center tracking-wider font-bold"
+                autoFocus
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="flex items-center gap-2.5 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowResetInvestmentsModal(false)}
+                className="flex-1 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (resetInvestmentsInput.trim().toUpperCase() === 'RESET TEST DATA') {
+                    resetInvestmentsAndPayoutsOnly();
+                    setShowResetInvestmentsModal(false);
+                  }
+                }}
+                disabled={resetInvestmentsInput.trim().toUpperCase() !== 'RESET TEST DATA'}
+                className={`flex-1 font-bold py-2.5 rounded-xl text-xs transition-colors text-slate-950 ${
+                  resetInvestmentsInput.trim().toUpperCase() === 'RESET TEST DATA'
+                    ? 'bg-amber-500 hover:bg-amber-400 shadow-md shadow-amber-500/20 cursor-pointer font-black'
+                    : 'bg-slate-200 cursor-not-allowed text-slate-400'
+                }`}
+              >
+                Confirm Reset to ₦0
               </button>
             </div>
           </div>

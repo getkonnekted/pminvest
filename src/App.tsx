@@ -63,6 +63,10 @@ function MainAppContent() {
     liveLiquidityReserve,
     register, 
     login, 
+    logout,
+    switchUser,
+    exitImpersonation,
+    isImpersonating,
     requestPasswordReset,
     confirmPasswordReset,
     successMsg, 
@@ -1326,6 +1330,23 @@ function MainAppContent() {
       <div>
         <BrandingHeader />
         
+        {(isImpersonating || (typeof window !== 'undefined' && sessionStorage.getItem('pm_original_admin_id'))) && currentUser && currentUser.role !== 'admin' && (
+          <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-4 py-2 text-xs font-bold shadow-md sticky top-0 z-50 flex flex-col sm:flex-row items-center justify-between gap-2 border-b border-amber-600 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-950 animate-ping" />
+              <span>
+                👀 Admin Preview Mode: Viewing user dashboard as <strong>{currentUser.name}</strong> ({currentUser.email} &bull; {currentUser.isMarketingAccount ? 'Marketer' : 'Lead'})
+              </span>
+            </div>
+            <button
+              onClick={() => exitImpersonation()}
+              className="bg-slate-950 hover:bg-slate-900 text-amber-400 px-3.5 py-1.5 rounded-lg text-xs font-extrabold cursor-pointer transition-colors whitespace-nowrap active:scale-95 shadow-xs"
+            >
+              Exit Preview &amp; Return to Control Panel &rarr;
+            </button>
+          </div>
+        )}
+
         {currentUser.role === 'admin' && (
           <div className={`${isChampagne ? 'bg-[#ede5d8] border-b border-[#c5a059]/35 text-slate-800' : 'bg-[#1e293b] border-b border-slate-700'} py-3 px-4 transition-colors`}>
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
