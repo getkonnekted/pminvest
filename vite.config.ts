@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pm-logo.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'og-card.jpg'],
+        includeAssets: ['favicon.ico', 'favicon-32x32.png', 'favicon-64x64.png', 'favicon.svg', 'apple-touch-icon.png', 'pm-logo.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'og-card.jpg'],
         manifest: {
           id: '/',
           name: 'PM Invest',
