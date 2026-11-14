@@ -348,8 +348,16 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const mergeCanonicalPlans = (remotePlans?: InvestmentPlan[] | null): { plans: InvestmentPlan[]; needsSync: boolean } => {
     if (!remotePlans || remotePlans.length === 0) return { plans: INVESTMENT_PLANS, needsSync: true };
-    const hasStarter = remotePlans.some(p => p.id === 'plan_0');
-    if (hasStarter) return { plans: remotePlans, needsSync: false };
+    const existingStarter = remotePlans.find(p => p.id === 'plan_0');
+    if (existingStarter) {
+      if (existingStarter.propertyImage !== INVESTMENT_PLANS[0].propertyImage) {
+        const updatedPlans = remotePlans.map(p =>
+          p.id === 'plan_0' ? { ...p, propertyImage: INVESTMENT_PLANS[0].propertyImage } : p
+        );
+        return { plans: updatedPlans, needsSync: true };
+      }
+      return { plans: remotePlans, needsSync: false };
+    }
     return { plans: [INVESTMENT_PLANS[0], ...remotePlans], needsSync: true };
   };
 

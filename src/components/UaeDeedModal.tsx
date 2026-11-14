@@ -48,7 +48,7 @@ const PROPERTY_DATABASE: Record<string, PropertyMeta> = {
     name: 'Jumeirah Village Studios',
     location: 'Jumeirah Village Circle (JVC), Dubai, UAE',
     address: 'Plot 214-108, District 12, Jumeirah Village Circle (JVC), Dubai, United Arab Emirates',
-    image: '/properties/marina_bay_residences.jpg',
+    image: '/properties/jumeirah_village_studios.jpg',
     type: 'Starter Studio Co-Ownership Stake',
     occupancy: '97.8%',
     deedTier: 'Jumeirah Village Co-Ownership Deed (₦15,000 Starter Tier)',

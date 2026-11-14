@@ -211,7 +211,7 @@ export const INVESTMENT_PLANS: InvestmentPlan[] = [
     propertyName: 'Jumeirah Village Studios',
     propertyLocation: 'Jumeirah Village Circle (JVC), Dubai, UAE',
     propertyAddress: 'Plot 214-108, District 12, Jumeirah Village Circle (JVC), Dubai, UAE',
-    propertyImage: '/properties/marina_bay_residences.jpg',
+    propertyImage: '/properties/jumeirah_village_studios.jpg',
     propertyType: 'Starter Studio Co-Ownership Stake',
     occupancyRate: '97.8%',
     deedTier: 'Jumeirah Village Co-Ownership Deed (₦15,000 Starter Tier)',
