@@ -173,9 +173,9 @@ export const UserDashboard: React.FC = () => {
     {
       id: 'invest',
       label: 'Acquire Stakes',
-      description: 'Choose a property plan starting from ₦30,000',
+      description: 'Choose a property plan starting from ₦15,000',
       icon: Sparkles,
-      badge: <span className="border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-sm">FROM ₦30K</span>
+      badge: <span className="border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-sm">FROM ₦15K</span>
     },
     {
       id: 'finance',
@@ -827,7 +827,7 @@ export const UserDashboard: React.FC = () => {
                   </div>
                   <p className="text-sm font-bold text-[#f7ecd5]">No active property investments yet.</p>
                   <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-                    Acquire your first fractional co-ownership stake in Dubai Marina, DIFC, or Creek Harbour starting from ₦30,000 to receive weekly Friday payouts.
+                    Acquire your first fractional co-ownership stake in Dubai Marina, JVC, DIFC, or Creek Harbour starting from ₦15,000 to receive weekly Friday payouts.
                   </p>
                   <button
                     onClick={() => setActiveTab('invest')}

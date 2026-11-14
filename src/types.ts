@@ -206,6 +206,23 @@ export interface InvestmentPlan {
 
 export const INVESTMENT_PLANS: InvestmentPlan[] = [
   {
+    id: 'plan_0',
+    name: 'Jumeirah Village Studios',
+    propertyName: 'Jumeirah Village Studios',
+    propertyLocation: 'Jumeirah Village Circle (JVC), Dubai, UAE',
+    propertyAddress: 'Plot 214-108, District 12, Jumeirah Village Circle (JVC), Dubai, UAE',
+    propertyImage: '/properties/marina_bay_residences.jpg',
+    propertyType: 'Starter Studio Co-Ownership Stake',
+    occupancyRate: '97.8%',
+    deedTier: 'Jumeirah Village Co-Ownership Deed (₦15,000 Starter Tier)',
+    cadastralId: 'DLD-CAD-214-108',
+    makaniNumber: '13490 61842',
+    cost: 15000,
+    totalReturns: 78000,
+    weeklyPayout: 3250,
+    weeksDuration: 24
+  },
+  {
     id: 'plan_1',
     name: 'Marina Bay Residences',
     propertyName: 'Marina Bay Residences',

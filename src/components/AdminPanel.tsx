@@ -672,7 +672,7 @@ export const AdminPanel: React.FC = () => {
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
               Plan Distribution & Exposure
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
               {INVESTMENT_PLANS.map(plan => {
                 const planInvestments = activeInvestments.filter(i => i.planId === plan.id);
                 const realCount = planInvestments.filter(i => isInvestmentRealPaid(i)).length;
@@ -1377,7 +1377,7 @@ export const AdminPanel: React.FC = () => {
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Live Tier Daily Pool Multipliers ({Math.round((settings.dailyTaskBonusRate ?? 0.05) * 100)}% of Weekly Yield)
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {INVESTMENT_PLANS.map((plan) => {
                   const dailyRate = Math.round(plan.weeklyPayout * (settings.dailyTaskBonusRate ?? 0.05));
                   return (

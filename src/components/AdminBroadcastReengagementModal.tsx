@@ -60,7 +60,7 @@ export const AdminBroadcastReengagementModal: React.FC<AdminBroadcastReengagemen
 
   // Selected property for campaign
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>(
-    properties[0]?.id || 'plan_1'
+    properties[0]?.id || 'plan_0'
   );
 
   // Selected language

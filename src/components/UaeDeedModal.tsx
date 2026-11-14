@@ -44,6 +44,21 @@ interface PropertyMeta {
 }
 
 const PROPERTY_DATABASE: Record<string, PropertyMeta> = {
+  plan_0: {
+    name: 'Jumeirah Village Studios',
+    location: 'Jumeirah Village Circle (JVC), Dubai, UAE',
+    address: 'Plot 214-108, District 12, Jumeirah Village Circle (JVC), Dubai, United Arab Emirates',
+    image: '/properties/marina_bay_residences.jpg',
+    type: 'Starter Studio Co-Ownership Stake',
+    occupancy: '97.8%',
+    deedTier: 'Jumeirah Village Co-Ownership Deed (₦15,000 Starter Tier)',
+    cadastralId: 'DLD-CAD-214-108',
+    makaniNumber: '13490 61842',
+    zoning: 'Freehold Urban Residential (R-3)',
+    valuation: 'AED 52,000,000 (Valued Q3 2026)',
+    trustee: 'Treasure Homes Sovereign Real Estate SPV Ltd',
+    spvCode: 'SPV-DXB-JVC-00'
+  },
   plan_1: {
     name: 'Marina Bay Residences',
     location: 'Dubai Marina, Dubai, UAE',

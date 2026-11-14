@@ -241,7 +241,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
   dailyLiquidityGrowth: DAILY_LIQUIDITY_GROWTH,
   hourlyLiquidityGrowth: HOURLY_LIQUIDITY_GROWTH,
   riskAlertLevel: 'low',
-  minWithdrawal: 5000,
+  minWithdrawal: 3000,
   maxWithdrawal: 1000000,
   autoApproveDeposits: false, // Production live mode: real bank transfers verified by treasury
   automatedPayouts: true,
@@ -319,7 +319,7 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return parsed;
   });
 
-  // Dynamic Investment Plans (Canonical 6-tier 24-week UAE luxury plans)
+  // Dynamic Investment Plans (Canonical 7-tier 24-week UAE luxury plans starting from ₦15,000)
   const [investmentPlans, setInvestmentPlans] = useState<InvestmentPlan[]>(() => {
     return INVESTMENT_PLANS;
   });
@@ -333,6 +333,26 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return saved ? JSON.parse(saved) : SEED_TRANSACTIONS;
   });
 
+  const resolveMinWithdrawalMigration = (candidateMin?: number): { value: number; migrated: boolean } => {
+    const alreadyMigrated = typeof window !== 'undefined' && localStorage.getItem('pm_min_wd_3k_v1') === '1';
+    if (!alreadyMigrated) {
+      try {
+        localStorage.setItem('pm_min_wd_3k_v1', '1');
+      } catch {}
+      if (candidateMin === undefined || candidateMin === 5000) {
+        return { value: 3000, migrated: true };
+      }
+    }
+    return { value: candidateMin ?? 3000, migrated: false };
+  };
+
+  const mergeCanonicalPlans = (remotePlans?: InvestmentPlan[] | null): { plans: InvestmentPlan[]; needsSync: boolean } => {
+    if (!remotePlans || remotePlans.length === 0) return { plans: INVESTMENT_PLANS, needsSync: true };
+    const hasStarter = remotePlans.some(p => p.id === 'plan_0');
+    if (hasStarter) return { plans: remotePlans, needsSync: false };
+    return { plans: [INVESTMENT_PLANS[0], ...remotePlans], needsSync: true };
+  };
+
   const [settings, setSettings] = useState<SystemSettings>(() => {
     const saved = localStorage.getItem('pm_prod_settings_v1');
     if (saved) {
@@ -342,9 +362,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const resolvedReserve = (parsed.liquidityReserve && parsed.liquidityReserve >= BASE_LIQUIDITY_RESERVE)
           ? parsed.liquidityReserve
           : currentReserve;
+        const { value: resolvedMinWd } = resolveMinWithdrawalMigration(parsed.minWithdrawal);
         return { 
           ...DEFAULT_SETTINGS, 
           ...parsed,
+          minWithdrawal: resolvedMinWd,
           liquidityReserve: resolvedReserve,
           dailyLiquidityGrowth: DAILY_LIQUIDITY_GROWTH,
           hourlyLiquidityGrowth: HOURLY_LIQUIDITY_GROWTH,
@@ -513,9 +535,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         if (invData.settings) {
           const dynamicReserve = calculateContinuousLiquidity(virtualDayOffset);
+          const { value: resolvedMinWd } = resolveMinWithdrawalMigration(invData.settings.minWithdrawal);
           setSettings(prev => ({
             ...prev,
             ...invData.settings,
+            minWithdrawal: resolvedMinWd,
             liquidityReserve: Math.max(invData.settings?.liquidityReserve || 0, dynamicReserve)
           }));
         }
@@ -525,7 +549,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
 
         if (invData.investmentPlans && invData.investmentPlans.length >= 6) {
-          setInvestmentPlans(invData.investmentPlans);
+          const { plans: mergedPlans } = mergeCanonicalPlans(invData.investmentPlans);
+          setInvestmentPlans(mergedPlans);
         }
 
         setTimeout(() => {
@@ -634,11 +659,17 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       if (dbData.settings) {
         const dynamicReserve = calculateContinuousLiquidity(virtualDayOffset);
-        setSettings(prev => ({
-          ...prev,
+        const { value: resolvedMinWd, migrated } = resolveMinWithdrawalMigration(dbData.settings.minWithdrawal);
+        const mergedSettings: SystemSettings = {
+          ...settings,
           ...dbData.settings,
+          minWithdrawal: resolvedMinWd,
           liquidityReserve: Math.max(dbData.settings.liquidityReserve || 0, dynamicReserve)
-        }));
+        };
+        setSettings(mergedSettings);
+        if (migrated) {
+          await syncSettingsToSupabase(mergedSettings);
+        }
       }
 
       if (dbData.currentWeek !== null) {
@@ -654,7 +685,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
 
       if (dbData.investmentPlans && dbData.investmentPlans.length >= 6) {
-        setInvestmentPlans(dbData.investmentPlans);
+        const { plans: mergedPlans, needsSync } = mergeCanonicalPlans(dbData.investmentPlans);
+        setInvestmentPlans(mergedPlans);
+        if (needsSync) {
+          await syncInvestmentPlansToSupabase(mergedPlans);
+        }
       }
 
       setTimeout(() => {
@@ -696,9 +731,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
             if (invData.settings) {
               const dynamicReserve = calculateContinuousLiquidity(virtualDayOffset);
+              const { value: resolvedMinWd } = resolveMinWithdrawalMigration(invData.settings.minWithdrawal);
               setSettings(prev => ({
                 ...prev,
                 ...invData.settings,
+                minWithdrawal: resolvedMinWd,
                 liquidityReserve: Math.max(invData.settings?.liquidityReserve || 0, dynamicReserve)
               }));
             }
@@ -706,7 +743,8 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               setCurrentWeek(invData.currentWeek);
             }
             if (invData.investmentPlans && invData.investmentPlans.length >= 6) {
-              setInvestmentPlans(invData.investmentPlans);
+              const { plans: mergedPlans } = mergeCanonicalPlans(invData.investmentPlans);
+              setInvestmentPlans(mergedPlans);
             }
           }
         } else {
@@ -738,11 +776,17 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               setTransactions(dbData.transactions);
               if (dbData.settings) {
                 const dynamicReserve = calculateContinuousLiquidity(virtualDayOffset);
-                setSettings(prev => ({
-                  ...prev,
+                const { value: resolvedMinWd, migrated } = resolveMinWithdrawalMigration(dbData.settings.minWithdrawal);
+                const mergedSettings: SystemSettings = {
+                  ...settings,
                   ...dbData.settings,
+                  minWithdrawal: resolvedMinWd,
                   liquidityReserve: Math.max(dbData.settings.liquidityReserve || 0, dynamicReserve)
-                }));
+                };
+                setSettings(mergedSettings);
+                if (migrated) {
+                  await syncSettingsToSupabase(mergedSettings);
+                }
               }
               if (dbData.currentWeek !== null) {
                 setCurrentWeek(dbData.currentWeek);
@@ -754,7 +798,11 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 setUserDailyProgress(prev => ({ ...prev, ...dbData.userDailyProgress }));
               }
               if (dbData.investmentPlans && dbData.investmentPlans.length >= 6) {
-                setInvestmentPlans(dbData.investmentPlans);
+                const { plans: mergedPlans, needsSync } = mergeCanonicalPlans(dbData.investmentPlans);
+                setInvestmentPlans(mergedPlans);
+                if (needsSync) {
+                  await syncInvestmentPlansToSupabase(mergedPlans);
+                }
               } else {
                 await syncInvestmentPlansToSupabase(investmentPlans);
               }

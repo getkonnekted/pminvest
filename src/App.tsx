@@ -298,7 +298,7 @@ function MainAppContent() {
                 Architectural Co-Investment in Prime Dubai Real Estate
               </h1>
               <p className={`text-xs sm:text-base ${isChampagne ? 'text-slate-700' : 'text-slate-300'} leading-relaxed max-w-2xl font-sans`}>
-                Contractual Friday cash yields backed by physical DIFC and Palm Jumeirah luxury property under bankruptcy-remote SPV custody. Acquire direct fractional title stakes from ₦30,000.
+                Contractual Friday cash yields backed by physical DIFC and Palm Jumeirah luxury property under bankruptcy-remote SPV custody. Acquire direct fractional title stakes from ₦15,000.
               </p>
             </div>
 
@@ -1017,7 +1017,7 @@ function MainAppContent() {
                 Pick Your Property Stake
               </h4>
               <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
-                Choose a structured 24-week unit in prime Dubai towers (starting from ₦30,000). Every unit is backed by authentic Dubai Land Department Title Deeds and Makani parcel IDs.
+                Choose a structured 24-week unit in prime Dubai towers (starting from ₦15,000). Every unit is backed by authentic Dubai Land Department Title Deeds and Makani parcel IDs.
               </p>
             </div>
 
