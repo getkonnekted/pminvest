@@ -5,18 +5,20 @@ export type LuxuryTheme = 'obsidian' | 'champagne';
 interface ThemeContextType {
   theme: LuxuryTheme;
   isChampagne: boolean;
+  isDark: boolean;
   toggleTheme: () => void;
   setTheme: (theme: LuxuryTheme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'obsidian',
-  isChampagne: false,
+  theme: 'champagne',
+  isChampagne: true,
+  isDark: false,
   toggleTheme: () => {},
   setTheme: () => {}
 });
 
-const STORAGE_KEY = 'pm_luxury_theme';
+const STORAGE_KEY = 'pm_theme_v2';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<LuxuryTheme>(() => {
@@ -26,7 +28,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return saved;
       }
     }
-    return 'obsidian';
+    // Refined Light Mode Default
+    return 'champagne';
   });
 
   useEffect(() => {
@@ -35,18 +38,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (theme === 'champagne') {
       root.classList.add('theme-champagne');
       root.classList.remove('theme-obsidian');
-      document.body.style.backgroundColor = '#FAF8F5';
-      document.body.style.color = '#14171F';
+      document.body.style.backgroundColor = '#FAF8F4';
+      document.body.style.color = '#18222B';
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute('content', '#FAF8F4');
     } else {
       root.classList.add('theme-obsidian');
       root.classList.remove('theme-champagne');
-      document.body.style.backgroundColor = '#0B0C10';
-      document.body.style.color = '#FAF8F5';
+      document.body.style.backgroundColor = '#0B1015';
+      document.body.style.color = '#F4F1EA';
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute('content', '#0B1015');
     }
 
     try {
       localStorage.setItem(STORAGE_KEY, theme);
-    } catch (e) {
+    } catch {
       // Ignore storage errors in restricted contexts
     }
   }, [theme]);
@@ -60,7 +67,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, isChampagne: theme === 'champagne', toggleTheme, setTheme }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        isChampagne: theme === 'champagne',
+        isDark: theme === 'obsidian',
+        toggleTheme,
+        setTheme
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );

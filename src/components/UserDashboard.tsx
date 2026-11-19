@@ -47,7 +47,7 @@ import { NIGERIAN_BANKS, resolveNigerianAccount } from '../lib/paystack';
 import { PmLogo } from './PmLogo';
 import { PayoutCountdown } from './PayoutCountdown';
 import { InvestmentPayoutButton } from './InvestmentPayoutButton';
-import { CommunityBanner, WHATSAPP_COMMUNITY_URL, WHATSAPP_SUPPORT_URL } from './CommunityBanner';
+import { CommunityBanner } from './CommunityBanner';
 import { UaeDeedModal } from './UaeDeedModal';
 import { PropertyCardSkeleton } from './PropertyCardSkeleton';
 import { InsufficientFundsModal } from './InsufficientFundsModal';
@@ -156,39 +156,35 @@ export const UserDashboard: React.FC = () => {
     }
   };
 
-  // Dashboard Menu Items for Hamburger & Tab Navigation
   const menuItems: {
     id: 'overview' | 'invest' | 'finance' | 'referrals';
     label: string;
     description: string;
     icon: React.ComponentType<{ className?: string }>;
-    badge?: React.ReactNode;
   }[] = [
     {
       id: 'overview',
       label: 'Overview',
-      description: 'Your wallet, weekly profits & active plans',
+      description: 'Wallet, returns & active holdings',
       icon: TrendingUp,
     },
     {
       id: 'invest',
-      label: 'Acquire Stakes',
-      description: 'Choose a property plan starting from ₦15,000',
-      icon: Sparkles,
-      badge: <span className="border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-sm">FROM ₦15K</span>
+      label: 'Properties',
+      description: 'Dubai offerings from ₦15,000',
+      icon: Building,
     },
     {
       id: 'finance',
-      label: 'Deposit & Withdraw',
-      description: 'Add money to wallet or send cash to your bank',
+      label: 'Wallet',
+      description: 'Deposit & bank withdrawal',
       icon: Wallet,
     },
     {
       id: 'referrals',
-      label: 'Partner Share (7.5%)',
-      description: 'Invite institutional co-investors and earn 7.5% weekly',
+      label: 'Partners',
+      description: '7.5% weekly referral override',
       icon: Users,
-      badge: <span className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-sm">7.5%</span>
     }
   ];
   
@@ -500,173 +496,74 @@ export const UserDashboard: React.FC = () => {
       )}
 
 
-      {/* Real Investor vs Unfunded Lead Status Callout */}
+      {/* Real Investor vs Unfunded Status Bar */}
       {isRealInvestor ? (
-        <div className="mb-5 bg-gradient-to-r from-[#071710] via-[#091b14] to-[#06120c] border border-emerald-500/35 text-emerald-200 px-4 py-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs shadow-xl">
+        <div className="mb-5 pm-card rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 shadow-inner">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold uppercase font-mono tracking-wider text-emerald-300">VERIFIED REAL INVESTOR</span>
-                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono font-bold text-[10px] px-2 py-0.5 rounded-full">₦{totalPaidTopup.toLocaleString()} Paid Top-Up</span>
-              </div>
-              <p className="text-slate-300 text-[11px] mt-0.5">Your wallet is backed by completed real funds. Every Friday property yield will be credited to this balance.</p>
-            </div>
+            <CheckCircle2 className="w-4 h-4 text-[#0B7A4E] shrink-0" />
+            <span>
+              <strong className="font-semibold">Verified Investor</strong> ·{' '}
+              <span className="font-mono tabular-nums text-[#0B7A4E] font-medium">
+                ₦{totalPaidTopup.toLocaleString()}
+              </span>{' '}
+              funded
+            </span>
           </div>
-          <span className="text-[10px] text-amber-300 bg-[#06080e] border border-amber-500/30 px-3 py-1 rounded-xl font-mono font-semibold self-start sm:self-auto shrink-0 shadow-sm">
-            TREASURE HOMES SECURED
-          </span>
+          <span className="text-[11px] opacity-65">Friday settlement active</span>
         </div>
       ) : currentUser.walletBalance > 0 ? null : (
-        <div className="mb-5 bg-gradient-to-r from-[#171206] via-[#10141f] to-[#0a0d16] border border-amber-500/35 text-amber-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xl">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 font-bold font-mono">⚡</div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold uppercase tracking-wide text-amber-300">UNFUNDED LEAD ACCOUNT</span>
-                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">Awaiting First Deposit</span>
-              </div>
-              <p className="text-slate-300 mt-0.5 text-[11px] leading-relaxed">Add money to your wallet to become a <strong className="text-emerald-400">Verified Real Investor</strong> and start receiving cash payouts in your bank every Friday.</p>
-            </div>
+        <div className="mb-5 pm-card rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <Wallet className="w-4 h-4 text-[#9A7B3E] shrink-0" />
+            <span>Fund your wallet to acquire a Dubai property stake from ₦15,000.</span>
           </div>
-          <button type="button" onClick={() => setActiveTab('finance')} className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-all self-start sm:self-auto shrink-0 shadow-md cursor-pointer whitespace-nowrap active:scale-95" id="btn_unfunded_lead_topup">Top Up Wallet Now →</button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('finance')}
+            className="bg-[#0B7A4E] hover:bg-[#08633E] text-white font-semibold px-3.5 py-1.5 rounded-lg text-xs transition-colors shrink-0 cursor-pointer whitespace-nowrap"
+            id="btn_unfunded_lead_topup"
+          >
+            Fund Wallet
+          </button>
         </div>
       )}
 
-      {/* Official WhatsApp & Telegram Community Invitation Banner */}
       <CommunityBanner />
 
-      {/* Responsive Hamburger Navigation Bar & Dropdown Drawer */}
-      <div className="mb-6 bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-2.5 sm:p-3 shadow-xl backdrop-blur-md">
-        <div className="flex items-center justify-between gap-3">
-          {/* Hamburger Menu Toggle Button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#06080e] hover:bg-[#111728] border border-amber-500/30 active:scale-95 text-[#f7ecd5] font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md shrink-0"
-            id="btn_dashboard_hamburger"
-            aria-label="Toggle navigation menu"
-          >
-            {isMenuOpen ? <X className="w-4 h-4 text-amber-400" /> : <Menu className="w-4 h-4 text-amber-400" />}
-            <span>{isMenuOpen ? 'Close' : 'Menu'}</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse hidden xs:inline" />
-          </button>
-
-          {/* Current Active Section Badge */}
-          <div className="flex items-center gap-1.5 bg-[#06080e] border border-amber-500/25 px-3 py-1.5 rounded-xl text-slate-200 text-xs font-bold truncate">
-            <span className="text-[10px] text-amber-400/80 uppercase tracking-wider font-mono hidden sm:inline">Active:</span>
-            {(() => {
-              const currentItem = menuItems.find(m => m.id === activeTab) || menuItems[0];
-              const CurrentIcon = currentItem.icon;
-              return (
-                <div className="flex items-center gap-1.5 truncate">
-                  <CurrentIcon className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span className="text-[#f7ecd5] font-extrabold truncate">{currentItem.label}</span>
-                </div>
-              );
-            })()}
-          </div>
-
-          {/* Desktop Navigation Tabs (visible on wide screens) */}
-          <div className="hidden lg:flex items-center gap-1 border-l border-amber-500/20 pl-3 overflow-x-auto">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => { setActiveTab(item.id); clearMessages(); setIsMenuOpen(false); }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-                    isActive 
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold border border-amber-400 shadow-md shadow-amber-500/15' 
-                      : 'text-slate-400 hover:text-amber-200 hover:bg-amber-500/10'
-                  }`}
-                  id={`tab_desktop_${item.id}`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-slate-950 font-bold' : 'text-amber-400'}`} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Real-time sync badge */}
-          {(isSyncing || pendingQueueLength > 0) && (
-            <div className="shrink-0 flex items-center gap-2">
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-mono text-amber-300 animate-pulse">
-                <RotateCw className="w-3 h-3 text-amber-400 animate-spin" />
-                <span>{pendingQueueLength > 0 ? `Syncing (${pendingQueueLength})` : 'Cloud Sync...'}</span>
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Mobile / Expanded Hamburger Drawer with clean quick-navigation cards */}
-        {isMenuOpen && (
-          <div className="mt-3 pt-3 border-t border-amber-500/15 animate-fadeIn">
-            <div className="px-1 mb-2.5 flex items-center justify-between text-[11px] font-mono text-slate-400">
-              <div className="flex items-center gap-2">
-                <PmLogo className="h-6 w-auto shrink-0" />
-                <span className="font-bold text-amber-300 uppercase tracking-wider">PM Invest Menus</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-amber-400 font-semibold">{menuItems.length} Available</span>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setActiveTab(item.id);
-                      setIsMenuOpen(false);
-                      clearMessages();
-                    }}
-                    className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-3 cursor-pointer group ${
-                      isActive 
-                        ? 'bg-gradient-to-b from-[#141b2d] to-[#0c1220] border-amber-400/80 shadow-md ring-1 ring-amber-400/40' 
-                        : 'bg-[#06080e] hover:bg-[#0f1422] border-amber-500/20 hover:border-amber-500/40'
-                    }`}
-                    id={`menu_item_${item.id}`}
-                  >
-                    <div className={`p-2 rounded-lg shrink-0 transition-colors ${
-                      isActive 
-                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-sm' 
-                        : 'bg-[#0f1422] text-amber-400 group-hover:bg-amber-500/20'
-                    }`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className={`text-xs font-bold ${isActive ? 'text-[#f7ecd5] font-extrabold' : 'text-slate-200'}`}>
-                          {item.label}
-                        </span>
-                        {item.badge}
-                      </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
-                        {item.description}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-3 pt-2.5 border-t border-amber-500/15 flex items-center justify-between text-xs text-slate-400">
-              <span>Wallet: <strong className="text-amber-300 font-mono font-bold">₦{currentUser?.walletBalance.toLocaleString()}</strong></span>
+      {/* Clean Executive Tab Bar */}
+      <div className="mb-6 border-b border-[var(--pm-border)] flex items-center justify-between gap-3 overflow-x-auto">
+        <nav className="flex items-center gap-1 sm:gap-2" aria-label="Dashboard sections">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
               <button
-                onClick={() => setIsMenuOpen(false)}
-                className="text-amber-400 hover:text-amber-300 font-semibold text-[11px] uppercase tracking-wider cursor-pointer"
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setActiveTab(item.id);
+                  clearMessages();
+                  setIsMenuOpen(false);
+                }}
+                className={`relative px-3.5 py-3 text-xs sm:text-[13px] font-semibold transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer border-b-2 -mb-px ${
+                  isActive
+                    ? 'border-[#0B7A4E] text-[#0B7A4E]'
+                    : 'border-transparent opacity-65 hover:opacity-100'
+                }`}
+                id={`tab_desktop_${item.id}`}
               >
-                Close Menu ✕
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span>{item.label}</span>
               </button>
-            </div>
-          </div>
+            );
+          })}
+        </nav>
+
+        {(isSyncing || pendingQueueLength > 0) && (
+          <span className="shrink-0 hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono opacity-65 pb-1">
+            <RotateCw className="w-3 h-3 animate-spin" />
+            <span>{pendingQueueLength > 0 ? `Syncing (${pendingQueueLength})` : 'Syncing'}</span>
+          </span>
         )}
       </div>
 
@@ -678,136 +575,73 @@ export const UserDashboard: React.FC = () => {
           {/* In-App Mobile PWA Installation Prompt */}
           <PWAInstallButton variant="banner" />
 
-          {/* Top Quick Stats Grid in Luxury Obsidian & Brushed Gold */}
+          {/* Flat Single-Elevation KPI Strip */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 shadow-xl flex items-center justify-between">
-              <div>
-                <p className="text-xs text-slate-400 font-medium font-sans uppercase tracking-wider">Wallet Balance</p>
-                <h3 className="text-xl sm:text-2xl font-black text-[#f7ecd5] font-mono mt-1">₦{currentUser.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
-                <span className="text-[10px] text-amber-400 font-medium font-sans">Ready to withdraw to your bank</span>
-              </div>
-              <div className="w-11 h-11 bg-[#06080e] border border-amber-500/25 rounded-xl flex items-center justify-center text-amber-400 shadow-md">
-                <Wallet className="w-5 h-5" />
-              </div>
+            <div className="pm-card rounded-xl p-5">
+              <p className="text-[11px] uppercase tracking-[0.1em] opacity-65 font-medium">Wallet Balance</p>
+              <h3 className="text-2xl font-semibold font-mono tabular-nums mt-1.5">
+                ₦{currentUser.walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </h3>
+              <span className="text-[11px] opacity-60 block mt-1">Available to withdraw</span>
             </div>
 
-            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 shadow-xl flex items-center justify-between">
-              <div>
-                <p className="text-xs text-slate-400 font-medium font-sans uppercase tracking-wider">Money in Properties</p>
-                <h3 className="text-xl sm:text-2xl font-black text-white font-mono mt-1">
-                  ₦{activeInvestments.reduce((sum, i) => sum + i.cost, 0).toLocaleString()}
-                </h3>
-                <span className="text-[10px] text-emerald-400 font-semibold font-sans">{activeInvestments.length} Active UAE Assets</span>
-              </div>
-              <div className="w-11 h-11 bg-[#06080e] border border-emerald-500/25 rounded-xl flex items-center justify-center text-emerald-400 shadow-md">
-                <TrendingUp className="w-5 h-5" />
-              </div>
+            <div className="pm-card rounded-xl p-5">
+              <p className="text-[11px] uppercase tracking-[0.1em] opacity-65 font-medium">Invested Capital</p>
+              <h3 className="text-2xl font-semibold font-mono tabular-nums mt-1.5">
+                ₦{activeInvestments.reduce((sum, i) => sum + i.cost, 0).toLocaleString()}
+              </h3>
+              <span className="text-[11px] text-[#0B7A4E] font-medium block mt-1">
+                {activeInvestments.length} active {activeInvestments.length === 1 ? 'asset' : 'assets'}
+              </span>
             </div>
 
-            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 shadow-xl flex items-center justify-between">
-              <div>
-                <p className="text-xs text-slate-400 font-medium font-sans uppercase tracking-wider">Total Profit Collected</p>
-                <h3 className="text-xl sm:text-2xl font-black text-amber-400 font-mono mt-1">₦{totalEarnedPayouts.toLocaleString()}</h3>
-                <span className="text-[10px] text-slate-400 font-sans">Paid into your wallet</span>
-              </div>
-              <div className="w-11 h-11 bg-[#06080e] border border-amber-500/25 rounded-xl flex items-center justify-center text-amber-400 shadow-md">
-                <ArrowUpRight className="w-5 h-5" />
-              </div>
+            <div className="pm-card rounded-xl p-5">
+              <p className="text-[11px] uppercase tracking-[0.1em] opacity-65 font-medium">Total Profit</p>
+              <h3 className="text-2xl font-semibold font-mono tabular-nums text-[#0B7A4E] mt-1.5">
+                ₦{totalEarnedPayouts.toLocaleString()}
+              </h3>
+              <span className="text-[11px] opacity-60 block mt-1">Paid to wallet</span>
             </div>
 
-            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 shadow-xl flex items-center justify-between">
-              <div>
-                <p className="text-xs text-slate-400 font-medium font-sans uppercase tracking-wider">Referral Bonus</p>
-                <h3 className="text-xl sm:text-2xl font-black text-[#f7ecd5] font-mono mt-1">₦{totalReferralBonus.toLocaleString()}</h3>
-                <span className="text-[10px] text-emerald-400 font-semibold font-sans">7.5% weekly bonus active</span>
-              </div>
-              <div className="w-11 h-11 bg-[#06080e] border border-amber-500/25 rounded-xl flex items-center justify-center text-amber-400 shadow-md">
-                <Users className="w-5 h-5" />
-              </div>
+            <div className="pm-card rounded-xl p-5">
+              <p className="text-[11px] uppercase tracking-[0.1em] opacity-65 font-medium">Partner Bonus</p>
+              <h3 className="text-2xl font-semibold font-mono tabular-nums mt-1.5">
+                ₦{totalReferralBonus.toLocaleString()}
+              </h3>
+              <span className="text-[11px] text-[#9A7B3E] font-medium block mt-1">7.5% weekly override</span>
             </div>
           </div>
 
-          {/* Live Real Estate Liquidity & Yield Candlestick Ticker */}
-          <LiveTradingSimulationCard 
+          <LiveTradingSimulationCard
             variant="compact"
             onExpandTerminal={() => setIsTradingTerminalOpen(true)}
-            className="border-amber-500/25 bg-gradient-to-r from-[#0c101c] via-[#080c16] to-[#0c101c] shadow-xl"
+            className="pm-card"
           />
 
-          {/* Active Investments Registry */}
-          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#070a12] border border-amber-500/25 rounded-2xl p-6 shadow-2xl relative overflow-hidden backdrop-blur-md">
-            <div id="active_investments_section" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-amber-500/20 pb-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 bg-amber-400 rounded-full animate-pulse" />
-                  <h3 className="text-base font-black text-[#f7ecd5] uppercase tracking-wider font-mono">
-                    My Active Investments ({activeInvestments.length})
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={handleRefreshInvestments}
-                    disabled={isRefreshingInvestments}
-                    className="p-1 rounded-lg bg-[#06080e] border border-amber-500/20 text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50 cursor-pointer"
-                    title="Refresh investment status from Supabase"
-                  >
-                    <RotateCw className={`w-3.5 h-3.5 ${isRefreshingInvestments ? 'animate-spin' : ''}`} />
-                  </button>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Verified UAE property deeds, payout schedules, and cadastral co-ownership records.
-                </p>
+          {/* Active Holdings */}
+          <div className="pm-card rounded-2xl p-5 sm:p-6">
+            <div id="active_investments_section" className="flex items-center justify-between gap-3 mb-5 pb-3 border-b border-[var(--pm-border)]">
+              <div className="flex items-center gap-2.5">
+                <h3 className="font-serif text-xl sm:text-2xl font-semibold">
+                  Active Holdings ({activeInvestments.length})
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleRefreshInvestments}
+                  disabled={isRefreshingInvestments}
+                  className="p-1.5 rounded-lg border border-[var(--pm-border)] opacity-70 hover:opacity-100 transition-opacity disabled:opacity-40 cursor-pointer"
+                  title="Refresh"
+                  aria-label="Refresh holdings"
+                >
+                  <RotateCw className={`w-3.5 h-3.5 ${isRefreshingInvestments ? 'animate-spin' : ''}`} />
+                </button>
               </div>
-              <div className="flex items-center gap-2 font-mono text-[10px] text-slate-400">
-                <span className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-2 py-1 rounded-sm uppercase tracking-wider font-bold">
-                  DLD VERIFIED
-                </span>
-                <span className="hidden sm:inline border border-amber-500/30 bg-amber-500/10 text-amber-300 px-2 py-1 rounded-sm uppercase tracking-wider font-bold">
-                  DIFC SPV ESCROW
-                </span>
-              </div>
+              <span className="text-[11px] font-mono opacity-60 hidden sm:inline">
+                DLD · DIFC SPV
+              </span>
             </div>
 
-            {/* Institutional DIFC SPV Trust & DLD Cadastral Verification Ledger */}
-            <div className="bg-[#06080e]/95 border border-amber-500/20 rounded-xl p-4 my-3 text-xs shadow-inner">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-500/15 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="font-mono font-bold uppercase tracking-wider text-[#f7ecd5] text-[11px]">
-                    DIFC SPV Trust &amp; Dubai Land Department (DLD) Registry
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 font-mono text-[10px] text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    SPV Structure: DIFC Law No. 4
-                  </span>
-                  <span className="hidden sm:inline text-amber-500/40">|</span>
-                  <span className="text-amber-300/80">Custodian: Treasure Homes Prime SPV</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 text-[11px] text-slate-300">
-                <div className="bg-[#090d18] border border-amber-500/15 p-2.5 rounded-lg space-y-1">
-                  <span className="text-[10px] font-mono uppercase text-slate-500 block">Asset Freehold Title</span>
-                  <p className="font-semibold text-[#f7ecd5]">DLD Registered Co-Ownership</p>
-                  <p className="text-[10px] text-slate-400">Every fractional stake is backed by registered real estate titles in Dubai.</p>
-                </div>
-
-                <div className="bg-[#090d18] border border-amber-500/15 p-2.5 rounded-lg space-y-1">
-                  <span className="text-[10px] font-mono uppercase text-slate-500 block">Rental Yield Clearing</span>
-                  <p className="font-semibold text-emerald-400">Friday Automated Settlements</p>
-                  <p className="text-[10px] text-slate-400">24-week distribution schedule settled directly via secure banking escrow.</p>
-                </div>
-
-                <div className="bg-[#090d18] border border-amber-500/15 p-2.5 rounded-lg space-y-1">
-                  <span className="text-[10px] font-mono uppercase text-slate-500 block">Cadastral Makani Audit</span>
-                  <p className="font-semibold text-amber-300">Official Municipal Geotag</p>
-                  <p className="text-[10px] text-slate-400">Directly inspect title deeds, cadastral plot numbers, and escrow certificates.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4">
               {/* SKELETON SCREEN LOADER: Mimics property card layout while investment data is being fetched/synchronized */}
               {(!isDbLoaded || supabaseStatus === 'loading' || isRefreshingInvestments) ? (
                 <div className="space-y-3">
@@ -938,15 +772,15 @@ export const UserDashboard: React.FC = () => {
 
                           <AutoRenewControl investment={inv} onToggle={toggleAutoReinvest} />
 
-                          {/* Official Deed & Documents Button */}
+                          {/* Official Deed Button */}
                           <button
                             type="button"
                             onClick={() => setViewingDeedInvestment(inv)}
-                            className="w-full mt-3 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-amber-500/10 cursor-pointer active:scale-95"
-                            title="View official DLD Co-Ownership Deed and backing contracts"
+                            className="w-full mt-3 py-2 px-3 rounded-lg border border-[var(--pm-border-strong)] hover:bg-[var(--pm-surface-subtle)] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                            title="View DLD Co-Ownership Deed"
                           >
-                            <Award className="w-4 h-4 text-slate-950" />
-                            <span>📜 View Official Deed &amp; Property Documents</span>
+                            <Award className="w-3.5 h-3.5 text-[#0B7A4E]" />
+                            <span>View Title Deed</span>
                           </button>
                         </div>
 
@@ -1087,232 +921,183 @@ export const UserDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* INVEST / BUY PLANS TAB */}
+      {/* PROPERTIES TAB */}
       {activeTab === 'invest' && (
         <div className="space-y-6">
-          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl text-center max-w-3xl mx-auto backdrop-blur-md">
-            <div className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
-              <UaeFlag size="xs" />
-              <span>UAE Prime Real Estate Portfolio</span>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-4 border-b border-[var(--pm-border)]">
+            <div>
+              <h3 className="font-serif text-2xl sm:text-3xl font-semibold">Dubai Property Offerings</h3>
+              <p className="text-xs opacity-65 mt-0.5">24-week tenure · Weekly Friday cash returns</p>
             </div>
-            <h3 className="text-xl sm:text-2xl font-black text-[#f7ecd5] tracking-wide uppercase font-mono">UAE Institutional Property Plans</h3>
-            <p className="text-xs text-slate-300 mt-1 max-w-xl mx-auto leading-relaxed">
-              Acquire institutional co-ownership in verified luxury assets across Dubai Marina, DIFC, Palm Jumeirah, and Creek Harbour. All plans run for <strong className="text-amber-400">24 weeks</strong> with cash payouts paid into your wallet every Friday.
-            </p>
-            <div className="mt-3 inline-flex items-center gap-2 bg-[#06080e] px-4 py-1.5 rounded-full border border-amber-500/30 text-xs text-slate-300 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Backed by <strong className="text-amber-300">Dubai Land Department (DLD)</strong> Title Deeds &amp; Sovereign SPV Trust</span>
-            </div>
+            <span className="text-xs font-mono opacity-70">
+              Wallet: ₦{(currentUser.walletBalance || 0).toLocaleString()}
+            </span>
           </div>
 
-          {/* Real-time Candlestick Trading & Yield Simulation Terminal */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse" />
-                <h4 className="text-sm font-black text-[#f7ecd5] uppercase tracking-wider font-mono">
-                  Live Candlestick Trading &amp; Yield Simulation
-                </h4>
-              </div>
-              <span className="text-[11px] text-amber-400 font-mono hidden sm:inline">
-                Real-time Asset Liquidity Index · UAE-REIT / NGN
-              </span>
-            </div>
-            <LiveTradingSimulationCard 
-              onExpandTerminal={() => setIsTradingTerminalOpen(true)}
-              className="border-amber-500/25 bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] shadow-2xl"
-            />
-          </div>
+          <LiveTradingSimulationCard
+            onExpandTerminal={() => setIsTradingTerminalOpen(true)}
+            className="pm-card"
+          />
 
           {(!isDbLoaded || supabaseStatus === 'loading' || isRefreshingInvestments) ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs text-amber-400 font-mono px-1">
-                <span className="flex items-center gap-1.5 animate-pulse">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  Synchronizing Dubai Land Department Property Offerings...
-                </span>
-                <span className="text-[11px] text-slate-500 font-mono">DLD Cadastral Registry</span>
-              </div>
-              <PropertyCardSkeleton count={3} variant="plan" className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3" />
-            </div>
+            <PropertyCardSkeleton count={3} variant="plan" className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3" />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {INVESTMENT_PLANS.map((plan) => {
                 const isAffordable = currentUser.walletBalance >= plan.cost;
-              return (
-                <div 
-                  key={plan.id} 
-                  className={`cv-auto bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border rounded-2xl flex flex-col justify-between shadow-2xl transition-all duration-300 relative overflow-hidden ${
-                    justActivatedPlanId === plan.id
-                      ? 'border-emerald-500 ring-4 ring-emerald-500/30 shadow-2xl scale-[1.01]'
-                      : investingPlanId === plan.id
-                        ? 'border-amber-400 ring-2 ring-amber-400/40 shadow-xl scale-[1.005]'
-                        : isAffordable ? 'border-amber-500/30 hover:border-amber-400 hover:shadow-amber-500/10' : 'border-amber-500/15 opacity-90'
-                  }`}
-                >
-                  {/* Property Image Banner */}
-                  <div className="relative h-44 w-full overflow-hidden bg-slate-900 group">
-                    <img 
-                      src={plan.propertyImage} 
-                      alt={plan.propertyName || plan.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#06080e] via-[#06080e]/40 to-transparent" />
-                    <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-                      <UaeFlag size="xs" />
-                      <span>{plan.propertyLocation.split(',')[0]}</span>
+                return (
+                  <article
+                    key={plan.id}
+                    className={`cv-auto pm-card rounded-2xl flex flex-col justify-between overflow-hidden transition-colors duration-200 ${
+                      justActivatedPlanId === plan.id
+                        ? 'ring-2 ring-[#0B7A4E]'
+                        : investingPlanId === plan.id
+                        ? 'ring-2 ring-[#9A7B3E]'
+                        : ''
+                    }`}
+                  >
+                    {/* Clean Full-Bleed Architectural Photo (Zero Corner Pills, Theme-Immune Scrim Text) */}
+                    <div className="relative h-44 w-full overflow-hidden bg-[#18222B] group">
+                      <img
+                        src={plan.propertyImage}
+                        alt={plan.propertyName || plan.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+                      <div className="pm-photo-overlay absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2">
+                        <span className="text-xs font-medium truncate">{plan.propertyType}</span>
+                        <span className="pm-photo-sub text-[11px] font-mono tabular-nums shrink-0">
+                          {plan.occupancyRate}
+                        </span>
+                      </div>
                     </div>
-                    <div className={`absolute top-3 right-3 text-[9px] font-extrabold uppercase px-2.5 py-1 rounded-full tracking-widest font-mono shadow-sm ${
-                      justActivatedPlanId === plan.id ? 'bg-emerald-500 text-white animate-pulse' : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black'
-                    }`}>
-                      {justActivatedPlanId === plan.id ? 'ACTIVATED' : 'DLD VERIFIED'}
-                    </div>
-                    <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-white text-[11px]">
-                      <span className="font-semibold text-slate-200 truncate pr-2">{plan.propertyType}</span>
-                      <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded font-mono text-[10px] font-bold shrink-0">
-                        {plan.occupancyRate} Occupancy
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className="p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      {/* Property Name & Verified Address */}
-                      <div className="mb-3">
-                        <h4 className="text-lg font-black text-[#f7ecd5] uppercase tracking-tight">{plan.propertyName || plan.name}</h4>
-                        <div className="flex items-start gap-1 text-xs text-slate-400 mt-1">
-                          <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                          <span className="text-[11px] leading-snug text-slate-400 line-clamp-2">{plan.propertyAddress}</span>
+                    <div className="p-5 flex-1 flex flex-col justify-between gap-4">
+                      <div className="space-y-3.5">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide opacity-60 font-medium">
+                            {plan.propertyLocation.split(',')[0]} · DLD Verified
+                          </p>
+                          <h4 className="font-serif text-xl font-semibold mt-0.5 leading-snug">
+                            {plan.propertyName || plan.name}
+                          </h4>
+                          <p className="text-[11px] font-mono opacity-60 mt-1 truncate">
+                            Makani {plan.makaniNumber} · {plan.cadastralId}
+                          </p>
                         </div>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[10px] font-mono">
-                          <span className="bg-[#06080e] border border-amber-500/20 text-slate-300 px-2 py-0.5 rounded">
-                            Makani: {plan.makaniNumber}
-                          </span>
-                          <span className="bg-[#06080e] border border-amber-500/20 text-slate-300 px-2 py-0.5 rounded">
-                            Cadastral: {plan.cadastralId}
-                          </span>
+
+                        {/* Flat Hairline Ledger */}
+                        <div className="border-y border-[var(--pm-border)] py-3 space-y-2 text-xs">
+                          <div className="flex justify-between items-baseline">
+                            <span className="opacity-65">Capital</span>
+                            <span className="font-mono text-sm font-semibold tabular-nums">
+                              ₦{plan.cost.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-baseline">
+                            <span className="opacity-65">Friday Payout</span>
+                            <span className="font-mono text-sm font-semibold tabular-nums text-[#0B7A4E]">
+                              ₦{plan.weeklyPayout.toLocaleString()}/wk
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-baseline">
+                            <span className="opacity-65">24-Week Return</span>
+                            <span className="font-mono text-sm font-semibold tabular-nums text-[#9A7B3E]">
+                              ₦{plan.totalReturns.toLocaleString()}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Yield Numbers */}
-                      <div className="my-4 bg-[#06080e]/90 border border-amber-500/20 p-3.5 rounded-xl space-y-2.5 shadow-inner">
-                        <div className="flex justify-between items-baseline">
-                          <span className="text-xs text-slate-400 font-medium">Invested Capital:</span>
-                          <span className="text-base font-black text-white font-mono">₦{plan.cost.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-baseline">
-                          <span className="text-xs text-slate-400 font-medium">Weekly Friday Cash Payout:</span>
-                          <span className="text-sm font-black text-emerald-400 font-mono">₦{plan.weeklyPayout.toLocaleString()} / wk</span>
-                        </div>
-                        <div className="h-px bg-amber-500/15 w-full" />
-                        <div className="flex justify-between items-baseline">
-                          <span className="text-xs text-amber-300 font-bold">Total Returns (24 Weeks):</span>
-                          <span className="text-base font-black text-amber-400 font-mono">₦{plan.totalReturns.toLocaleString()}</span>
-                        </div>
-                      </div>
+                      <div className="space-y-2">
+                        {isAffordable ? (
+                          <button
+                            onClick={() => handlePurchase(plan)}
+                            disabled={investingPlanId === plan.id}
+                            className="w-full py-2.5 px-4 rounded-lg bg-[#0B7A4E] hover:bg-[#08633E] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                            id={`btn_purchase_${plan.id}`}
+                          >
+                            {justActivatedPlanId === plan.id ? (
+                              <>
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span>Activated</span>
+                              </>
+                            ) : investingPlanId === plan.id ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Activating…</span>
+                              </>
+                            ) : (
+                              `Acquire · ₦${plan.cost.toLocaleString()}`
+                            )}
+                          </button>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setShortfallPlan(plan)}
+                              className="w-full py-2.5 px-4 rounded-lg bg-[#0B7A4E] hover:bg-[#08633E] text-white font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                              id={`btn_fund_wallet_${plan.id}`}
+                            >
+                              <Wallet className="w-3.5 h-3.5 shrink-0" />
+                              <span>Top Up ₦{(plan.cost - (currentUser.walletBalance || 0)).toLocaleString()}</span>
+                            </button>
+                            <div className="flex items-center justify-between text-[11px] font-mono opacity-65 px-0.5">
+                              <span>Wallet: ₦{(currentUser.walletBalance || 0).toLocaleString()}</span>
+                              <span>Shortfall: ₦{(plan.cost - (currentUser.walletBalance || 0)).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        )}
 
-                      {/* Deed Guarantee Notice & Preview Button */}
-                      <div className="mb-4">
                         <button
                           type="button"
                           onClick={() => setSampleDeedPlan(plan)}
-                          className="w-full text-center py-2 px-3 rounded-xl bg-[#06080e] hover:bg-[#111728] border border-amber-500/30 text-amber-300 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm hover:border-amber-400"
+                          className="w-full py-2 px-3 rounded-lg text-xs font-medium opacity-75 hover:opacity-100 hover:bg-[var(--pm-surface-subtle)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                         >
-                          <Award className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Preview Title Deed &amp; Backing Documents</span>
+                          <Award className="w-3.5 h-3.5 text-[#9A7B3E]" />
+                          <span>Preview Title Deed</span>
                         </button>
                       </div>
                     </div>
-
-                    {isAffordable ? (
-                      <button
-                        onClick={() => handlePurchase(plan)}
-                        disabled={investingPlanId === plan.id}
-                        className={`w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden active:scale-95 cursor-pointer ${
-                          justActivatedPlanId === plan.id
-                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]'
-                            : investingPlanId === plan.id
-                              ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 shadow-md animate-pulse cursor-wait'
-                              : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/10 hover:shadow-amber-500/20 cursor-pointer'
-                        }`}
-                        id={`btn_purchase_${plan.id}`}
-                      >
-                        {justActivatedPlanId === plan.id ? (
-                          <>
-                            <CheckCircle2 className="w-4 h-4 text-white animate-bounce" />
-                            <span>Plan Activated!</span>
-                          </>
-                        ) : investingPlanId === plan.id ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
-                            <span className="tracking-widest">Activating Contract...</span>
-                          </>
-                        ) : (
-                          `Invest ₦${plan.cost.toLocaleString()}`
-                        )}
-                      </button>
-                    ) : (
-                      <div className="space-y-2">
-                        <button
-                          type="button"
-                          onClick={() => setShortfallPlan(plan)}
-                          className="w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-[#06080e] hover:bg-[#111728] border border-amber-500/40 text-amber-300 flex items-center justify-center gap-2 shadow-sm hover:border-amber-400 transition-all cursor-pointer active:scale-95 font-sans"
-                          id={`btn_fund_wallet_${plan.id}`}
-                          title="Insufficient funds in wallet. Click to top up."
-                        >
-                          <Wallet className="w-4 h-4 text-amber-400 shrink-0" />
-                          <span>Top Up ₦{(plan.cost - (currentUser.walletBalance || 0)).toLocaleString()} to Invest</span>
-                        </button>
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono px-0.5">
-                          <span>Wallet: <strong className={currentUser.walletBalance === 0 ? "text-rose-400 font-bold" : "text-white"}>₦{(currentUser.walletBalance || 0).toLocaleString()}</strong></span>
-                          <span>Shortfall: <strong className="text-rose-400 font-bold">₦{(plan.cost - (currentUser.walletBalance || 0)).toLocaleString()}</strong></span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* FINANCE (DEPOSIT & WITHDRAWAL) TAB */}
       {activeTab === 'finance' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="deposit_form_container">
           {/* DEPOSIT MODULE (DIRECT BANK TRANSFER & RECEIPT PROOF) */}
-          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl space-y-5 backdrop-blur-md">
-            <div className="border-b border-amber-500/20 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="pm-card rounded-2xl p-6 space-y-5">
+            <div className="border-b border-[var(--pm-border)] pb-3 flex items-center justify-between gap-2">
               <div>
-                <h3 className="text-base font-bold text-[#f7ecd5] uppercase tracking-wider flex items-center gap-2 font-mono">
-                  <ArrowDownLeft className="w-5 h-5 text-emerald-400" />
-                  How to Add Money
+                <h3 className="font-serif text-xl font-semibold flex items-center gap-2">
+                  <ArrowDownLeft className="w-4 h-4 text-[#0B7A4E]" />
+                  Deposit Funds
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Transfer from your bank app to either of our official accounts below. Enter the amount you sent and upload your receipt screenshot. Your wallet will be funded within 10 to 30 minutes.
+                <p className="text-xs opacity-65 mt-0.5">
+                  Transfer to either reserve account below and upload your receipt. Credited within 10–30 minutes.
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 self-start sm:self-auto bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold text-emerald-300">
-                <Building className="w-3.5 h-3.5 text-emerald-400" />
-                <span>DIRECT BANK TRANSFER</span>
-              </div>
+              <span className="text-[11px] font-medium text-[#0B7A4E] shrink-0">Bank Transfer</span>
             </div>
 
             <div className="space-y-4">
               {/* Treasure Homes Reserve Accounts */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-amber-300 font-mono">
-                    <Building className="w-4 h-4 text-amber-400" />
-                    <span>OFFICIAL BANK ACCOUNTS FOR PAYMENT</span>
+                <div className="space-y-2.5">
+                  <div className="text-[11px] uppercase tracking-wider opacity-60 font-medium">
+                    Reserve Bank Accounts
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Account 1: PAGA */}
-                    <div className="bg-[#06080e] border border-amber-500/30 p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden shadow-inner">
-                      <div className="absolute top-0 right-0 bg-amber-500/20 text-amber-300 font-mono font-bold text-[9px] uppercase px-2 py-0.5 rounded-bl-lg border-l border-b border-amber-500/30">
+                    <div className="pm-card-subtle p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden">
+                      <div className="text-[10px] font-mono uppercase tracking-wider opacity-55">
                         Account 1
                       </div>
                       <div className="flex justify-between">
@@ -1348,8 +1133,8 @@ export const UserDashboard: React.FC = () => {
                     </div>
 
                     {/* Account 2: Moniepoint */}
-                    <div className="bg-[#06080e] border border-amber-500/30 p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden shadow-inner">
-                      <div className="absolute top-0 right-0 bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[9px] uppercase px-2 py-0.5 rounded-bl-lg border-l border-b border-emerald-500/30">
+                    <div className="pm-card-subtle p-3.5 rounded-xl space-y-1.5 text-xs relative overflow-hidden">
+                      <div className="text-[10px] font-mono uppercase tracking-wider opacity-55">
                         Account 2
                       </div>
                       <div className="flex justify-between">
@@ -1446,44 +1231,44 @@ export const UserDashboard: React.FC = () => {
                         onChange={handleFileChange}
                       />
                       <label htmlFor="receipt-upload-input" className="cursor-pointer block space-y-1.5">
-                        <UploadCloud className="w-6 h-6 text-amber-400 mx-auto animate-bounce-slow" />
-                        <div className="text-xs text-slate-300">
+                        <UploadCloud className="w-6 h-6 text-[#0B7A4E] mx-auto" />
+                        <div className="text-xs opacity-80">
                           {receiptFile ? (
-                            <span className="font-bold text-amber-400 font-mono text-[11px] break-all">
+                            <span className="font-semibold text-[#0B7A4E] font-mono text-[11px] break-all">
                               Selected: {receiptFile.name}
                             </span>
                           ) : (
-                            <span>Drag and drop your receipt here, or <strong className="text-amber-400 hover:underline">browse files</strong></span>
+                            <span>Drop receipt here, or <strong className="text-[#0B7A4E] hover:underline">browse files</strong></span>
                           )}
                         </div>
-                        <p className="text-[10px] text-slate-500">Supports PNG, JPG, or PDF (Max 5MB)</p>
+                        <p className="text-[10px] opacity-55">PNG, JPG, or PDF (Max 5MB)</p>
                       </label>
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-black py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md shadow-emerald-950/20 cursor-pointer active:scale-95"
+                    className="w-full bg-[#0B7A4E] hover:bg-[#08633E] text-white font-semibold py-2.5 rounded-lg text-xs transition-colors cursor-pointer"
                     id="btn_submit_deposit"
                   >
-                    I Have Sent The Money (Submit Receipt)
+                    Submit Deposit Receipt
                   </button>
                 </form>
               </div>
 
             {/* List of User Pending Deposits */}
             {pendingDeposits.length > 0 && (
-              <div className="pt-3 border-t border-amber-500/20 space-y-2">
-                <h4 className="text-xs font-bold text-amber-400 flex items-center gap-1 font-mono">
-                  <Clock className="w-3.5 h-3.5 animate-spin" /> Pending Deposit Approvals ({pendingDeposits.length})
+              <div className="pt-3 border-t border-[var(--pm-border)] space-y-2">
+                <h4 className="text-xs font-semibold flex items-center gap-1.5 opacity-80">
+                  <Clock className="w-3.5 h-3.5 text-[#9A7B3E]" /> Pending Deposits ({pendingDeposits.length})
                 </h4>
                 {pendingDeposits.map(t => (
-                  <div key={t.id} className="bg-[#06080e] border border-amber-500/20 p-3 rounded-xl text-xs flex justify-between items-center shadow-inner">
+                  <div key={t.id} className="pm-card-subtle p-3 rounded-xl text-xs flex justify-between items-center">
                     <div>
-                      <p className="font-bold text-white font-mono">₦{t.amount.toLocaleString()}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">{t.paymentMethod} - {new Date(t.createdAt).toLocaleTimeString()}</p>
+                      <p className="font-semibold font-mono">₦{t.amount.toLocaleString()}</p>
+                      <p className="text-[10px] opacity-60 mt-0.5">{t.paymentMethod} · {new Date(t.createdAt).toLocaleTimeString()}</p>
                     </div>
-                    <span className="text-[9px] bg-amber-500/15 text-amber-300 px-2 py-0.5 border border-amber-500/30 rounded-full font-mono uppercase tracking-widest animate-pulse font-bold">
+                    <span className="text-[10px] text-[#9A7B3E] font-mono uppercase font-semibold">
                       Pending
                     </span>
                   </div>
@@ -1493,21 +1278,18 @@ export const UserDashboard: React.FC = () => {
           </div>
 
           {/* WITHDRAWAL MODULE */}
-          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl space-y-5 backdrop-blur-md">
-            <div className="border-b border-amber-500/20 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="pm-card rounded-2xl p-6 space-y-5">
+            <div className="border-b border-[var(--pm-border)] pb-3 flex items-center justify-between gap-2">
               <div>
-                <h3 className="text-base font-bold text-[#f7ecd5] uppercase tracking-wider flex items-center gap-2 font-mono">
-                  <ArrowUpRight className="w-5 h-5 text-rose-400" />
-                  Send Money to Your Bank
+                <h3 className="font-serif text-xl font-semibold flex items-center gap-2">
+                  <ArrowUpRight className="w-4 h-4 text-[#9A7B3E]" />
+                  Withdraw to Bank
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Enter how much you want to withdraw and choose your bank. Your money will arrive in your bank account within a few hours.
+                <p className="text-xs opacity-65 mt-0.5">
+                  Minimum withdrawal ₦{settings.minWithdrawal.toLocaleString()}. Settled directly to your Nigerian bank account.
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 self-start sm:self-auto bg-[#06080e] border border-amber-500/25 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold text-slate-300">
-                <Clock className="w-3.5 h-3.5 text-amber-400" />
-                <span>BANK WITHDRAWAL</span>
-              </div>
+              <span className="text-[11px] font-medium opacity-65 shrink-0">NIBSS</span>
             </div>
 
             <form onSubmit={handleWithdrawalSubmit} className="space-y-4">
@@ -1570,40 +1352,33 @@ export const UserDashboard: React.FC = () => {
 
               <button
                 type="submit"
-                className={`w-full py-3 rounded-xl text-xs uppercase tracking-wider font-black transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer active:scale-95 ${
-                  settings.automatedPayouts 
-                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-emerald-950/20' 
-                    : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-500/10'
-                }`}
+                className="w-full py-2.5 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer bg-[#0B7A4E] hover:bg-[#08633E] text-white"
                 id="btn_submit_withdrawal"
               >
                 {settings.automatedPayouts ? (
-                  <>
-                    <Zap className="w-4 h-4 text-amber-300" />
-                    <span>Withdraw Cash to My Bank (₦{Number(withAmount || 0).toLocaleString()})</span>
-                  </>
+                  <span>Withdraw ₦{Number(withAmount || 0).toLocaleString()}</span>
                 ) : (
-                  <span>Withdraw Cash to My Bank</span>
+                  <span>Request Bank Withdrawal</span>
                 )}
               </button>
             </form>
 
             {/* List of User Pending Withdrawals */}
             {pendingWithdrawals.length > 0 && (
-              <div className="pt-3 border-t border-amber-500/20 space-y-2">
-                <h4 className="text-xs font-bold text-amber-400 flex items-center gap-1 font-mono">
-                  <Clock className="w-3.5 h-3.5 animate-spin" /> Pending Disbursals ({pendingWithdrawals.length})
+              <div className="pt-3 border-t border-[var(--pm-border)] space-y-2">
+                <h4 className="text-xs font-semibold flex items-center gap-1.5 opacity-80">
+                  <Clock className="w-3.5 h-3.5 text-[#9A7B3E]" /> Pending Withdrawals ({pendingWithdrawals.length})
                 </h4>
                 {pendingWithdrawals.map(t => (
-                  <div key={t.id} className="bg-[#06080e] border border-amber-500/20 p-3 rounded-xl text-xs flex justify-between items-center shadow-inner">
+                  <div key={t.id} className="pm-card-subtle p-3 rounded-xl text-xs flex justify-between items-center">
                     <div>
-                      <p className="font-bold text-white font-mono">₦{t.amount.toLocaleString()}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">To: {t.accountDetails}</p>
+                      <p className="font-semibold font-mono">₦{t.amount.toLocaleString()}</p>
+                      <p className="text-[10px] opacity-60 mt-0.5">To: {t.accountDetails}</p>
                       {t.gatewayReference && (
-                        <p className="text-[9px] font-mono text-emerald-400 mt-0.5">Ref: {t.gatewayReference}</p>
+                        <p className="text-[10px] font-mono text-[#0B7A4E] mt-0.5">Ref: {t.gatewayReference}</p>
                       )}
                     </div>
-                    <span className="text-[9px] bg-amber-500/15 text-amber-300 px-2 py-0.5 border border-amber-500/30 rounded-full font-mono uppercase tracking-widest animate-pulse font-bold">
+                    <span className="text-[10px] text-[#9A7B3E] font-mono uppercase font-semibold">
                       Processing
                     </span>
                   </div>
@@ -1611,55 +1386,6 @@ export const UserDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* Active WhatsApp Number & Verified Dispatch Channel Card */}
-            <div className="bg-[#06080e] border border-amber-500/25 rounded-2xl p-5 space-y-3.5 shadow-xl">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                    <MessageSquare className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-[#f7ecd5] uppercase tracking-wider font-mono">
-                      Active WhatsApp Dispatch Channel
-                    </h4>
-                    <p className="text-[10px] text-slate-400">
-                      Official phone number designated for automated Friday distributions &amp; official deeds
-                    </p>
-                  </div>
-                </div>
-                {(() => {
-                  const waInfo = getWhatsAppStatusInfo(currentUser.whatsappStatus);
-                  return (
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border ${waInfo.badgeClass}`}>
-                      <span>{waInfo.icon}</span>
-                      <span>{waInfo.label}</span>
-                    </span>
-                  );
-                })()}
-              </div>
-
-              <div className="bg-[#0b0f19] border border-slate-800 p-3.5 rounded-xl flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <span className="text-[10px] text-slate-400 font-mono block">Registered Active WhatsApp</span>
-                  <span className="text-sm font-bold text-white font-mono mt-0.5 block">
-                    {formatPhoneDisplay(currentUser.phone)}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[9px] font-mono text-emerald-400 block font-semibold">Priority Delivery Channel</span>
-                  <span className="text-[11px] text-slate-300 font-mono">Encrypted 256-bit</span>
-                </div>
-              </div>
-
-              {/* Clear Value Proposition */}
-              <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5">
-                <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <div className="text-xs text-slate-300 leading-relaxed">
-                  <strong className="text-amber-300 block font-semibold mb-0.5">Value Guarantee:</strong>
-                  Receive instant Friday yield receipts and deed documents directly to your WhatsApp inbox every Friday at 12:00 PM without manual follow-up.
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -1667,115 +1393,99 @@ export const UserDashboard: React.FC = () => {
       {/* REFERRAL TAB */}
       {activeTab === 'referrals' && (
         <div className="space-y-6">
-          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl text-center max-w-3xl mx-auto space-y-3 backdrop-blur-md">
-            <h3 className="text-lg font-bold text-[#f7ecd5] tracking-wide uppercase flex items-center justify-center gap-2 font-mono">
-              <Users className="w-5 h-5 text-amber-400" />
-              Invite Friends, Earn Cash Every Friday
-            </h3>
-            <p className="text-xs text-slate-300 max-w-xl mx-auto leading-relaxed">
-              Share your invite link with friends. Whenever they get paid their weekly profit, you automatically receive 7.5% cash sent straight to your wallet!
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
-              <div className="bg-[#06080e] inline-flex items-center gap-2 border border-amber-500/30 px-3.5 py-2 rounded-xl text-sm shadow-inner">
-                <span className="text-slate-400 text-xs">My Code:</span>
-                <strong className="text-amber-400 font-mono text-sm tracking-wider font-extrabold">{currentUser.referralCode}</strong>
-                <button 
+          <div className="pm-card rounded-2xl p-6 text-center max-w-3xl mx-auto space-y-4">
+            <div>
+              <h3 className="font-serif text-2xl font-semibold">Partner Program</h3>
+              <p className="text-xs opacity-65 mt-1">
+                Earn a 7.5% weekly override on every Friday payout credited to your invited investors.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              <div className="pm-card-subtle inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs">
+                <span className="opacity-65">Code:</span>
+                <strong className="font-mono text-sm font-semibold tracking-wider">{currentUser.referralCode}</strong>
+                <button
                   onClick={handleCopyCode}
-                  className="bg-[#111728] hover:bg-[#1a233a] border border-amber-500/30 text-amber-300 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
-                  title="Copy code only"
+                  className="text-[#0B7A4E] hover:underline font-semibold flex items-center gap-1 cursor-pointer ml-1"
+                  title="Copy code"
                 >
-                  {copiedCode ? 'Copied!' : <><Copy className="w-3.5 h-3.5" /> Copy Code</>}
+                  {copiedCode ? 'Copied' : <><Copy className="w-3.5 h-3.5" /> Copy</>}
                 </button>
               </div>
 
-              <button 
+              <button
                 onClick={handleCopyLink}
-                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 shadow-md shadow-amber-500/10 transition-all cursor-pointer active:scale-95"
-                title="Copy direct invite link with referral code attached"
+                className="bg-[#0B7A4E] hover:bg-[#08633E] text-white font-semibold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Copy invite link"
               >
-                {copiedLink ? <><Check className="w-3.5 h-3.5" /> Link Copied!</> : <><Link2 className="w-3.5 h-3.5" /> Copy Direct Invite Link</>}
+                {copiedLink ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Link2 className="w-3.5 h-3.5" /> Copy Invite Link</>}
               </button>
 
-              <button 
+              <button
                 type="button"
                 onClick={() => setIsPitchModalOpen(true)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 shadow-md transition-all cursor-pointer active:scale-95"
-                title="Share your pitch on WhatsApp in 6 regional languages"
+                className="pm-btn-secondary font-semibold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer"
                 id="btn_user_whatsapp_multilingual_pitch"
               >
-                <MessageSquare className="w-3.5 h-3.5 text-slate-950" />
-                <span>Share on WhatsApp (6 Languages)</span>
+                <MessageSquare className="w-3.5 h-3.5 text-[#0B7A4E]" />
+                <span>Share Pitch (6 Languages)</span>
               </button>
-
-              <a 
-                href={WHATSAPP_SUPPORT_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/40 text-emerald-300 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shrink-0 shadow-sm transition-all cursor-pointer active:scale-95"
-                title="Chat with Dedicated WhatsApp Account Concierge"
-                id="btn_user_chat_whatsapp_advisor"
-              >
-                <span>Chat with Advisor on WhatsApp</span>
-              </a>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 text-center shadow-xl">
-              <p className="text-xs text-slate-400 font-medium">Friends Joined</p>
-              <h3 className="text-3xl font-extrabold text-white mt-1 font-mono">{referredUsers.length}</h3>
-              <p className="text-[10px] text-amber-400 font-medium mt-1">Signed up with your link</p>
+            <div className="pm-card rounded-xl p-5 text-center">
+              <p className="text-xs opacity-65">Invited Partners</p>
+              <h3 className="text-3xl font-mono font-semibold mt-1">{referredUsers.length}</h3>
             </div>
 
-            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 text-center shadow-xl">
-              <p className="text-xs text-slate-400 font-medium">Friends' Active Money</p>
-              <h3 className="text-3xl font-extrabold text-white mt-1 font-mono">
+            <div className="pm-card rounded-xl p-5 text-center">
+              <p className="text-xs opacity-65">Downline Capital</p>
+              <h3 className="text-3xl font-mono font-semibold mt-1">
                 ₦{investments
                   .filter(inv => referredUsers.some(ru => ru.id === inv.userId) && inv.status === 'active')
                   .reduce((sum, inv) => sum + inv.cost, 0)
                   .toLocaleString()}
               </h3>
-              <p className="text-[10px] text-slate-400 mt-1">Total working in property plans</p>
             </div>
 
-            <div className="bg-gradient-to-b from-[#0e1424] to-[#070a12] border border-amber-500/20 rounded-2xl p-5 text-center shadow-xl">
-              <p className="text-xs text-slate-400 font-medium">Total Referral Cash Earned</p>
-              <h3 className="text-3xl font-extrabold text-amber-400 mt-1 font-mono">₦{totalReferralBonus.toLocaleString()}</h3>
-              <p className="text-[10px] text-emerald-400 font-medium mt-1">Paid directly to your wallet</p>
+            <div className="pm-card rounded-xl p-5 text-center">
+              <p className="text-xs opacity-65">Override Earned</p>
+              <h3 className="text-3xl font-mono font-semibold text-[#0B7A4E] mt-1">₦{totalReferralBonus.toLocaleString()}</h3>
             </div>
           </div>
 
           {/* List of Referred Users */}
-          <div className="bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border border-amber-500/25 rounded-2xl p-6 shadow-2xl backdrop-blur-md">
-            <h3 className="text-sm font-bold text-[#f7ecd5] uppercase tracking-wider mb-4 border-b border-amber-500/20 pb-3 font-mono">
-              My Referral Downline ({referredUsers.length})
+          <div className="pm-card rounded-2xl p-6">
+            <h3 className="font-serif text-xl font-semibold mb-4 border-b border-[var(--pm-border)] pb-3">
+              Downline ({referredUsers.length})
             </h3>
             {referredUsers.length === 0 ? (
-              <p className="text-xs text-slate-400 text-center py-6">You have not referred any users yet. Share your referral code to start earning!</p>
+              <p className="text-xs opacity-60 text-center py-6">No referrals yet. Share your invite link to start earning.</p>
             ) : (
               <div className="space-y-3">
                 {referredUsers.map(ru => {
                   const ruInvestments = investments.filter(inv => inv.userId === ru.id && inv.status === 'active');
                   return (
-                    <div key={ru.id} className="bg-[#06080e] border border-amber-500/20 p-4 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs shadow-inner">
+                    <div key={ru.id} className="pm-card-subtle p-4 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs">
                       <div>
-                        <p className="font-semibold text-white">{ru.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">Signed up on: {new Date(ru.createdAt).toLocaleDateString()}</p>
+                        <p className="font-semibold">{ru.name}</p>
+                        <p className="text-[11px] opacity-60 font-mono mt-0.5">Joined {new Date(ru.createdAt).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right flex items-center gap-4">
                         <div>
-                          <span className="text-slate-400 block text-[10px]">Active Investments</span>
-                          <span className="font-bold text-amber-400 font-mono">
+                          <span className="opacity-60 block text-[10px]">Active Plans</span>
+                          <span className="font-semibold font-mono">
                             {ruInvestments.length > 0 
-                              ? `${ruInvestments.length} plan(s) (₦${ruInvestments.reduce((s, i) => s + i.cost, 0).toLocaleString()})`
+                              ? `${ruInvestments.length} (₦${ruInvestments.reduce((s, i) => s + i.cost, 0).toLocaleString()})`
                               : 'None'
                             }
                           </span>
                         </div>
                         {ruInvestments.length > 0 && (
-                          <div className="bg-emerald-500/15 px-2.5 py-1 rounded-lg text-emerald-300 font-mono text-[9px] border border-emerald-500/30 font-bold">
-                            +₦{(ruInvestments.reduce((s, i) => s + i.weeklyPayout, 0) * 0.5).toLocaleString()}/wk Bonus
-                          </div>
+                          <span className="text-[#0B7A4E] font-mono text-[11px] font-semibold">
+                            +₦{(ruInvestments.reduce((s, i) => s + i.weeklyPayout, 0) * 0.5).toLocaleString()}/wk
+                          </span>
                         )}
                       </div>
                     </div>
@@ -1787,38 +1497,30 @@ export const UserDashboard: React.FC = () => {
         </div>
       )}
 
-
-
       {/* Investment FAQ Accordion Section */}
-      <div className="mt-12 pt-8 border-t border-amber-500/20">
-        <div className="max-w-3xl mx-auto space-y-6">
-          <div className="text-center space-y-2">
-            <h3 className="text-sm font-bold text-[#f7ecd5] uppercase tracking-widest flex items-center justify-center gap-2 font-mono">
-              <HelpCircle className="w-5 h-5 text-amber-400 shrink-0" />
-              <span>Frequently Asked Questions</span>
-            </h3>
-            <p className="text-xs text-slate-400 max-w-lg mx-auto">
-              Common questions about adding money, seven-day payouts, and bank withdrawals.
-            </p>
+      <div className="mt-12 pt-8 border-t border-[var(--pm-border)]">
+        <div className="max-w-3xl mx-auto space-y-5">
+          <div className="text-center">
+            <h3 className="font-serif text-2xl font-semibold">Frequently Asked Questions</h3>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {faqItems.map((faq, idx) => {
               const isOpen = openFaqIdx === idx;
               return (
                 <div 
                   key={idx} 
-                  className="bg-gradient-to-b from-[#0c101c] to-[#070a12] border border-amber-500/20 rounded-2xl overflow-hidden shadow-lg hover:border-amber-500/40 transition-colors"
+                  className="pm-card rounded-xl overflow-hidden transition-colors"
                 >
                   <button
                     onClick={() => setOpenFaqIdx(isOpen ? null : idx)}
-                    className="w-full flex items-center justify-between p-4 text-left font-semibold text-xs sm:text-sm text-slate-200 hover:bg-amber-500/5 transition-colors focus:outline-none cursor-pointer"
+                    className="w-full flex items-center justify-between p-4 text-left font-medium text-xs sm:text-sm focus:outline-none cursor-pointer"
                   >
                     <span className="pr-4">{faq.question}</span>
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180 text-amber-400' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 opacity-55 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180 text-[#0B7A4E]' : ''}`} />
                   </button>
                   {isOpen && (
-                    <div className="px-4 pb-4 pt-1 text-xs text-slate-300 leading-relaxed border-t border-amber-500/15 bg-[#06080e]/60">
+                    <div className="px-4 pb-4 pt-2 text-xs opacity-75 leading-relaxed border-t border-[var(--pm-border)]">
                       {faq.answer}
                     </div>
                   )}
@@ -1829,34 +1531,31 @@ export const UserDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* ─── POST-INVESTMENT CELEBRATION MODAL ─── */}
+      {/* POST-INVESTMENT ACTIVATION MODAL */}
       {activatedPlanModal && (
-        <div className="fixed inset-0 z-50 bg-[#06080e]/85 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-gradient-to-b from-[#0e1424] via-[#0a0f1d] to-[#06080e] rounded-3xl max-w-md w-full p-6 sm:p-8 border border-amber-400/50 shadow-2xl relative overflow-hidden animate-scaleUp">
-            {/* Top decorative gradient bar */}
-            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-400 via-amber-500 to-emerald-400" />
-            
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="pm-card rounded-2xl max-w-md w-full p-6 sm:p-7 relative overflow-hidden animate-scaleUp">
             <button
               onClick={() => setActivatedPlanModal(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+              className="absolute top-4 right-4 opacity-60 hover:opacity-100 p-1.5 rounded-lg transition-opacity cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-tr from-amber-400 to-amber-500 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-amber-500/30 text-slate-950 mb-4 animate-bounce">
-                <Sparkles className="w-8 h-8 text-slate-950" />
+              <div className="w-12 h-12 bg-[#0B7A4E]/12 text-[#0B7A4E] rounded-full flex items-center justify-center mx-auto mb-3">
+                <CheckCircle2 className="w-6 h-6" />
               </div>
 
-              <span className="text-[10px] font-mono font-extrabold uppercase tracking-widest text-amber-300 bg-amber-500/15 border border-amber-500/30 px-3 py-1 rounded-full">
+              <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-[#0B7A4E]">
                 Contract Activated
               </span>
 
-              <h3 className="text-xl sm:text-2xl font-black text-[#f7ecd5] uppercase tracking-tight mt-3 font-mono">
+              <h3 className="font-serif text-2xl font-semibold mt-1">
                 {activatedPlanModal.plan.name}
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Your investment is secured and generating structured mortgage yield.
+              <p className="text-xs opacity-65 mt-1">
+                Your 24-week property deed is active and scheduled for Friday payouts.
               </p>
             </div>
 

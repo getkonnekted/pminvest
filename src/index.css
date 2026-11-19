@@ -1,29 +1,87 @@
 @import "tailwindcss";
 
-/* =========================================================================
-   ARCHITECTURAL MINIMALIST LUXURY DESIGN TOKENS
-   ========================================================================= */
-:root {
-  --color-obsidian-bg: #0B0C10;
-  --color-obsidian-surface: #111319;
-  --color-obsidian-surface-elevated: #161922;
-  --color-alabaster-bg: #FAF8F5;
-  --color-alabaster-surface: #FFFFFF;
-  --color-alabaster-surface-elevated: #F3EFE8;
-  --color-bronze-hairline: rgba(184, 150, 78, 0.2);
-  --color-bronze-primary: #B8964E;
-  --color-gold-accent: #D4AF37;
+@theme {
+  --font-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-sans: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /* =========================================================================
-   STRICT TABULAR FIGURE TYPOGRAPHY & NUMERICAL INTEGRITY
+   PM INVEST — PRIVATE BANK & DUBAI REAL ESTATE DESIGN TOKENS
+   60% Canvas · 30% Single-Elevation Surface · 10% Institutional Emerald
    ========================================================================= */
-html,
-body,
-button,
-input,
-select,
-textarea,
+:root,
+html.theme-champagne,
+[data-theme="champagne"] {
+  color-scheme: light;
+  --pm-bg: #FAF8F4;
+  --pm-surface: #FFFFFF;
+  --pm-surface-subtle: #F3EFE8;
+  --pm-surface-hover: #F7F4EE;
+  --pm-ink: #18222B;
+  --pm-ink-secondary: #43505C;
+  --pm-ink-muted: #6C7885;
+  --pm-border: #E6E0D6;
+  --pm-border-strong: #D3CBC0;
+  --pm-emerald: #0B7A4E;
+  --pm-emerald-hover: #08633E;
+  --pm-emerald-soft: rgba(11, 122, 78, 0.08);
+  --pm-brass: #9A7B3E;
+  --pm-brass-soft: rgba(154, 123, 62, 0.1);
+}
+
+html.theme-obsidian,
+[data-theme="obsidian"] {
+  color-scheme: dark;
+  --pm-bg: #0B1015;
+  --pm-surface: #121922;
+  --pm-surface-subtle: #18222E;
+  --pm-surface-hover: #1C2735;
+  --pm-ink: #F4F1EA;
+  --pm-ink-secondary: #C7D1DC;
+  --pm-ink-muted: #8896A6;
+  --pm-border: #222F3D;
+  --pm-border-strong: #324255;
+  --pm-emerald: #10B981;
+  --pm-emerald-hover: #059669;
+  --pm-emerald-soft: rgba(16, 185, 129, 0.12);
+  --pm-brass: #C6A45C;
+  --pm-brass-soft: rgba(198, 164, 92, 0.12);
+}
+
+/* =========================================================================
+   STRICT TABULAR NUMERALS & TYPOGRAPHIC REFINEMENT
+   ========================================================================= */
+html {
+  font-family: var(--font-sans);
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--pm-bg);
+  color: var(--pm-ink);
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  position: relative;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#root {
+  overflow-x: hidden;
+  width: 100%;
+  min-height: 100vh;
+}
+
 table,
 .font-mono,
 .tabular-nums,
@@ -33,38 +91,62 @@ table,
   font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
-/* =========================================================================
-   HARDWARE-ACCELERATED NATIVE SCROLLING & PERF ENGINE
-   ========================================================================= */
-html {
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-  text-rendering: optimizeLegibility;
-  overflow-x: hidden;
-  width: 100%;
-  max-width: 100vw;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  width: 100%;
-  max-width: 100vw;
-  position: relative;
-  transition: background-color 0.25s ease, color 0.25s ease;
-}
-
-#root {
-  overflow-x: hidden;
-  width: 100%;
-  min-height: 100vh;
-}
-
-/* Off-screen card & section paint deferral: renders smoothly on demand */
+/* Off-screen paint deferral for smooth scrolling */
 .cv-auto {
   content-visibility: auto;
-  contain-intrinsic-size: 550px;
+  contain-intrinsic-size: 520px;
+}
+
+/* =========================================================================
+   SEMANTIC COMPONENT UTILITIES
+   ========================================================================= */
+.pm-canvas {
+  background-color: var(--pm-bg);
+  color: var(--pm-ink);
+}
+
+.pm-card {
+  background-color: var(--pm-surface);
+  border: 1px solid var(--pm-border);
+  color: var(--pm-ink);
+}
+
+.pm-card-subtle {
+  background-color: var(--pm-surface-subtle);
+  border: 1px solid var(--pm-border);
+  color: var(--pm-ink);
+}
+
+.pm-divider {
+  border-color: var(--pm-border);
+}
+
+.pm-btn-primary {
+  background-color: var(--pm-emerald);
+  color: #FFFFFF;
+  transition: background-color 180ms ease, transform 150ms ease, opacity 180ms ease;
+}
+.pm-btn-primary:hover {
+  background-color: var(--pm-emerald-hover);
+}
+
+.pm-btn-secondary {
+  background-color: var(--pm-surface);
+  border: 1px solid var(--pm-border-strong);
+  color: var(--pm-ink);
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+.pm-btn-secondary:hover {
+  background-color: var(--pm-surface-subtle);
+}
+
+/* Theme-immune text over dark photographic scrims */
+.pm-photo-overlay,
+.pm-photo-overlay * {
+  color: #FAF8F4 !important;
+}
+.pm-photo-overlay .pm-photo-sub {
+  color: rgba(250, 248, 244, 0.82) !important;
 }
 
 @keyframes shimmer {
@@ -76,325 +158,138 @@ body {
   }
 }
 
-@keyframes goldPulse {
-  0%, 100% {
-    opacity: 1;
-    border-color: rgba(184, 150, 78, 0.35);
-  }
-  50% {
-    opacity: 0.6;
-    border-color: rgba(184, 150, 78, 0.15);
-  }
-}
-
 .animate-shimmer {
   animation: shimmer 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   will-change: transform;
 }
 
-.animate-gold-pulse {
-  animation: goldPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* =========================================================================
-   ARCHITECTURAL HAIRLINE BRONZE UTILITIES
-   ========================================================================= */
-.border-hairline-bronze {
-  border: 1px solid rgba(184, 150, 78, 0.2) !important;
-}
-
-.border-b-hairline-bronze {
-  border-bottom: 1px solid rgba(184, 150, 78, 0.2) !important;
-}
-
-.border-t-hairline-bronze {
-  border-top: 1px solid rgba(184, 150, 78, 0.2) !important;
-}
-
-.divide-hairline-bronze > * + * {
-  border-color: rgba(184, 150, 78, 0.2) !important;
-}
-
-.hairline-divider {
-  height: 1px;
-  background-color: rgba(184, 150, 78, 0.2);
-  width: 100%;
-}
-
-/* Luxury gold text clip utility */
-.gold-gradient-text {
-  background: linear-gradient(135deg, #FAF8F5 0%, #D4AF37 50%, #B8964E 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.champagne-gradient-text {
-  background: linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 45%, #D4AF37 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* =========================================================================
-   THEME STYLES: OBSIDIAN SLATE (DARK DEFAULT)
-   ========================================================================= */
-html.theme-obsidian,
-[data-theme="obsidian"] {
-  color-scheme: dark;
-}
-
-html.theme-obsidian body,
-[data-theme="obsidian"] body {
-  background-color: #0B0C10 !important;
-  color: #FAF8F5 !important;
-}
-
-/* Obsidian luxury scrollbar */
-html.theme-obsidian ::-webkit-scrollbar,
-[data-theme="obsidian"] ::-webkit-scrollbar,
+/* Refined scrollbars */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 
-html.theme-obsidian ::-webkit-scrollbar-track,
-[data-theme="obsidian"] ::-webkit-scrollbar-track,
 ::-webkit-scrollbar-track {
-  background: #0B0C10;
+  background: var(--pm-bg);
 }
 
-html.theme-obsidian ::-webkit-scrollbar-thumb,
-[data-theme="obsidian"] ::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-thumb {
-  background: rgba(184, 150, 78, 0.35);
+  background: var(--pm-border-strong);
   border-radius: 9999px;
 }
 
-html.theme-obsidian ::-webkit-scrollbar-thumb:hover,
-[data-theme="obsidian"] ::-webkit-scrollbar-thumb:hover,
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 175, 55, 0.6);
+  background: var(--pm-ink-muted);
 }
 
 /* =========================================================================
-   THEME STYLES: ALABASTER TRAVERTINE LIGHT LUXURY
+   CLEAN LIGHT-MODE COMPATIBILITY LAYER FOR SECONDARY LEGACY MODALS/WIDGETS
+   (Scoped strictly so .pm-photo-overlay and solid buttons are NEVER inverted)
    ========================================================================= */
-html.theme-champagne,
-[data-theme="champagne"] {
-  color-scheme: light;
-}
-
-html.theme-champagne body,
-[data-theme="champagne"] body {
-  background-color: #FAF8F5 !important;
-  color: #14171F !important;
-}
-
-/* Alabaster Travertine luxury scrollbar */
-html.theme-champagne ::-webkit-scrollbar,
-[data-theme="champagne"] ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
-}
-
-html.theme-champagne ::-webkit-scrollbar-track,
-[data-theme="champagne"] ::-webkit-scrollbar-track {
-  background: #FAF8F5;
-}
-
-html.theme-champagne ::-webkit-scrollbar-thumb,
-[data-theme="champagne"] ::-webkit-scrollbar-thumb {
-  background: rgba(184, 150, 78, 0.35);
-  border-radius: 9999px;
-}
-
-html.theme-champagne ::-webkit-scrollbar-thumb:hover,
-[data-theme="champagne"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(184, 150, 78, 0.6);
-}
-
-/* Alabaster Travertine Light surface overrides */
 html.theme-champagne .bg-slate-950,
-[data-theme="champagne"] .bg-slate-950,
 html.theme-champagne .bg-slate-900,
-[data-theme="champagne"] .bg-slate-900,
 html.theme-champagne .bg-\[\#06080e\],
-[data-theme="champagne"] .bg-\[\#06080e\],
 html.theme-champagne .bg-\[\#06080e\]\/90,
-[data-theme="champagne"] .bg-\[\#06080e\]\/90,
 html.theme-champagne .bg-\[\#06080e\]\/85,
-[data-theme="champagne"] .bg-\[\#06080e\]\/85,
 html.theme-champagne .bg-\[\#0B0C10\],
-[data-theme="champagne"] .bg-\[\#0B0C10\],
-html.theme-champagne .bg-\[\#0B0C10\]\/95,
-[data-theme="champagne"] .bg-\[\#0B0C10\]\/95 {
-  background-color: #FAF8F5 !important;
+html.theme-champagne .bg-\[\#0B0C10\]\/95 {
+  background-color: #FAF8F4 !important;
 }
 
 html.theme-champagne .bg-\[\#070a12\],
-[data-theme="champagne"] .bg-\[\#070a12\],
 html.theme-champagne .bg-\[\#070a13\],
-[data-theme="champagne"] .bg-\[\#070a13\],
 html.theme-champagne .bg-\[\#090d18\],
-[data-theme="champagne"] .bg-\[\#090d18\],
 html.theme-champagne .bg-\[\#0c101c\],
-[data-theme="champagne"] .bg-\[\#0c101c\],
 html.theme-champagne .bg-\[\#0d1222\],
-[data-theme="champagne"] .bg-\[\#0d1222\],
 html.theme-champagne .bg-\[\#0e1424\],
-[data-theme="champagne"] .bg-\[\#0e1424\],
 html.theme-champagne .bg-\[\#10172a\],
-[data-theme="champagne"] .bg-\[\#10172a\],
 html.theme-champagne .bg-\[\#111728\],
-[data-theme="champagne"] .bg-\[\#111728\],
 html.theme-champagne .bg-\[\#131b2e\],
-[data-theme="champagne"] .bg-\[\#131b2e\],
 html.theme-champagne .bg-\[\#141b2e\],
-[data-theme="champagne"] .bg-\[\#141b2e\],
 html.theme-champagne .bg-\[\#10121A\],
-[data-theme="champagne"] .bg-\[\#10121A\],
 html.theme-champagne .bg-\[\#111319\],
-[data-theme="champagne"] .bg-\[\#111319\],
-html.theme-champagne .bg-\[\#161922\],
-[data-theme="champagne"] .bg-\[\#161922\] {
+html.theme-champagne .bg-\[\#161922\] {
   background-color: #FFFFFF !important;
 }
 
-/* Admin sub-bar styling */
-html.theme-champagne .bg-\[\#1e293b\],
-[data-theme="champagne"] .bg-\[\#1e293b\] {
+html.theme-champagne .bg-\[\#1e293b\] {
   background-color: #F3EFE8 !important;
 }
 
-html.theme-champagne .bg-\[\#0f172a\],
-[data-theme="champagne"] .bg-\[\#0f172a\] {
-  background-color: #EAE3D6 !important;
+html.theme-champagne .bg-\[\#0f172a\] {
+  background-color: #ECE6DC !important;
 }
 
-html.theme-champagne .border-slate-700,
-[data-theme="champagne"] .border-slate-700,
-html.theme-champagne .border-slate-700\/80,
-[data-theme="champagne"] .border-slate-700\/80,
-html.theme-champagne .border-slate-800,
-[data-theme="champagne"] .border-slate-800 {
-  border-color: rgba(184, 150, 78, 0.25) !important;
-}
-
-/* Transform obsidian gradients to warm alabaster travertine gradients */
 html.theme-champagne .from-\[\#0c101c\],
-[data-theme="champagne"] .from-\[\#0c101c\],
 html.theme-champagne .from-\[\#0e1424\],
-[data-theme="champagne"] .from-\[\#0e1424\] {
-  --tw-gradient-from: #FAF8F5 !important;
+html.theme-champagne .from-\[\#070b14\] {
+  --tw-gradient-from: #FFFFFF !important;
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
 
 html.theme-champagne .via-\[\#090d18\],
-[data-theme="champagne"] .via-\[\#090d18\] {
-  --tw-gradient-via: #F3EFE8 !important;
-  --tw-gradient-stops: var(--tw-gradient-from), #F3EFE8, var(--tw-gradient-to) !important;
+html.theme-champagne .via-\[\#0b1222\] {
+  --tw-gradient-via: #FAF8F4 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), #FAF8F4, var(--tw-gradient-to) !important;
 }
 
 html.theme-champagne .to-\[\#06080e\],
-[data-theme="champagne"] .to-\[\#06080e\],
 html.theme-champagne .to-\[\#070a12\],
-[data-theme="champagne"] .to-\[\#070a12\],
-html.theme-champagne .to-\[\#120a24\],
-[data-theme="champagne"] .to-\[\#120a24\] {
-  --tw-gradient-to: #EAE3D6 !important;
+html.theme-champagne .to-\[\#120a24\] {
+  --tw-gradient-to: #F3EFE8 !important;
 }
 
-/* Gold text gradient in light mode */
-html.theme-champagne .gold-gradient-text,
-[data-theme="champagne"] .gold-gradient-text {
-  background: linear-gradient(135deg, #4A3B18 0%, #8C6D33 50%, #B8964E 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-}
-
-/* In Alabaster Travertine mode, convert light gold/champagne text to deep high-contrast tones */
-html.theme-champagne .text-\[\#f7ecd5\],
-[data-theme="champagne"] .text-\[\#f7ecd5\],
-html.theme-champagne .text-\[\#FAF8F5\],
-[data-theme="champagne"] .text-\[\#FAF8F5\] {
-  color: #14171F !important;
-}
-
-html.theme-champagne .text-slate-100,
-[data-theme="champagne"] .text-slate-100,
-html.theme-champagne .text-slate-200,
-[data-theme="champagne"] .text-slate-200 {
-  color: #1E2433 !important;
-}
-
-html.theme-champagne .text-slate-300,
-[data-theme="champagne"] .text-slate-300,
-html.theme-champagne .text-slate-400,
-[data-theme="champagne"] .text-slate-400 {
-  color: #475569 !important;
-}
-
-/* High-contrast bronze/amber text in light mode */
-html.theme-champagne .text-amber-400,
-[data-theme="champagne"] .text-amber-400,
-html.theme-champagne .text-amber-300,
-[data-theme="champagne"] .text-amber-300,
-html.theme-champagne .text-yellow-400,
-[data-theme="champagne"] .text-yellow-400 {
-  color: #8C6D33 !important;
-}
-
-html.theme-champagne .text-amber-500,
-[data-theme="champagne"] .text-amber-500 {
-  color: #9E7D3B !important;
-}
-
-/* High-contrast emerald text in light mode */
-html.theme-champagne .text-emerald-400,
-[data-theme="champagne"] .text-emerald-400,
-html.theme-champagne .text-emerald-300,
-[data-theme="champagne"] .text-emerald-300 {
-  color: #047857 !important;
-}
-
-/* Ensure text-white on light surfaces turns dark, except on colored action buttons */
-html.theme-champagne .text-white:not([class*="bg-emerald-"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-blue-"]):not([class*="bg-amber-"]):not([class*="bg-slate-9"]):not([class*="bg-black"]):not([class*="from-"]):not(button.bg-emerald-600):not(button.bg-purple-600),
-[data-theme="champagne"] .text-white:not([class*="bg-emerald-"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-blue-"]):not([class*="bg-amber-"]):not([class*="bg-slate-9"]):not([class*="bg-black"]):not([class*="from-"]):not(button.bg-emerald-600):not(button.bg-purple-600) {
-  color: #14171F !important;
-}
-
-/* Hairline bronze border overrides */
+html.theme-champagne .border-slate-700,
+html.theme-champagne .border-slate-700\/80,
+html.theme-champagne .border-slate-800,
 html.theme-champagne .border-amber-500\/20,
-[data-theme="champagne"] .border-amber-500\/20,
 html.theme-champagne .border-amber-500\/25,
-[data-theme="champagne"] .border-amber-500\/25,
 html.theme-champagne .border-amber-500\/30,
-[data-theme="champagne"] .border-amber-500\/30,
 html.theme-champagne .border-amber-500\/40,
-[data-theme="champagne"] .border-amber-500\/40,
 html.theme-champagne .border-\[\#B8964E\]\/20,
-[data-theme="champagne"] .border-\[\#B8964E\]\/20,
 html.theme-champagne .border-\[\#B8964E\]\/25,
-[data-theme="champagne"] .border-\[\#B8964E\]\/25,
-html.theme-champagne .border-\[\#B8964E\]\/30,
-[data-theme="champagne"] .border-\[\#B8964E\]\/30 {
-  border-color: rgba(184, 150, 78, 0.28) !important;
+html.theme-champagne .border-\[\#B8964E\]\/30 {
+  border-color: #E6E0D6 !important;
 }
 
-/* Form controls in light mode */
-html.theme-champagne input,
-[data-theme="champagne"] input,
+html.theme-champagne :not(.pm-photo-overlay) > .text-\[\#f7ecd5\],
+html.theme-champagne .text-\[\#f7ecd5\]:not(.pm-photo-overlay *),
+html.theme-champagne .text-\[\#FAF8F5\]:not(.pm-photo-overlay *),
+html.theme-champagne .text-slate-100:not(.pm-photo-overlay *),
+html.theme-champagne .text-slate-200:not(.pm-photo-overlay *) {
+  color: #18222B !important;
+}
+
+html.theme-champagne .text-slate-300:not(.pm-photo-overlay *),
+html.theme-champagne .text-slate-400:not(.pm-photo-overlay *) {
+  color: #556270 !important;
+}
+
+html.theme-champagne .text-amber-400:not(.pm-photo-overlay *),
+html.theme-champagne .text-amber-300:not(.pm-photo-overlay *),
+html.theme-champagne .text-yellow-400:not(.pm-photo-overlay *),
+html.theme-champagne .text-amber-500:not(.pm-photo-overlay *) {
+  color: #8A6D35 !important;
+}
+
+html.theme-champagne .text-emerald-400:not(.pm-photo-overlay *),
+html.theme-champagne .text-emerald-300:not(.pm-photo-overlay *) {
+  color: #0B7A4E !important;
+}
+
+html.theme-champagne .text-white:not(.pm-photo-overlay):not(.pm-photo-overlay *):not([class*="bg-emerald-"]):not([class*="bg-[#0B7A4E]"]):not([class*="bg-[#18222B]"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-blue-"]):not([class*="bg-sky-"]):not([class*="bg-amber-"]):not([class*="bg-slate-9"]):not([class*="bg-black"]):not([class*="from-"]) {
+  color: #18222B !important;
+}
+
+html.theme-champagne input:not([type="checkbox"]):not([type="radio"]),
 html.theme-champagne select,
-[data-theme="champagne"] select,
-html.theme-champagne textarea,
-[data-theme="champagne"] textarea {
+html.theme-champagne textarea {
   background-color: #FFFFFF !important;
-  color: #14171F !important;
-  border-color: rgba(184, 150, 78, 0.3) !important;
+  color: #18222B !important;
+  border-color: #D3CBC0 !important;
 }
 
 html.theme-champagne input::placeholder,
-[data-theme="champagne"] input::placeholder,
-html.theme-champagne textarea::placeholder,
-[data-theme="champagne"] textarea::placeholder {
-  color: #94A3B8 !important;
+html.theme-champagne textarea::placeholder {
+  color: #8B96A3 !important;
 }

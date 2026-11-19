@@ -249,58 +249,53 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
 
   const latestOrder = orders[0] || null;
 
-  // COMPACT TICKER BAR (Image 3 Style: Placed directly above Active Investments)
+  // COMPACT TICKER BAR
   if (variant === 'compact') {
     return (
-      <div className={`bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 text-white rounded-2xl p-3.5 shadow-sm mb-5 relative overflow-hidden font-sans ${className}`}>
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 relative z-10">
+      <div className={`pm-card rounded-xl p-3.5 mb-5 font-sans ${className}`}>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* Index & Real-time Rate */}
           <div className="flex items-center gap-3 shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 font-bold shadow-md shadow-amber-500/20 shrink-0">
-              <TrendingUp className="w-4 h-4 text-slate-950" />
+            <div className="w-9 h-9 rounded-lg bg-[#0B7A4E]/12 text-[#0B7A4E] flex items-center justify-center shrink-0">
+              <TrendingUp className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-xs sm:text-sm text-white tracking-tight font-mono">
+                <span className="font-semibold text-xs sm:text-sm tracking-tight font-mono">
                   UAE-REIT / NGN
                 </span>
-                <span className="text-[10px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full font-mono font-bold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] text-[#0B7A4E] font-mono font-semibold">
                   LIVE
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs font-mono mt-0.5">
-                <span className="font-bold text-white">₦{currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                <span className="text-emerald-400 font-bold flex items-center">
+                <span className="font-semibold tabular-nums">₦{currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="text-[#0B7A4E] font-semibold flex items-center">
                   <ArrowUpRight className="w-3 h-3" />
                   +{priceChangePercent}%
                 </span>
-                <span className="text-slate-500 hidden sm:inline">·</span>
-                <span className="text-slate-400 text-[11px] hidden sm:inline">24h Vol: ₦{(volume24h / 1000000000).toFixed(2)}B</span>
+                <span className="opacity-35 hidden sm:inline">·</span>
+                <span className="opacity-60 text-[11px] hidden sm:inline">24h Vol ₦{(volume24h / 1000000000).toFixed(2)}B</span>
               </div>
             </div>
           </div>
 
-          {/* Real-time Order Stream Bar (Latest UAE Execution) */}
+          {/* Latest UAE Execution */}
           {latestOrder && (
-            <div className="min-w-0 flex-1 bg-slate-900/80 border border-slate-800/80 rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 text-xs font-mono">
+            <div className="min-w-0 flex-1 pm-card-subtle rounded-lg px-3 py-1.5 flex items-center justify-between gap-2 text-xs font-mono">
               <div className="flex items-center gap-2 truncate">
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                  latestOrder.side === 'BUY' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                  latestOrder.side === 'YIELD' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                  'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
+                <span className={`text-[10px] font-semibold ${
+                  latestOrder.side === 'BUY' ? 'text-[#0B7A4E]' : 'text-[#9A7B3E]'
                 }`}>
                   {latestOrder.type}
                 </span>
-                <span className="text-slate-200 truncate text-[11px]">
+                <span className="opacity-80 truncate text-[11px]">
                   {latestOrder.location}
                 </span>
               </div>
-              <div className="text-right shrink-0">
-                <span className="text-emerald-400 font-bold text-[11px]">
-                  +₦{(latestOrder.amount / 1000000).toFixed(1)}M
-                </span>
-              </div>
+              <span className="text-[#0B7A4E] font-semibold text-[11px] shrink-0 tabular-nums">
+                +₦{(latestOrder.amount / 1000000).toFixed(1)}M
+              </span>
             </div>
           )}
 
@@ -309,11 +304,11 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
             <button
               type="button"
               onClick={onExpandTerminal}
-              className="bg-slate-800 hover:bg-slate-750 text-amber-400 hover:text-amber-300 font-bold text-xs py-2 px-3.5 rounded-xl border border-slate-700/80 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 whitespace-nowrap"
+              className="pm-btn-secondary font-medium text-xs py-2 px-3.5 rounded-lg flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
-              <Activity className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Open Trading Terminal</span>
-              <Maximize2 className="w-3 h-3 text-slate-400" />
+              <Activity className="w-3.5 h-3.5 text-[#0B7A4E]" />
+              <span>Market Terminal</span>
+              <Maximize2 className="w-3 h-3 opacity-60" />
             </button>
           </div>
         </div>
@@ -323,33 +318,25 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
 
   // FULL CARD (Candlestick chart, 24h stats, depth, and order book)
   return (
-    <div className={`bg-slate-900 border border-slate-800 text-white rounded-2xl p-5 shadow-lg flex flex-col justify-between relative overflow-hidden font-sans ${className}`}>
-      {/* Background ambient gradient */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-amber-500/10 via-emerald-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-
-      {/* Top Header: Pair, Price & Status Badge */}
-      <div className="flex flex-wrap items-start justify-between gap-3 relative z-10 border-b border-slate-800/80 pb-3.5">
+    <div className={`pm-card rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden font-sans ${className}`}>
+      {/* Top Header: Pair, Price & Status */}
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--pm-border)] pb-3.5">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 font-bold shadow-md shadow-amber-500/20 shrink-0">
-            <TrendingUp className="w-5 h-5 text-slate-950" />
+          <div className="w-10 h-10 rounded-lg bg-[#0B7A4E]/12 text-[#0B7A4E] flex items-center justify-center shrink-0">
+            <TrendingUp className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm sm:text-base text-white tracking-tight font-mono">
+              <span className="font-semibold text-sm sm:text-base tracking-tight font-mono">
                 UAE-REIT / NGN
               </span>
-              <span className="text-[10px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full font-mono font-bold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                REALTIME FEED
+              <span className="text-[10px] text-[#0B7A4E] font-mono font-semibold">
+                LIVE FEED
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-              <span>Prime UAE Luxury Property Liquidity Index</span>
-              <span className="text-slate-600">•</span>
-              <span className="text-amber-400/90 font-medium flex items-center gap-1">
-                <span>Dubai Asset Backing</span>
-                <UaeFlag size="xs" />
-              </span>
+            <p className="text-[11px] opacity-65 flex items-center gap-1.5 mt-0.5">
+              <span>Dubai Property Liquidity Index</span>
+              <UaeFlag size="xs" />
             </p>
           </div>
         </div>
@@ -359,10 +346,10 @@ export const LiveTradingSimulationCard: React.FC<LiveTradingSimulationCardProps>
           {onExpandTerminal && (
             <button
               onClick={onExpandTerminal}
-              className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700/60 cursor-pointer flex items-center gap-1.5 text-xs font-bold"
-              title="Open Full Institutional Property Trading Terminal"
+              className="px-3 py-1.5 rounded-lg pm-btn-secondary cursor-pointer flex items-center gap-1.5 text-xs font-medium"
+              title="Open Market Terminal"
             >
-              <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+              <Maximize2 className="w-3.5 h-3.5 text-[#0B7A4E]" />
               <span className="hidden sm:inline">Terminal</span>
             </button>
           )}

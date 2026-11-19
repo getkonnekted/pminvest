@@ -389,21 +389,19 @@ export const AdminPanel: React.FC = () => {
   });
 
   return (
-    <div className="w-full text-slate-800 p-1" id="admin_panel_container">
-      {/* Admin Action Bar */}
-      <div className="mb-6 bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <PmLogo className="h-10 sm:h-12 w-auto shrink-0" />
-          <div className="min-w-0 flex-1">
-            <span className="text-[9px] sm:text-[10px] text-amber-600 font-mono tracking-widest block uppercase font-extrabold truncate">Treasure Homes Control Centre</span>
-            <h2 className="text-base sm:text-lg font-extrabold text-slate-900 uppercase tracking-wider truncate">
-              PM Invest Master Dashboard
+    <div className="w-full" id="admin_panel_container">
+      {/* Executive Admin Header */}
+      <div className="mb-6 pm-card rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <PmLogo className="h-9 sm:h-10 w-auto shrink-0" />
+          <div className="min-w-0">
+            <h2 className="font-serif text-xl sm:text-2xl font-semibold tracking-tight truncate">
+              Control Centre
             </h2>
           </div>
         </div>
 
-        {/* Quick Simulator Trigger, Quick Account Creator, Broadcast Campaign & Theme Switcher */}
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
           <ThemeToggle compact />
           <button
             type="button"
@@ -411,17 +409,13 @@ export const AdminPanel: React.FC = () => {
               setBroadcastInitialLeadId(null);
               setShowBroadcastModal(true);
             }}
-            className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm cursor-pointer whitespace-nowrap"
+            className="pm-btn-secondary font-semibold px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             id="btn_admin_header_broadcast"
-            title="Launch Broadcast Re-engagement campaign for unfunded leads"
           >
-            <Share2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Broadcast Re-engagement</span>
-            <span className="sm:hidden">Broadcast</span>
+            <Share2 className="w-3.5 h-3.5 text-[#0B7A4E]" />
+            <span>Re-engage</span>
             {unfundedLeadsCount > 0 && (
-              <span className="bg-slate-950 text-amber-400 font-mono text-[10px] px-1.5 py-0.2 rounded-full font-bold">
-                {unfundedLeadsCount}
-              </span>
+              <span className="font-mono text-[11px] opacity-70">({unfundedLeadsCount})</span>
             )}
           </button>
           <button
@@ -430,217 +424,148 @@ export const AdminPanel: React.FC = () => {
               setCreateUserError(null);
               setShowCreateUserModal(true);
             }}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer whitespace-nowrap active:scale-95"
+            className="bg-[#0B7A4E] hover:bg-[#08633E] text-white font-semibold px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             id="btn_admin_header_create_user"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Create Account</span>
-            <span className="sm:hidden">New User</span>
+            <span>Create Account</span>
           </button>
         </div>
       </div>
 
       {/* Messages */}
       {successMsg && (
-        <div className="mb-5 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center justify-between text-sm shadow-sm animate-fadeIn">
+        <div className="mb-5 bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-3 rounded-xl flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <Check className="w-5 h-5 text-emerald-600 shrink-0" />
+            <Check className="w-4 h-4 text-[#0B7A4E] shrink-0" />
             <span>{successMsg}</span>
           </div>
-          <button onClick={clearMessages} className="text-emerald-600 hover:text-emerald-800 font-medium text-xs font-mono px-2">Dismiss</button>
+          <button onClick={clearMessages} className="text-[#0B7A4E] hover:underline font-medium cursor-pointer">Dismiss</button>
         </div>
       )}
 
-      {/* Admin sub-tabs */}
-      <div className="flex overflow-x-auto no-scrollbar pb-1.5 mb-6 border-b border-slate-200 gap-1 scroll-smooth -mx-1 px-1 sm:mx-0 sm:px-0">
-        <button
-          onClick={() => { setAdminTab('analytics'); clearMessages(); }}
-          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            adminTab === 'analytics'
-              ? 'bg-slate-100 text-slate-900 border-t-2 border-amber-500'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_admin_analytics"
-        >
-          Analytics
-        </button>
-        <button
-          onClick={() => { setAdminTab('deposits'); clearMessages(); }}
-          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            adminTab === 'deposits'
-              ? 'bg-slate-100 text-slate-900 border-t-2 border-amber-500'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_admin_deposits"
-        >
-          Deposits {pendingDeposits.length > 0 && <span className="bg-amber-500 text-slate-950 font-mono font-bold px-1.5 py-0.5 text-[9px] rounded-full shrink-0">{pendingDeposits.length}</span>}
-        </button>
-        <button
-          onClick={() => { setAdminTab('withdrawals'); clearMessages(); }}
-          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            adminTab === 'withdrawals'
-              ? 'bg-slate-100 text-slate-900 border-t-2 border-amber-500'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_admin_withdrawals"
-        >
-          Withdrawals {pendingWithdrawals.length > 0 && <span className="bg-rose-600 text-white font-mono font-bold px-1.5 py-0.5 text-[9px] rounded-full shrink-0">{pendingWithdrawals.length}</span>}
-        </button>
-        <button
-          onClick={() => { setAdminTab('kyc'); clearMessages(); }}
-          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            adminTab === 'kyc'
-              ? 'bg-slate-100 text-slate-900 border-t-2 border-amber-500'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_admin_kyc"
-        >
-          KYC Audits {pendingKycs.length > 0 && <span className="bg-amber-500 text-slate-950 font-mono font-bold px-1.5 py-0.5 text-[9px] rounded-full shrink-0">{pendingKycs.length}</span>}
-        </button>
-        <button
-          onClick={() => { setAdminTab('tasks'); clearMessages(); }}
-          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            adminTab === 'tasks'
-              ? 'bg-slate-100 text-slate-900 border-t-2 border-amber-500'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_admin_tasks"
-        >
-          <Flame className="w-3.5 h-3.5 text-amber-500" />
-          <span>Daily Tasks</span>
-          {pendingTaskSubmissions.length > 0 && (
-            <span className="bg-purple-600 text-white font-mono font-bold px-1.5 py-0.5 text-[9px] rounded-full shrink-0 animate-pulse">
-              {pendingTaskSubmissions.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => { setAdminTab('users'); clearMessages(); }}
-          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            adminTab === 'users'
-              ? 'bg-slate-100 text-slate-900 border-t-2 border-amber-500'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_admin_users"
-        >
-          Users List ({users.length})
-        </button>
-        <button
-          onClick={() => { setAdminTab('referrals'); clearMessages(); }}
-          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            adminTab === 'referrals'
-              ? 'bg-slate-100 text-slate-900 border-t-2 border-amber-500'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_admin_referrals"
-        >
-          <Share2 className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Referral Chains</span>
-        </button>
-        <button
-          onClick={() => { setAdminTab('settings'); clearMessages(); }}
-          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            adminTab === 'settings'
-              ? 'bg-slate-100 text-slate-900 border-t-2 border-amber-500'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_admin_settings"
-        >
-          Controls
-        </button>
-        <button
-          onClick={() => { setAdminTab('audit'); clearMessages(); }}
-          className={`px-3.5 py-2 rounded-t-lg font-bold text-xs tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            adminTab === 'audit'
-              ? 'bg-slate-100 text-slate-900 border-t-2 border-amber-500'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-          id="tab_admin_audit"
-        >
-          <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
-          <span>Realtime Protection &amp; Audit</span>
-        </button>
+      {/* Clean Horizontal Underline Tab Bar */}
+      <div className="flex overflow-x-auto no-scrollbar mb-6 border-b border-[var(--pm-border)] gap-1 scroll-smooth">
+        {[
+          { id: 'analytics' as const, label: 'Analytics' },
+          { id: 'deposits' as const, label: 'Deposits', count: pendingDeposits.length },
+          { id: 'withdrawals' as const, label: 'Withdrawals', count: pendingWithdrawals.length },
+          { id: 'kyc' as const, label: 'KYC', count: pendingKycs.length },
+          { id: 'tasks' as const, label: 'Tasks', count: pendingTaskSubmissions.length },
+          { id: 'users' as const, label: `Users (${users.length})` },
+          { id: 'referrals' as const, label: 'Referrals' },
+          { id: 'settings' as const, label: 'Controls' },
+          { id: 'audit' as const, label: 'Audit' }
+        ].map((tab) => {
+          const isActive = adminTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => { setAdminTab(tab.id); clearMessages(); }}
+              className={`px-3.5 py-2.5 text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 border-b-2 -mb-px cursor-pointer ${
+                isActive
+                  ? 'border-[#0B7A4E] text-[#0B7A4E]'
+                  : 'border-transparent opacity-65 hover:opacity-100'
+              }`}
+              id={`tab_admin_${tab.id}`}
+            >
+              <span>{tab.label}</span>
+              {tab.count && tab.count > 0 ? (
+                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#0B7A4E]/10 text-[#0B7A4E]">
+                  {tab.count}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
       </div>
 
       {/* ANALYTICS SUB-TAB */}
       {adminTab === 'analytics' && (
         <div className="space-y-6">
-          {/* Liquidity Reserve Status Bar */}
-          <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          {/* Liquidity Reserve Bar */}
+          <div className="pm-card p-5 sm:p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 font-mono tracking-wider block uppercase font-medium">Security Compliance Level</span>
-              <h3 className="text-xl font-extrabold text-slate-900">TREASURE HOMES LIQUIDITY RESERVE GUARANTEE</h3>
-              <p className="text-xs text-slate-500 max-w-lg">
-                Institutional cash reserve dedicated to underwriting weekly investor yields and immediate bank payout execution.
-              </p>
+              <span className="text-[11px] uppercase tracking-[0.14em] opacity-60 font-medium block">
+                Treasury Reserve
+              </span>
+              <h3 className="font-serif text-2xl font-semibold">Liquidity Reserve</h3>
+              <p className="text-xs opacity-65">Dedicated capital underwriting Friday settlements.</p>
             </div>
-            <div className="bg-slate-50 border border-slate-200 px-6 py-4 rounded-2xl text-center shrink-0 w-full md:w-auto">
-              <span className="text-xs text-amber-600 font-bold block">ACTIVE LIQUIDITY RESERVE</span>
-              <div className="mt-1 flex justify-center">
-                <LiveReserveCounter precision={0} showRateBadge={false} showLivePulse={true} size="xl" className="text-slate-900 font-extrabold" />
+            <div className="pm-card-subtle px-5 py-3.5 rounded-xl text-left md:text-right shrink-0 w-full md:w-auto">
+              <div className="flex md:justify-end">
+                <LiveReserveCounter precision={0} showRateBadge={false} showLivePulse={false} size="xl" className="font-mono font-semibold tabular-nums" />
               </div>
-              <span className={`inline-block mt-2 px-3 py-0.5 rounded text-[10px] font-mono font-bold ${
-                settings.riskAlertLevel === 'low' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                settings.riskAlertLevel === 'medium' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                'bg-rose-50 text-rose-700 border border-rose-200 animate-pulse'
-              }`}>
-                RISK ALERT LEVEL: {settings.riskAlertLevel.toUpperCase()}
+              <span className="inline-block mt-1 text-[11px] font-mono opacity-70">
+                Risk: {settings.riskAlertLevel.toUpperCase()}
               </span>
             </div>
           </div>
 
-          {/* Grid Stats */}
+          {/* Flat 4-Column KPI Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 font-medium block font-mono">Total Capital Under Mgmt</span>
-                <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-1.5 py-0.5 rounded font-mono">Real Funded</span>
-              </div>
-              <h3 className="text-2xl font-extrabold text-slate-900 mt-1">₦{totalActiveCapital.toLocaleString()}</h3>
-              <div className="pt-1.5 border-t border-slate-100 text-[10px] space-y-0.5">
-                <div className="flex justify-between text-emerald-700 font-semibold">
-                  <span>Real Organic Capital:</span>
-                  <span className="font-mono">₦{realActiveCapital.toLocaleString()}</span>
+            <div className="pm-card p-5 rounded-xl space-y-2">
+              <span className="text-[11px] uppercase tracking-[0.1em] opacity-60 font-medium block">
+                Organic Capital
+              </span>
+              <h3 className="text-2xl font-semibold font-mono tabular-nums">
+                ₦{totalActiveCapital.toLocaleString()}
+              </h3>
+              <div className="pt-2 border-t border-[var(--pm-border)] text-[11px] space-y-1">
+                <div className="flex justify-between text-[#0B7A4E] font-medium">
+                  <span>Real Funded</span>
+                  <span className="font-mono tabular-nums">₦{realActiveCapital.toLocaleString()}</span>
                 </div>
                 {marketingActiveCapital > 0 && (
-                  <div className="flex justify-between text-slate-400 font-medium">
-                    <span>Marketer Demo Alloc (Excluded):</span>
-                    <span className="font-mono text-slate-400 line-through">₦{marketingActiveCapital.toLocaleString()}</span>
+                  <div className="flex justify-between opacity-55">
+                    <span>Marketer Demo</span>
+                    <span className="font-mono tabular-nums line-through">₦{marketingActiveCapital.toLocaleString()}</span>
                   </div>
                 )}
                 {testDemoCapital > 0 && (
-                  <div className="flex justify-between text-amber-600 font-medium" title="Test investments on unfunded accounts not backed by completed deposits">
-                    <span>Test Demo Alloc (Excluded):</span>
-                    <span className="font-mono text-amber-600 line-through">₦{testDemoCapital.toLocaleString()}</span>
+                  <div className="flex justify-between opacity-65">
+                    <span>Unfunded Test</span>
+                    <span className="font-mono tabular-nums line-through">₦{testDemoCapital.toLocaleString()}</span>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-              <span className="text-xs text-slate-500 font-medium block font-mono">Accumulated Payout Yields</span>
-              <h3 className="text-2xl font-extrabold text-amber-600 mt-1">₦{totalAccumulatedPayouts.toLocaleString()}</h3>
-              <p className="text-[10px] text-slate-500 mt-1">Real payouts & ref bonuses</p>
+            <div className="pm-card p-5 rounded-xl">
+              <span className="text-[11px] uppercase tracking-[0.1em] opacity-60 font-medium block">
+                Paid Yields
+              </span>
+              <h3 className="text-2xl font-semibold font-mono tabular-nums text-[#0B7A4E] mt-2">
+                ₦{totalAccumulatedPayouts.toLocaleString()}
+              </h3>
+              <p className="text-[11px] opacity-60 mt-1">Payouts &amp; partner overrides</p>
             </div>
 
-            <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-              <span className="text-xs text-slate-500 font-medium block font-mono">Pending Authorizations</span>
-              <h3 className="text-2xl font-extrabold text-amber-600 mt-1">{pendingDeposits.length + pendingWithdrawals.length}</h3>
-              <p className="text-[10px] text-slate-500 mt-1">{pendingDeposits.length} deposits | {pendingWithdrawals.length} withdrawals</p>
+            <div className="pm-card p-5 rounded-xl">
+              <span className="text-[11px] uppercase tracking-[0.1em] opacity-60 font-medium block">
+                Pending Approvals
+              </span>
+              <h3 className="text-2xl font-semibold font-mono tabular-nums mt-2">
+                {pendingDeposits.length + pendingWithdrawals.length}
+              </h3>
+              <p className="text-[11px] opacity-60 mt-1">
+                {pendingDeposits.length} deposits · {pendingWithdrawals.length} withdrawals
+              </p>
             </div>
 
-            <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm space-y-1">
-              <span className="text-xs text-slate-500 font-medium block font-mono">Platform Accounts ({totalRegisteredUsers})</span>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-extrabold text-emerald-700 font-mono">{realPaidInvestorsCount}</span>
-                <span className="text-xs text-emerald-800 font-semibold font-mono">Real Paid</span>
+            <div className="pm-card p-5 rounded-xl space-y-2">
+              <span className="text-[11px] uppercase tracking-[0.1em] opacity-60 font-medium block">
+                Accounts ({totalRegisteredUsers})
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-semibold font-mono tabular-nums text-[#0B7A4E]">
+                  {realPaidInvestorsCount}
+                </span>
+                <span className="text-xs opacity-70">funded</span>
               </div>
-              <div className="pt-1.5 border-t border-slate-100 text-[10px] space-y-0.5">
-                <div className="flex justify-between items-center text-slate-600">
-                  <div className="flex items-center gap-1">
-                    <span>Unfunded Leads:</span>
-                    <span className="font-bold text-amber-700 font-mono">{unfundedLeadsCount}</span>
-                  </div>
+              <div className="pt-2 border-t border-[var(--pm-border)] text-[11px] space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className="opacity-70">Unfunded: <strong className="font-mono">{unfundedLeadsCount}</strong></span>
                   {unfundedLeadsCount > 0 && (
                     <button
                       type="button"
@@ -648,48 +573,49 @@ export const AdminPanel: React.FC = () => {
                         setBroadcastInitialLeadId(null);
                         setShowBroadcastModal(true);
                       }}
-                      className="text-[9px] text-amber-600 hover:text-amber-700 font-bold underline cursor-pointer"
-                      title="Launch Broadcast Re-engagement campaign"
+                      className="text-[#0B7A4E] hover:underline font-semibold cursor-pointer"
                     >
-                      Re-engage →
+                      Re-engage
                     </button>
                   )}
                 </div>
-                <div className="flex justify-between text-purple-700 font-semibold">
-                  <span>Marketing Canvassers:</span>
-                  <span className="font-bold font-mono">{marketingUsersCount}</span>
+                <div className="flex justify-between opacity-70">
+                  <span>Marketers</span>
+                  <span className="font-mono">{marketingUsersCount}</span>
                 </div>
-                <div className="flex justify-between text-emerald-800 font-bold pt-0.5 border-t border-slate-100">
-                  <span>Real Paid Inflow:</span>
-                  <span className="font-mono">₦{totalRealInflow.toLocaleString()}</span>
+                <div className="flex justify-between text-[#0B7A4E] font-medium pt-1 border-t border-[var(--pm-border)]">
+                  <span>Real Inflow</span>
+                  <span className="font-mono tabular-nums">₦{totalRealInflow.toLocaleString()}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Active Capital Distribution across Plans */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
-              Plan Distribution & Exposure
+          {/* Plan Distribution & Exposure */}
+          <div className="pm-card rounded-2xl p-5 sm:p-6">
+            <h3 className="font-serif text-xl font-semibold mb-4 pb-2.5 border-b border-[var(--pm-border)]">
+              Plan Exposure
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-              {INVESTMENT_PLANS.map(plan => {
-                const planInvestments = activeInvestments.filter(i => i.planId === plan.id);
-                const realCount = planInvestments.filter(i => isInvestmentRealPaid(i)).length;
-                const marketingCount = planInvestments.filter(i => isInvestmentMarketing(i)).length;
-                const testCount = planInvestments.filter(i => !isInvestmentRealPaid(i) && !isInvestmentMarketing(i)).length;
+              {INVESTMENT_PLANS.map((plan) => {
+                const planInvestments = activeInvestments.filter((i) => i.planId === plan.id);
+                const realCount = planInvestments.filter((i) => isInvestmentRealPaid(i)).length;
+                const marketingCount = planInvestments.filter((i) => isInvestmentMarketing(i)).length;
+                const testCount = planInvestments.filter((i) => !isInvestmentRealPaid(i) && !isInvestmentMarketing(i)).length;
                 const totalExcludedDemo = marketingCount + testCount;
                 return (
-                  <div key={plan.id} className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-1">
-                    <span className="font-bold text-slate-900 block">{plan.name}</span>
-                    <span className="text-slate-500 text-[10px] block">Cost: ₦{plan.cost.toLocaleString()}</span>
-                    <div className="flex justify-between items-center pt-2">
-                      <span className="text-[10px] text-emerald-600 font-medium">Real: {realCount}</span>
-                      <span className="font-bold text-slate-900">₦{(realCount * plan.cost).toLocaleString()}</span>
+                  <div key={plan.id} className="pm-card-subtle p-4 rounded-xl space-y-1">
+                    <span className="font-semibold block">{plan.name}</span>
+                    <span className="opacity-60 font-mono text-[11px] block">₦{plan.cost.toLocaleString()}</span>
+                    <div className="flex justify-between items-center pt-2 border-t border-[var(--pm-border)] mt-2">
+                      <span className="text-[11px] text-[#0B7A4E] font-medium">Real: {realCount}</span>
+                      <span className="font-mono font-semibold tabular-nums">
+                        ₦{(realCount * plan.cost).toLocaleString()}
+                      </span>
                     </div>
                     {totalExcludedDemo > 0 && (
-                      <span className="text-[9px] text-slate-400 font-mono block pt-0.5">
-                        +{totalExcludedDemo} demo (excluded)
+                      <span className="text-[10px] opacity-55 font-mono block">
+                        +{totalExcludedDemo} demo excluded
                       </span>
                     )}
                   </div>
@@ -1621,18 +1547,15 @@ export const AdminPanel: React.FC = () => {
 
       {/* USERS LIST TAB */}
       {adminTab === 'users' && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
+        <div className="pm-card rounded-2xl p-5 sm:p-6 space-y-5">
           {/* Header & Quick Action Buttons */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-100 pb-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-[var(--pm-border)] pb-4">
             <div>
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-amber-500" />
-                <h3 className="text-base font-bold text-slate-900 uppercase tracking-wider">
-                  Investor &amp; Account Backend Controls
-                </h3>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Register new accounts, adjust balances, modify roles, or deactivate &amp; reactivate account access.
+              <h3 className="font-serif text-2xl font-semibold">
+                Accounts Directory
+              </h3>
+              <p className="text-xs opacity-60 mt-0.5">
+                Manage investor profiles, balances, roles, and access.
               </p>
             </div>
 
@@ -1646,22 +1569,22 @@ export const AdminPanel: React.FC = () => {
                     setTimeout(() => setIsManualSyncingUsers(false), 500);
                   }}
                   disabled={isManualSyncingUsers}
-                  className="flex-1 sm:flex-initial bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold text-xs px-3 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap active:scale-95 disabled:opacity-60"
-                  title="Force refresh from Supabase database to verify deleted accounts and new registrations"
+                  className="flex-1 sm:flex-initial pm-btn-secondary font-medium text-xs px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap disabled:opacity-60"
+                  title="Force refresh from Supabase database"
                   id="btn_admin_sync_users_database"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${isManualSyncingUsers ? 'animate-spin text-amber-600' : ''}`} />
-                  <span>{isManualSyncingUsers ? 'Syncing...' : 'Sync Database'}</span>
+                  <RefreshCw className={`w-3.5 h-3.5 ${isManualSyncingUsers ? 'animate-spin text-[#0B7A4E]' : ''}`} />
+                  <span>{isManualSyncingUsers ? 'Syncing…' : 'Sync'}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setShowLeadsExportModal(true)}
-                  className="flex-1 sm:flex-initial bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 font-black text-xs px-3.5 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap"
-                  title="Export leads to CSV spreadsheet, WhatsApp broadcast lists, or vCard contacts"
+                  className="flex-1 sm:flex-initial pm-btn-secondary font-medium text-xs px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+                  title="Export leads to CSV or contact lists"
                   id="btn_admin_open_leads_export_modal"
                 >
-                  <Download className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                  <Download className="w-3.5 h-3.5 text-[#9A7B3E]" />
                   <span>Export Leads</span>
                 </button>
 
@@ -1671,10 +1594,10 @@ export const AdminPanel: React.FC = () => {
                     setCreateUserError(null);
                     setShowCreateUserModal(true);
                   }}
-                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap active:scale-95"
+                  className="w-full sm:w-auto bg-[#0B7A4E] hover:bg-[#08633E] text-white font-semibold text-xs px-3.5 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
                   id="btn_admin_open_create_user_modal"
                 >
-                  <UserPlus className="w-4 h-4" />
+                  <UserPlus className="w-3.5 h-3.5" />
                   <span>Create Account</span>
                 </button>
               </div>
@@ -1686,48 +1609,48 @@ export const AdminPanel: React.FC = () => {
                   placeholder="Search name, email, phone, code..."
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-8 pr-3 text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full bg-[var(--pm-surface-subtle)] border border-[var(--pm-border)] rounded-lg py-2 pl-8 pr-3 focus:outline-none focus:border-[#0B7A4E]"
                 />
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-3" />
+                <Search className="w-3.5 h-3.5 opacity-50 absolute left-2.5 top-2.5" />
               </div>
             </div>
           </div>
 
           {/* Quick Backend Summary Metrics Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 sm:p-3.5">
-              <span className="text-[10px] font-mono font-bold text-slate-500 uppercase block">Total Accounts</span>
-              <span className="text-lg sm:text-xl font-extrabold text-slate-900 font-mono mt-0.5 block">{users.length}</span>
-              <span className="text-[10px] text-slate-400">All registered profiles</span>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="pm-card-subtle rounded-xl p-3.5">
+              <span className="text-[11px] opacity-60 block">Total Accounts</span>
+              <span className="text-xl font-mono font-semibold mt-0.5 block tabular-nums">{users.length}</span>
+              <span className="text-[11px] opacity-55">Registered profiles</span>
             </div>
-            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3 sm:p-3.5">
+            <div className="pm-card-subtle rounded-xl p-3.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold text-emerald-800 uppercase block truncate">Real Investors</span>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="text-[11px] text-[#0B7A4E] font-medium block truncate">Real Investors</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#0B7A4E] shrink-0" />
               </div>
-              <span className="text-lg sm:text-xl font-extrabold text-emerald-700 font-mono mt-0.5 block">{realPaidInvestorsCount}</span>
-              <span className="text-[10px] text-emerald-700 font-semibold block truncate">₦{totalRealInflow.toLocaleString()} Total Paid Inflow</span>
+              <span className="text-xl font-mono font-semibold text-[#0B7A4E] mt-0.5 block tabular-nums">{realPaidInvestorsCount}</span>
+              <span className="text-[11px] opacity-65 block truncate">₦{totalRealInflow.toLocaleString()} paid inflow</span>
             </div>
-            <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 sm:p-3.5">
+            <div className="pm-card-subtle rounded-xl p-3.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold text-amber-800 uppercase block truncate">Unfunded Leads</span>
-                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span className="text-[11px] text-[#9A7B3E] font-medium block truncate">Unfunded Leads</span>
+                <Clock className="w-3.5 h-3.5 text-[#9A7B3E] shrink-0" />
               </div>
-              <span className="text-lg sm:text-xl font-extrabold text-amber-700 font-mono mt-0.5 block">{unfundedLeadsCount}</span>
-              <span className="text-[10px] text-amber-600 block truncate">Awaiting first wallet deposit</span>
+              <span className="text-xl font-mono font-semibold text-[#9A7B3E] mt-0.5 block tabular-nums">{unfundedLeadsCount}</span>
+              <span className="text-[11px] opacity-55 block truncate">Awaiting first deposit</span>
             </div>
-            <div className="bg-purple-50/70 border border-purple-200/80 rounded-xl p-3 sm:p-3.5">
+            <div className="pm-card-subtle rounded-xl p-3.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold text-purple-800 uppercase block truncate">Marketing Team</span>
-                <Zap className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                <span className="text-[11px] opacity-70 font-medium block truncate">Marketing Team</span>
+                <Zap className="w-3.5 h-3.5 opacity-60 shrink-0" />
               </div>
-              <span className="text-lg sm:text-xl font-extrabold text-purple-800 font-mono mt-0.5 block">{marketingUsersCount}</span>
-              <span className="text-[10px] text-purple-700 truncate block">₦{totalMarketingAllocations.toLocaleString()} Demo Alloc</span>
+              <span className="text-xl font-mono font-semibold mt-0.5 block tabular-nums">{marketingUsersCount}</span>
+              <span className="text-[11px] opacity-55 truncate block">₦{totalMarketingAllocations.toLocaleString()} demo alloc</span>
             </div>
           </div>
 
           {/* Filter Segment Tabs & View Mode Switcher */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--pm-border)] pb-2">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs -mx-1 px-1 sm:mx-0 sm:px-0">
               <button
                 type="button"

@@ -7,141 +7,73 @@ import React, { useState, useEffect } from 'react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { StateProvider, useAppState } from './context/StateContext';
 import { BrandingHeader, LegalDisclosures } from './components/BrandingHeader';
-import { 
-  Building, 
-  ShieldCheck, 
-  ArrowRight, 
-  Lock, 
-  Mail, 
-  UserPlus, 
-  HelpCircle, 
-  Sparkles, 
-  Calendar, 
+import {
+  ShieldCheck,
+  ArrowRight,
+  Lock,
+  Mail,
+  UserPlus,
   Key,
   Users,
   AlertTriangle,
   ShieldAlert,
   LayoutGrid,
-  Zap,
+  Briefcase,
   Eye,
   EyeOff,
   CheckCircle2,
   User as UserIcon,
   Phone,
   X,
-  Globe,
   KeyRound,
-  RotateCcw,
-  MapPin,
-  Award,
-  Clock,
-  MessageSquare
+  FileText,
+  Send
 } from 'lucide-react';
 import { INVESTMENT_PLANS } from './types';
 import { PayoutToastContainer } from './components/PayoutToast';
-import { LiveReserveCounter } from './components/LiveReserveCounter';
-import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
-import { UaeFlag } from './components/UaeFlag';
 import { PayoutCountdown } from './components/PayoutCountdown';
-import { WHATSAPP_COMMUNITY_URL, WHATSAPP_SUPPORT_URL, TELEGRAM_COMMUNITY_URL } from './components/CommunityBanner';
+import { TELEGRAM_COMMUNITY_URL } from './components/CommunityBanner';
 import { sanitizeAndValidatePhone } from './lib/phoneSanitizer';
 import { UaeDeedModal } from './components/UaeDeedModal';
 
 const UserDashboard = React.lazy(() => import('./components/UserDashboard').then(module => ({ default: module.UserDashboard })));
 const MarketerDashboard = React.lazy(() => import('./components/MarketerDashboard').then(module => ({ default: module.MarketerDashboard })));
 const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(module => ({ default: module.AdminPanel })));
-const AujotenPage = React.lazy(() => import('./components/AujotenPage').then(module => ({ default: module.AujotenPage })));
 
 function MainAppContent() {
   const { isChampagne } = useTheme();
-  // Pure lightweight native hardware-accelerated scrolling with zero JS main-thread overhead
-  const { 
-    currentUser, 
-    users, 
-    settings,
-    liveLiquidityReserve,
-    register, 
-    login, 
-    logout,
-    switchUser,
+  const {
+    currentUser,
+    register,
+    login,
     exitImpersonation,
     isImpersonating,
     requestPasswordReset,
     confirmPasswordReset,
-    successMsg, 
-    errorMsg, 
+    successMsg,
+    errorMsg,
     clearMessages,
     payoutToasts,
     dismissPayoutToast
   } = useAppState();
+
   const [isRegistering, setIsRegistering] = useState(false);
   const [inspectingDeedPlan, setInspectingDeedPlan] = useState<any | null>(null);
   const [adminView, setAdminView] = useState<'admin' | 'investor' | 'marketer'>('admin');
-  const [currentPage, setCurrentPage] = useState<'pminvest' | 'aujoten'>(() => {
-    if (typeof window !== 'undefined') {
-      const path = (window.location.pathname || '').toLowerCase();
-      const hash = (window.location.hash || '').toLowerCase();
-      const search = (window.location.search || '').toLowerCase();
-      if (path.includes('aujoten') || hash.includes('aujoten') || search.includes('aujoten')) {
-        return 'aujoten';
-      }
-    }
-    return 'pminvest';
-  });
-  
-  // URL routing detection (e.g. pminvest.org.ng/aujoten or ?page=aujoten or #aujoten or pathname === '/aujoten')
-  useEffect(() => {
-    const checkRoute = () => {
-      const path = (window.location.pathname || '').toLowerCase();
-      const hash = (window.location.hash || '').toLowerCase();
-      const search = (window.location.search || '').toLowerCase();
-      
-      if (path.includes('aujoten') || hash.includes('aujoten') || search.includes('aujoten')) {
-        setCurrentPage('aujoten');
-      } else {
-        setCurrentPage('pminvest');
-      }
-    };
 
-    checkRoute();
-    window.addEventListener('popstate', checkRoute);
-    window.addEventListener('hashchange', checkRoute);
+  useEffect(() => {
     const handleAdminViewSwitch = (e: any) => {
       if (e.detail && (e.detail === 'admin' || e.detail === 'investor' || e.detail === 'marketer')) {
         setAdminView(e.detail);
       }
     };
     window.addEventListener('switch-admin-view', handleAdminViewSwitch);
-
     return () => {
-      window.removeEventListener('popstate', checkRoute);
-      window.removeEventListener('hashchange', checkRoute);
       window.removeEventListener('switch-admin-view', handleAdminViewSwitch);
     };
   }, []);
 
-  const navigateTo = (page: 'pminvest' | 'aujoten') => {
-    setCurrentPage(page);
-    if (page === 'aujoten') {
-      window.location.hash = 'aujoten';
-    } else {
-      window.location.hash = '';
-      if (window.location.pathname.includes('aujoten')) {
-        window.history.pushState({}, '', '/');
-      }
-    }
-  };
-
-  // If user navigated to /aujoten, render the Aujoten dedicated website
-  if (currentPage === 'aujoten') {
-    return (
-      <React.Suspense fallback={<div className="min-h-screen bg-slate-950 p-8 text-center text-sm text-slate-300">Loading page…</div>}>
-        <AujotenPage onBackToPmInvest={() => navigateTo('pminvest')} />
-      </React.Suspense>
-    );
-  }
-  
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -156,7 +88,7 @@ function MainAppContent() {
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regRef, setRegRef] = useState('');
 
-  // Check URL params for referral code if provided and take visitor straight to Create Account
+  // Capture referral code from URL
   useEffect(() => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -165,7 +97,7 @@ function MainAppContent() {
         const cleanRef = refParam.toUpperCase().trim();
         setRegRef(cleanRef);
         localStorage.setItem('pm_invite_code', cleanRef);
-        setIsRegistering(true); // Takes visitor directly to CREATE ACCOUNT
+        setIsRegistering(true);
         setTimeout(() => {
           const authElement = document.getElementById('card_auth_panel');
           if (authElement) {
@@ -179,7 +111,7 @@ function MainAppContent() {
         }
       }
     } catch {
-      // Ignore if URLSearchParams or localStorage is unavailable
+      // Ignore storage errors
     }
   }, []);
 
@@ -201,9 +133,9 @@ function MainAppContent() {
     }
   };
 
-  // Password reset state & flow
+  // Password reset state
   const [isResettingPassword, setIsResettingPassword] = useState(false);
-  const [resetStep, setResetStep] = useState<1 | 2 | 3>(1); // 1 = Request, 2 = Verify Code & Confirm New Password, 3 = Reset Confirmed
+  const [resetStep, setResetStep] = useState<1 | 2 | 3>(1);
   const [resetEmail, setResetEmail] = useState('');
   const [resetCode, setResetCode] = useState('');
   const [generatedCodeBanner, setGeneratedCodeBanner] = useState<string | null>(null);
@@ -219,7 +151,7 @@ function MainAppContent() {
     clearMessages();
     const emailToUse = resetEmail.trim().toLowerCase();
     if (!emailToUse) {
-      setResetLocalError('Please enter your registered email address.');
+      setResetLocalError('Enter your registered email address.');
       return;
     }
     const res = requestPasswordReset(emailToUse);
@@ -236,17 +168,15 @@ function MainAppContent() {
 
     const codeToUse = resetCode.trim();
     if (!codeToUse) {
-      setResetLocalError('Please enter the 6-digit confirmation code.');
+      setResetLocalError('Enter the 6-digit confirmation code.');
       return;
     }
-
     if (!resetNewPassword || resetNewPassword.length < 4) {
-      setResetLocalError('New password must be at least 4 characters long.');
+      setResetLocalError('Password must be at least 4 characters.');
       return;
     }
-
     if (resetNewPassword !== resetConfirmPassword) {
-      setResetLocalError('Password confirmation does not match. Please ensure both passwords match.');
+      setResetLocalError('Passwords do not match.');
       return;
     }
 
@@ -269,887 +199,818 @@ function MainAppContent() {
     clearMessages();
   };
 
-  // Unauthenticated Landing Page
+  const inputBase = isChampagne
+    ? 'w-full bg-white border border-[#D3CBC0] rounded-lg py-2.5 pl-9 pr-3 text-sm text-[#18222B] placeholder-[#8B96A3] focus:outline-none focus:border-[#0B7A4E] focus:ring-2 focus:ring-[#0B7A4E]/15 transition-colors'
+    : 'w-full bg-[#0B1015] border border-[#2A394A] rounded-lg py-2.5 pl-9 pr-3 text-sm text-[#F4F1EA] placeholder-[#64748B] focus:outline-none focus:border-[#10B981] focus:ring-2 focus:ring-[#10B981]/20 transition-colors';
+
+  const labelBase = `block text-xs font-medium mb-1.5 ${isChampagne ? 'text-[#43505C]' : 'text-[#C7D1DC]'}`;
+
+  // ── UNAUTHENTICATED LANDING PAGE ──
   if (!currentUser) {
     return (
-      <div className={`min-h-screen ${isChampagne ? 'bg-[#FAF8F5] text-slate-900' : 'bg-[#0B0C10] text-slate-100'} flex flex-col justify-between font-sans selection:bg-[#B8964E]/30 selection:text-amber-200 relative overflow-x-hidden`}>
-        {/* Ambient subtle warm gold illumination */}
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#B8964E]/5 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute top-1/3 right-10 w-[450px] h-[450px] bg-[#D4AF37]/5 rounded-full blur-[130px] pointer-events-none" />
+      <div
+        className={`min-h-screen flex flex-col justify-between font-sans relative overflow-x-hidden ${
+          isChampagne ? 'bg-[#FAF8F4] text-[#18222B]' : 'bg-[#0B1015] text-[#F4F1EA]'
+        }`}
+      >
+        <PayoutToastContainer toasts={payoutToasts} onDismiss={dismissPayoutToast} />
 
-        <PayoutToastContainer
-          toasts={payoutToasts}
-          onDismiss={dismissPayoutToast}
-        />
-
-        {/* Top Bar with Strict 3-Zone Contract */}
         <BrandingHeader />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start flex-grow relative z-10">
-          {/* LEFT PANEL: Architectural Headline & Institutional Metrics */}
-          <div className="lg:col-span-7 space-y-5 sm:space-y-6">
-            <div className="space-y-3 sm:space-y-4">
-              <div className="flex items-center gap-2">
-                <span className={`text-[9px] sm:text-[10px] font-mono uppercase tracking-wider sm:tracking-widest ${isChampagne ? 'text-[#9C7B38] font-bold' : 'text-[#D4AF37] font-semibold'} border-b border-[#B8964E]/40 pb-0.5`}>
-                  DIFC SPV LEGAL TRUST &amp; DUBAI LAND DEPARTMENT CO-OWNERSHIP
-                </span>
-              </div>
-              <h1 className={`text-2xl sm:text-4xl lg:text-5xl font-black ${isChampagne ? 'text-slate-950' : 'text-[#FAF8F5]'} tracking-tight leading-tight`} style={{ textWrap: 'balance' as any }}>
-                Architectural Co-Investment in Prime Dubai Real Estate
-              </h1>
-              <p className={`text-xs sm:text-base ${isChampagne ? 'text-slate-700' : 'text-slate-300'} leading-relaxed max-w-2xl font-sans`}>
-                Contractual Friday cash yields backed by physical DIFC and Palm Jumeirah luxury property under bankruptcy-remote SPV custody. Acquire direct fractional title stakes from ₦15,000.
-              </p>
-            </div>
+        {/* HERO & CLIENT AUTHENTICATION */}
+        <section className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-14 sm:pt-14 sm:pb-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+            {/* Left Editorial Proposition */}
+            <div className="lg:col-span-7 space-y-7 pt-1">
+              <div className="space-y-4">
+                <p
+                  className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                    isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'
+                  }`}
+                >
+                  DIFC SPV Custody · Dubai Land Department
+                </p>
 
-            {/* High-Intent Architectural CTAs */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1">
-              <a
-                href="#properties_catalog"
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#B8964E] via-[#D4AF37] to-[#9C7B38] hover:from-[#D4AF37] hover:to-[#B8964E] text-slate-950 text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer active:scale-95 text-center"
-              >
-                View Real Estate Dossiers →
-              </a>
-              <a
-                href="#difc_trust_section"
-                className={`px-5 py-2.5 rounded-xl border ${isChampagne ? 'border-[#B8964E]/40 bg-white hover:bg-slate-50 text-slate-800' : 'border-[#B8964E]/30 bg-[#0E1017] hover:bg-[#161822] text-[#D4AF37]'} text-xs font-mono uppercase tracking-wider transition-all cursor-pointer text-center`}
-              >
-                Legal Framework Details
-              </a>
-            </div>
+                <h1
+                  className={`font-serif font-semibold tracking-tight leading-[1.06] ${
+                    isChampagne ? 'text-[#18222B]' : 'text-[#F4F1EA]'
+                  }`}
+                  style={{ fontSize: 'clamp(2.35rem, 4.4vw, 3.85rem)', textWrap: 'balance' as any }}
+                >
+                  Prime Dubai Real Estate,{' '}
+                  <span className={isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'}>
+                    Weekly Friday Yields.
+                  </span>
+                </h1>
 
-            {/* 4 Quiet Tabular Trust Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-1">
-              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-2.5 sm:p-3.5 rounded-xl`}>
-                <span className={`text-[9px] sm:text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>SPV Entity</span>
-                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} font-mono block mt-0.5 sm:mt-1 truncate`}>
-                  Reg #4982
-                </span>
-                <span className={`text-[8px] sm:text-[9px] ${isChampagne ? 'text-[#9C7B38]' : 'text-[#D4AF37]'} font-mono block truncate`}>DIFC Common Law</span>
-              </div>
-
-              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-2.5 sm:p-3.5 rounded-xl`}>
-                <span className={`text-[9px] sm:text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>Dubai Assets</span>
-                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} font-mono block mt-0.5 sm:mt-1 truncate`}>
-                  6 Freehold Deeds
-                </span>
-                <span className={`text-[8px] sm:text-[9px] text-emerald-400 font-mono block truncate`}>DLD Recorded</span>
-              </div>
-
-              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-2.5 sm:p-3.5 rounded-xl`}>
-                <span className={`text-[9px] sm:text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>Disbursement</span>
-                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'} font-mono block mt-0.5 sm:mt-1 truncate`}>
-                  Every Friday
-                </span>
-                <span className={`text-[8px] sm:text-[9px] ${isChampagne ? 'text-slate-500' : 'text-slate-400'} font-mono block truncate`}>12:00 PM Direct</span>
-              </div>
-
-              <div className={`${isChampagne ? 'bg-white border-[#B8964E]/25 text-slate-900 shadow-xs' : 'bg-[#10121A] border-white/10 text-white shadow-md'} border p-2.5 sm:p-3.5 rounded-xl`}>
-                <span className={`text-[9px] sm:text-[10px] font-mono ${isChampagne ? 'text-slate-500' : 'text-slate-400'} uppercase block`}>Partner Share</span>
-                <span className={`text-xs sm:text-sm font-bold ${isChampagne ? 'text-[#9C7B38]' : 'text-amber-300'} font-mono block mt-0.5 sm:mt-1 truncate`}>
-                  7.5% Weekly
-                </span>
-                <span className={`text-[8px] sm:text-[9px] text-emerald-400 font-mono block truncate`}>Liquid Override</span>
-              </div>
-            </div>
-
-            {/* Official Investor Community Links: Prioritized Telegram Channel & Registration Incentive */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 pt-1">
-              <a
-                href={TELEGRAM_COMMUNITY_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`inline-flex items-center justify-center gap-2 ${isChampagne ? 'bg-sky-600 hover:bg-sky-700 text-white' : 'bg-gradient-to-r from-[#0088cc] to-[#229ED9] hover:from-[#0077b5] hover:to-[#1d8cbf] text-white border border-sky-400/30'} text-xs font-black px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer`}
-                id="btn_hero_join_telegram"
-                title="Join Official Telegram Community for Live Friday Alerts"
-              >
-                <span>⚡ Join Telegram Community</span>
-              </a>
-
-              <a
-                href="#properties_catalog"
-                className={`inline-flex items-center justify-center gap-1.5 text-xs ${isChampagne ? 'text-[#9C7B38] hover:text-[#B8964E]' : 'text-[#D4AF37] hover:text-amber-300'} font-mono font-bold hover:underline py-1.5 px-1 cursor-pointer text-center`}
-              >
-                <span>Explore Properties</span>
-              </a>
-            </div>
-          </div>
-
-          {/* RIGHT PANEL: Clean Auth Forms in Luxury Obsidian & Brushed Gold */}
-          <div className={`lg:col-span-5 ${isChampagne ? 'bg-white border-[#c5a059]/40 text-slate-900 shadow-xl' : 'bg-gradient-to-b from-[#0c101c] via-[#090d18] to-[#06080e] border-amber-500/30 text-slate-100 shadow-2xl'} border rounded-2xl p-4 sm:p-7 relative overflow-hidden`} id="card_auth_panel">
-            {/* Ambient accent background blur */}
-            <div className="absolute top-0 right-0 w-44 h-44 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-            {/* Segmented Top Tabs */}
-            <div className={`flex ${isChampagne ? 'bg-[#ede5d8] border-[#c5a059]/30' : 'bg-[#06080e] border-amber-500/20'} p-1 rounded-xl mb-5 border`}>
-              <button
-                type="button"
-                onClick={() => { setIsRegistering(false); setIsResettingPassword(false); clearMessages(); }}
-                className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  !isRegistering && !isResettingPassword
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-                id="tab_auth_signin"
-              >
-                <Lock className={`w-3.5 h-3.5 ${!isRegistering && !isResettingPassword ? 'text-slate-950' : 'text-amber-400'}`} />
-                <span>Sign In</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setIsRegistering(true); setIsResettingPassword(false); clearMessages(); }}
-                className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  isRegistering && !isResettingPassword
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-                id="tab_auth_signup"
-              >
-                <UserPlus className={`w-3.5 h-3.5 ${isRegistering && !isResettingPassword ? 'text-slate-950' : 'text-emerald-400'}`} />
-                <span>Create Account</span>
-              </button>
-            </div>
-
-            {/* Password Reset Notice (only when in reset mode) */}
-            {isResettingPassword && (
-              <div className="mb-4">
-                <h3 className="text-sm font-bold text-[#f7ecd5] uppercase tracking-tight">
-                  Reset Your Password
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Enter your registered email to reset your account password.
+                <p
+                  className={`text-sm sm:text-base max-w-xl leading-relaxed ${
+                    isChampagne ? 'text-[#43505C]' : 'text-[#A8B4C2]'
+                  }`}
+                >
+                  Fractional ownership in verified Dubai towers starting from ₦15,000, with rental distributions settled directly every Friday.
                 </p>
               </div>
-            )}
 
-            {/* Invite-Only Gating Banner for Registration */}
-            {isRegistering && !isResettingPassword && (
-              <div className={`mb-4 rounded-xl p-3 flex items-start gap-2.5 text-xs shadow-xs ${
-                regRef 
-                  ? 'bg-emerald-950/40 border border-emerald-500/40 text-emerald-200' 
-                  : 'bg-amber-500/10 border border-amber-500/30 text-amber-200'
-              }`}>
-                {regRef ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                ) : (
-                  <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                )}
+              {/* Focused Action Row */}
+              <div className="flex flex-wrap items-center gap-4 pt-1">
+                <a
+                  href="#properties_catalog"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-[#0B7A4E] hover:bg-[#08633E] text-white text-sm font-semibold transition-colors cursor-pointer"
+                >
+                  <span>View Properties</span>
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+
+                <a
+                  href="#difc_trust_section"
+                  className={`inline-flex items-center justify-center px-5 py-3 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
+                    isChampagne
+                      ? 'bg-white border-[#D3CBC0] text-[#18222B] hover:bg-[#F3EFE8]'
+                      : 'bg-[#121922] border-[#222F3D] text-[#F4F1EA] hover:bg-[#18222E]'
+                  }`}
+                >
+                  Legal Trust
+                </a>
+
+                <a
+                  href={TELEGRAM_COMMUNITY_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-1.5 text-xs font-semibold transition-colors px-1 py-2 ${
+                    isChampagne
+                      ? 'text-[#0B7A4E] hover:text-[#08633E]'
+                      : 'text-[#10B981] hover:text-emerald-300'
+                  }`}
+                  id="btn_hero_join_telegram"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Telegram Channel</span>
+                </a>
+              </div>
+
+              {/* Clean Hairline-Divided Institutional Ledger */}
+              <div
+                className={`pt-7 mt-4 border-t grid grid-cols-2 sm:grid-cols-4 gap-6 ${
+                  isChampagne ? 'border-[#E6E0D6]' : 'border-[#222F3D]'
+                }`}
+              >
                 <div>
-                  <span className="font-bold text-white block">
-                    {regRef ? `Invited by Verified Partner (${regRef})` : 'Sponsor Invite Code Required'}
+                  <span className={`text-[11px] uppercase tracking-[0.1em] block ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
+                    SPV Entity
                   </span>
-                  <span className="text-[11px] text-slate-300 mt-0.5 block leading-relaxed">
-                    {regRef 
-                      ? 'Your referral link was verified. Complete registration below to claim your asset-backed account.'
-                      : 'To maintain institutional integrity, PM Invest registration requires an authorized referral code from an existing member.'}
+                  <span className="font-mono text-sm font-semibold tabular-nums block mt-1">
+                    Reg #4982
+                  </span>
+                  <span className={`text-[11px] block mt-0.5 ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
+                    DIFC Common Law
+                  </span>
+                </div>
+
+                <div>
+                  <span className={`text-[11px] uppercase tracking-[0.1em] block ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
+                    Portfolio
+                  </span>
+                  <span className="font-mono text-sm font-semibold tabular-nums block mt-1">
+                    {INVESTMENT_PLANS.length} Deeds
+                  </span>
+                  <span className={`text-[11px] block mt-0.5 ${isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'}`}>
+                    DLD Recorded
+                  </span>
+                </div>
+
+                <div>
+                  <span className={`text-[11px] uppercase tracking-[0.1em] block ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
+                    Settlement
+                  </span>
+                  <span className={`font-mono text-sm font-semibold tabular-nums block mt-1 ${isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'}`}>
+                    Fridays
+                  </span>
+                  <span className={`text-[11px] block mt-0.5 ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
+                    12:00 PM Direct
+                  </span>
+                </div>
+
+                <div>
+                  <span className={`text-[11px] uppercase tracking-[0.1em] block ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
+                    Partner Share
+                  </span>
+                  <span className={`font-mono text-sm font-semibold tabular-nums block mt-1 ${isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'}`}>
+                    7.5% Weekly
+                  </span>
+                  <span className={`text-[11px] block mt-0.5 ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
+                    Referral Override
                   </span>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* General Feedback Notifications */}
-            {successMsg && (
-              <div className="mb-4 bg-emerald-950/70 border border-emerald-500/40 text-emerald-200 p-3 rounded-xl text-xs flex items-start justify-between gap-2 shadow-xs animate-fade-in">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="font-medium leading-relaxed">{successMsg}</span>
-                </div>
-                <button 
-                  onClick={clearMessages} 
-                  className="text-emerald-400 hover:text-emerald-200 p-0.5"
+            {/* Right Clean Single-Elevation Auth Card */}
+            <div
+              id="card_auth_panel"
+              className={`lg:col-span-5 rounded-2xl border p-6 sm:p-7 ${
+                isChampagne
+                  ? 'bg-white border-[#E6E0D6]'
+                  : 'bg-[#121922] border-[#222F3D]'
+              }`}
+            >
+              {/* Clean Segmented Tabs */}
+              <div
+                className={`grid grid-cols-2 p-1 rounded-lg mb-6 border ${
+                  isChampagne
+                    ? 'bg-[#F3EFE8] border-[#E6E0D6]'
+                    : 'bg-[#0B1015] border-[#222F3D]'
+                }`}
+              >
+                <button
                   type="button"
+                  onClick={() => {
+                    setIsRegistering(false);
+                    setIsResettingPassword(false);
+                    clearMessages();
+                  }}
+                  className={`py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                    !isRegistering && !isResettingPassword
+                      ? isChampagne
+                        ? 'bg-white text-[#18222B] shadow-xs'
+                        : 'bg-[#18222E] text-[#F4F1EA]'
+                      : isChampagne
+                      ? 'text-[#6C7885] hover:text-[#18222B]'
+                      : 'text-[#8896A6] hover:text-[#F4F1EA]'
+                  }`}
+                  id="tab_auth_signin"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRegistering(true);
+                    setIsResettingPassword(false);
+                    clearMessages();
+                  }}
+                  className={`py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                    isRegistering && !isResettingPassword
+                      ? isChampagne
+                        ? 'bg-white text-[#18222B] shadow-xs'
+                        : 'bg-[#18222E] text-[#F4F1EA]'
+                      : isChampagne
+                      ? 'text-[#6C7885] hover:text-[#18222B]'
+                      : 'text-[#8896A6] hover:text-[#F4F1EA]'
+                  }`}
+                  id="tab_auth_signup"
+                >
+                  Create Account
                 </button>
               </div>
-            )}
-            {errorMsg && (
-              <div className="mb-4 bg-rose-950/70 border border-rose-500/40 text-rose-200 p-3 rounded-xl text-xs flex items-start justify-between gap-2 shadow-xs animate-fade-in">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                  <span className="font-medium leading-relaxed">{errorMsg}</span>
-                </div>
-                <button 
-                  onClick={clearMessages} 
-                  className="text-rose-400 hover:text-rose-200 p-0.5"
-                  type="button"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
 
-            {isResettingPassword ? (
-              /* PASSWORD RESET & CONFIRMATION WORKFLOW */
-              <div className="space-y-4">
-                {resetLocalError && (
-                  <div className="bg-rose-950/70 border border-rose-500/40 text-rose-200 p-3 rounded-xl text-xs flex items-start gap-2 shadow-xs">
-                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                    <span className="font-medium leading-relaxed">{resetLocalError}</span>
+              {isResettingPassword && (
+                <div className="mb-4">
+                  <h3 className="font-serif text-xl font-semibold">Reset Password</h3>
+                  <p className={`text-xs mt-0.5 ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
+                    Verify your email to set a new password.
+                  </p>
+                </div>
+              )}
+
+              {isRegistering && !isResettingPassword && regRef && (
+                <div
+                  className={`mb-4 rounded-lg px-3 py-2 text-xs flex items-center gap-2 border ${
+                    isChampagne
+                      ? 'bg-[#0B7A4E]/5 border-[#0B7A4E]/20 text-[#0B7A4E]'
+                      : 'bg-[#10B981]/10 border-[#10B981]/25 text-[#10B981]'
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>Sponsor code verified: <strong className="font-mono">{regRef}</strong></span>
+                </div>
+              )}
+
+              {successMsg && (
+                <div
+                  className={`mb-4 rounded-lg p-3 text-xs flex items-start justify-between gap-2 border ${
+                    isChampagne
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                      : 'bg-emerald-950/50 border-emerald-500/30 text-emerald-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-[#0B7A4E] shrink-0" />
+                    <span>{successMsg}</span>
                   </div>
-                )}
+                  <button onClick={clearMessages} type="button" className="opacity-70 hover:opacity-100 cursor-pointer">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
 
-                {resetStep === 1 && (
-                  /* Step 1: Request Reset Confirmation Code */
-                  <form onSubmit={handleRequestResetCode} className="space-y-3.5">
-                    <div className="bg-[#06080e] border border-amber-500/20 rounded-xl p-3.5 text-xs text-slate-300 space-y-1">
-                      <div className="flex items-center gap-1.5 font-bold text-[#f7ecd5]">
-                        <Key className="w-4 h-4 text-amber-400" />
-                        <span>Step 1 of 2: Request Confirmation Code</span>
-                      </div>
-                      <p className="text-[11px] text-slate-400 leading-relaxed">
-                        Enter your registered account email. A secure 6-digit confirmation code will be issued to authorize resetting your password.
-                      </p>
+              {errorMsg && (
+                <div
+                  className={`mb-4 rounded-lg p-3 text-xs flex items-start justify-between gap-2 border ${
+                    isChampagne
+                      ? 'bg-rose-50 border-rose-200 text-rose-900'
+                      : 'bg-rose-950/50 border-rose-500/30 text-rose-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>{errorMsg}</span>
+                  </div>
+                  <button onClick={clearMessages} type="button" className="opacity-70 hover:opacity-100 cursor-pointer">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {isResettingPassword ? (
+                <div className="space-y-4">
+                  {resetLocalError && (
+                    <div className="rounded-lg p-3 text-xs flex items-start gap-2 border bg-rose-50 border-rose-200 text-rose-900">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      <span>{resetLocalError}</span>
                     </div>
+                  )}
 
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Registered Email Address</label>
-                      <div className="relative">
-                        <input 
-                          type="email" 
-                          value={resetEmail}
-                          onChange={(e) => setResetEmail(e.target.value)}
-                          placeholder="e.g. investor@gmail.com"
-                          autoComplete="email"
-                          className="w-full bg-[#06080e] border border-slate-700/80 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all font-sans"
-                          required
-                        />
-                        <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-[0.99] text-slate-950 font-black py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 cursor-pointer mt-2"
-                      id="btn_request_reset_code"
-                    >
-                      <span>Send Reset Confirmation Code</span>
-                      <ArrowRight className="w-4 h-4 text-slate-950" />
-                    </button>
-
-                    <div className="text-center pt-2 text-xs text-slate-400">
-                      <span>Remembered your password? </span>
-                      <button 
-                        type="button"
-                        onClick={() => { setIsResettingPassword(false); setResetStep(1); clearMessages(); }}
-                        className="text-amber-400 hover:text-amber-300 font-bold hover:underline cursor-pointer"
-                      >
-                        Return to Sign In
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                {resetStep === 2 && (
-                  /* Step 2: Enter Code, New Password & Confirm Match */
-                  <form onSubmit={handleConfirmResetSubmit} className="space-y-3.5">
-                    {/* Security Code Banner with Quick Autofill */}
-                    {generatedCodeBanner && (
-                      <div className="bg-amber-950/60 border border-amber-500/40 rounded-xl p-3 text-xs text-amber-200 space-y-1.5 shadow-xs">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5 font-bold text-amber-300">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                            <span>Security Confirmation Code</span>
-                          </div>
-                          <span className="text-[10px] bg-amber-500/20 text-amber-300 font-mono px-2 py-0.5 rounded font-bold">15m Expiry</span>
+                  {resetStep === 1 && (
+                    <form onSubmit={handleRequestResetCode} className="space-y-4">
+                      <div>
+                        <label className={labelBase}>Registered Email</label>
+                        <div className="relative">
+                          <input
+                            type="email"
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                            placeholder="name@example.com"
+                            autoComplete="email"
+                            className={inputBase}
+                            required
+                          />
+                          <Mail className="w-4 h-4 text-[#8B96A3] absolute left-3 top-3" />
                         </div>
-                        <p className="text-[11px] text-slate-300">
-                          Reset authorization for <strong className="text-white">{resetEmail}</strong>:
-                        </p>
-                        <div className="flex items-center gap-2 pt-0.5">
-                          <span className="font-mono font-extrabold text-sm tracking-widest text-white bg-[#06080e] px-3 py-1 rounded border border-amber-500/40 shadow-xs">
-                            {generatedCodeBanner}
-                          </span>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full bg-[#0B7A4E] hover:bg-[#08633E] text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                        id="btn_request_reset_code"
+                      >
+                        <Key className="w-4 h-4" />
+                        <span>Send Code</span>
+                      </button>
+
+                      <div className="text-center pt-1 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsResettingPassword(false);
+                            setResetStep(1);
+                            clearMessages();
+                          }}
+                          className={`font-medium hover:underline cursor-pointer ${
+                            isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'
+                          }`}
+                        >
+                          Back to Sign In
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {resetStep === 2 && (
+                    <form onSubmit={handleConfirmResetSubmit} className="space-y-4">
+                      {generatedCodeBanner && (
+                        <div
+                          className={`rounded-lg p-3 text-xs border space-y-2 ${
+                            isChampagne
+                              ? 'bg-[#F3EFE8] border-[#E6E0D6] text-[#18222B]'
+                              : 'bg-[#18222E] border-[#222F3D] text-[#F4F1EA]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold">Confirmation Code</span>
+                            <span className="font-mono text-[11px] opacity-70">15m</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono font-semibold text-sm tracking-widest">
+                              {generatedCodeBanner}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setResetCode(generatedCodeBanner)}
+                              className="text-xs font-semibold text-[#0B7A4E] hover:underline cursor-pointer"
+                            >
+                              Autofill
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className={labelBase}>6-Digit Code</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={resetCode}
+                            onChange={(e) => setResetCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            placeholder="123456"
+                            maxLength={6}
+                            className={`${inputBase} font-mono tracking-widest`}
+                            required
+                          />
+                          <KeyRound className="w-4 h-4 text-[#8B96A3] absolute left-3 top-3" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className={labelBase}>New Password</label>
+                        <div className="relative">
+                          <input
+                            type={showResetNewPassword ? 'text' : 'password'}
+                            value={resetNewPassword}
+                            onChange={(e) => setResetNewPassword(e.target.value)}
+                            placeholder="Minimum 4 characters"
+                            className={`${inputBase} pr-10`}
+                            required
+                          />
+                          <Lock className="w-4 h-4 text-[#8B96A3] absolute left-3 top-3" />
                           <button
                             type="button"
-                            onClick={() => setResetCode(generatedCodeBanner)}
-                            className="text-[11px] bg-amber-500 text-slate-950 font-bold px-2 py-1 rounded hover:bg-amber-400 transition-colors cursor-pointer"
+                            onClick={() => setShowResetNewPassword(!showResetNewPassword)}
+                            className="absolute right-3 top-3 text-[#8B96A3] hover:text-[#18222B]"
+                            tabIndex={-1}
                           >
-                            Autofill Code
+                            {showResetNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
                       </div>
-                    )}
 
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">6-Digit Confirmation Code</label>
-                      <div className="relative">
-                        <input 
-                          type="text" 
-                          value={resetCode}
-                          onChange={(e) => setResetCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          placeholder="e.g. 123456"
-                          maxLength={6}
-                          className="w-full bg-[#06080e] border border-slate-700/80 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all font-mono tracking-widest"
-                          required
-                        />
-                        <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">New Password</label>
-                      <div className="relative">
-                        <input 
-                          type={showResetNewPassword ? 'text' : 'password'}
-                          value={resetNewPassword}
-                          onChange={(e) => setResetNewPassword(e.target.value)}
-                          placeholder="At least 4 characters"
-                          className="w-full bg-[#06080e] border border-slate-700/80 rounded-xl py-2.5 pl-9 pr-10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all font-mono"
-                          required
-                        />
-                        <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                        <button
-                          type="button"
-                          onClick={() => setShowResetNewPassword(!showResetNewPassword)}
-                          className="absolute right-3 top-3 text-slate-400 hover:text-white focus:outline-none"
-                          tabIndex={-1}
-                        >
-                          {showResetNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <label className="block text-xs font-semibold text-slate-300">Confirm New Password</label>
-                        {resetNewPassword && resetConfirmPassword && (
-                          resetNewPassword === resetConfirmPassword ? (
-                            <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5">
-                              <CheckCircle2 className="w-3 h-3" /> Match
+                      <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="text-xs font-medium">Confirm Password</label>
+                          {resetNewPassword && resetConfirmPassword && (
+                            <span
+                              className={`text-[11px] font-medium ${
+                                resetNewPassword === resetConfirmPassword ? 'text-[#0B7A4E]' : 'text-rose-600'
+                              }`}
+                            >
+                              {resetNewPassword === resetConfirmPassword ? 'Matches' : 'Mismatch'}
                             </span>
-                          ) : (
-                            <span className="text-[10px] text-rose-400 font-bold flex items-center gap-0.5">
-                              <AlertTriangle className="w-3 h-3" /> Does not match
-                            </span>
-                          )
-                        )}
+                          )}
+                        </div>
+                        <div className="relative">
+                          <input
+                            type={showResetConfirmPassword ? 'text' : 'password'}
+                            value={resetConfirmPassword}
+                            onChange={(e) => setResetConfirmPassword(e.target.value)}
+                            placeholder="Re-enter password"
+                            className={`${inputBase} pr-10`}
+                            required
+                          />
+                          <Lock className="w-4 h-4 text-[#8B96A3] absolute left-3 top-3" />
+                          <button
+                            type="button"
+                            onClick={() => setShowResetConfirmPassword(!showResetConfirmPassword)}
+                            className="absolute right-3 top-3 text-[#8B96A3] hover:text-[#18222B]"
+                            tabIndex={-1}
+                          >
+                            {showResetConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </div>
-                      <div className="relative">
-                        <input 
-                          type={showResetConfirmPassword ? 'text' : 'password'}
-                          value={resetConfirmPassword}
-                          onChange={(e) => setResetConfirmPassword(e.target.value)}
-                          placeholder="Re-enter new password"
-                          className="w-full bg-[#06080e] border border-slate-700/80 rounded-xl py-2.5 pl-9 pr-10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all font-mono"
-                          required
-                        />
-                        <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                        <button
-                          type="button"
-                          onClick={() => setShowResetConfirmPassword(!showResetConfirmPassword)}
-                          className="absolute right-3 top-3 text-slate-400 hover:text-white focus:outline-none"
-                          tabIndex={-1}
-                        >
-                          {showResetConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
 
-                    <button
-                      type="submit"
-                      disabled={!resetCode.trim() || !resetNewPassword || resetNewPassword !== resetConfirmPassword}
-                      className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] text-slate-950 font-black py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10 cursor-pointer mt-2"
-                      id="btn_confirm_reset_password"
-                    >
-                      <ShieldCheck className="w-4 h-4 text-slate-950" />
-                      <span>Confirm & Reset Password</span>
-                    </button>
-                  </form>
-                )}
+                      <button
+                        type="submit"
+                        disabled={!resetCode.trim() || !resetNewPassword || resetNewPassword !== resetConfirmPassword}
+                        className="w-full bg-[#0B7A4E] hover:bg-[#08633E] disabled:opacity-50 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-colors cursor-pointer"
+                        id="btn_confirm_reset_password"
+                      >
+                        Update Password
+                      </button>
+                    </form>
+                  )}
 
-                {resetStep === 3 && (
-                  /* Step 3: Success Acknowledgement */
-                  <div className="text-center py-4 space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 mx-auto flex items-center justify-center">
-                      <CheckCircle2 className="w-6 h-6" />
+                  {resetStep === 3 && (
+                    <div className="text-center py-4 space-y-3">
+                      <CheckCircle2 className="w-8 h-8 text-[#0B7A4E] mx-auto" />
+                      <h4 className="font-serif text-lg font-semibold">Password Updated</h4>
+                      <button
+                        type="button"
+                        onClick={handleFinishResetToSignIn}
+                        className="w-full bg-[#0B7A4E] hover:bg-[#08633E] text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-colors cursor-pointer"
+                      >
+                        Sign In
+                      </button>
                     </div>
-                    <h4 className="text-base font-bold text-white">Password Reset Confirmed!</h4>
-                    <p className="text-xs text-slate-400 leading-relaxed">
-                      Your new password has been set. You can now sign in with your updated credentials.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleFinishResetToSignIn}
-                      className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-black py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer mt-2"
-                    >
-                      <span>Continue to Sign In</span>
-                      <ArrowRight className="w-4 h-4 text-slate-950" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : !isRegistering ? (
-              /* CLEAN SIGN IN FORM */
-              <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
-                  <div className="relative">
-                    <input 
-                      type="email" 
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="e.g. investor@gmail.com"
-                      autoComplete="email"
-                      className="w-full bg-[#06080e] border border-slate-700/80 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all font-sans"
-                      required
-                    />
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  </div>
+                  )}
                 </div>
+              ) : !isRegistering ? (
+                <form onSubmit={handleLoginSubmit} className="space-y-4">
+                  <div>
+                    <label className={labelBase}>Email</label>
+                    <div className="relative">
+                      <input
+                        type="email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="name@example.com"
+                        autoComplete="email"
+                        className={inputBase}
+                        required
+                      />
+                      <Mail className="w-4 h-4 text-[#8B96A3] absolute left-3 top-3" />
+                    </div>
+                  </div>
 
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="block text-xs font-semibold text-slate-300">Password</label>
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className={`text-xs font-medium ${isChampagne ? 'text-[#43505C]' : 'text-[#C7D1DC]'}`}>
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsResettingPassword(true);
+                          setResetEmail(loginEmail || '');
+                          setResetStep(1);
+                          setResetLocalError(null);
+                          clearMessages();
+                        }}
+                        className={`text-xs font-medium hover:underline cursor-pointer ${
+                          isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'
+                        }`}
+                      >
+                        Forgot?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showLoginPassword ? 'text' : 'password'}
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        placeholder="Enter password"
+                        autoComplete="current-password"
+                        className={`${inputBase} pr-10`}
+                      />
+                      <Lock className="w-4 h-4 text-[#8B96A3] absolute left-3 top-3" />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        className="absolute right-3 top-3 text-[#8B96A3] hover:text-[#18222B] cursor-pointer"
+                        tabIndex={-1}
+                        aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-[#0B7A4E] hover:bg-[#08633E] text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer mt-1"
+                    id="btn_landing_login"
+                  >
+                    <span>Sign In</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+
+                  <p className={`text-center pt-1 text-xs ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
+                    New investor?{' '}
                     <button
                       type="button"
                       onClick={() => {
-                        setIsResettingPassword(true);
-                        setResetEmail(loginEmail || '');
-                        setResetStep(1);
-                        setResetLocalError(null);
+                        setIsRegistering(true);
                         clearMessages();
                       }}
-                      className="text-[11px] text-amber-400 hover:text-amber-300 font-semibold hover:underline cursor-pointer"
+                      className={`font-semibold hover:underline cursor-pointer ${
+                        isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'
+                      }`}
                     >
-                      Forgot password?
+                      Create account
                     </button>
-                  </div>
-                  <div className="relative">
-                    <input 
-                      type={showLoginPassword ? 'text' : 'password'}
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder="Enter account password"
-                      autoComplete="current-password"
-                      className="w-full bg-[#06080e] border border-slate-700/80 rounded-xl py-2.5 pl-9 pr-10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all font-mono"
-                    />
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                    <button
-                      type="button"
-                      onClick={() => setShowLoginPassword(!showLoginPassword)}
-                      className="absolute right-3 top-3 text-slate-400 hover:text-white focus:outline-none"
-                      tabIndex={-1}
-                      title={showLoginPassword ? "Hide password" : "Show password"}
-                    >
-                      {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-[0.99] text-slate-950 font-black py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/15 cursor-pointer mt-2"
-                  id="btn_landing_login"
-                >
-                  <span>Sign In</span>
-                  <ArrowRight className="w-4 h-4 text-slate-950" />
-                </button>
-
-                <div className="text-center pt-2 text-xs text-slate-400">
-                  <span>Don't have an account? </span>
-                  <button 
-                    type="button"
-                    onClick={() => { setIsRegistering(true); clearMessages(); }}
-                    className="text-amber-400 hover:text-amber-300 font-bold hover:underline cursor-pointer"
-                  >
-                    Create one now
-                  </button>
-                </div>
-              </form>
-            ) : (
-              /* CLEAN REGISTRATION FORM */
-              <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Full Legal Name</label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      value={regName}
-                      onChange={(e) => setRegName(e.target.value)}
-                      placeholder="e.g. Jude Okafor"
-                      autoComplete="name"
-                      className="w-full bg-[#06080e] border border-slate-700/80 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all font-sans"
-                      required
-                    />
-                    <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
-                  <div className="relative">
-                    <input 
-                      type="email" 
-                      value={regEmail}
-                      onChange={(e) => setRegEmail(e.target.value)}
-                      placeholder="e.g. jude@gmail.com"
-                      autoComplete="email"
-                      className="w-full bg-[#06080e] border border-slate-700/80 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all font-sans"
-                      required
-                    />
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-baseline mb-1">
-                    <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                      <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Active WhatsApp Number</span>
-                      <span className="text-rose-400 font-bold">*</span>
-                    </label>
-                    <span className="text-[10px] text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 font-mono font-bold px-1.5 py-0.5 rounded uppercase">
-                      Compulsory
-                    </span>
+                  </p>
+                </form>
+              ) : (
+                <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+                  <div>
+                    <label className={labelBase}>Full Name</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                        placeholder="Jude Okafor"
+                        autoComplete="name"
+                        className={inputBase}
+                        required
+                      />
+                      <UserIcon className="w-4 h-4 text-[#8B96A3] absolute left-3 top-3" />
+                    </div>
                   </div>
 
-                  <div className="relative">
-                    <input 
-                      type="tel" 
-                      value={regPhone}
-                      onChange={(e) => setRegPhone(e.target.value)}
-                      placeholder="e.g. 08012345678 or +234..."
-                      autoComplete="tel"
-                      className={`w-full bg-[#06080e] border ${
-                        regPhone.trim() 
-                          ? regPhoneValidation.isValid 
-                            ? 'border-emerald-500/60 focus:border-emerald-400 focus:ring-emerald-500/20' 
-                            : 'border-rose-500/60 focus:border-rose-400 focus:ring-rose-500/20'
-                          : 'border-slate-700/80 focus:border-amber-400 focus:ring-amber-500/20'
-                      } rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-all font-mono`}
-                      required
-                    />
-                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <div>
+                    <label className={labelBase}>Email</label>
+                    <div className="relative">
+                      <input
+                        type="email"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                        placeholder="jude@example.com"
+                        autoComplete="email"
+                        className={inputBase}
+                        required
+                      />
+                      <Mail className="w-4 h-4 text-[#8B96A3] absolute left-3 top-3" />
+                    </div>
                   </div>
 
-                  {/* Value Proposition Notice */}
-                  <div className="mt-1.5 space-y-1">
-                    <div className="flex items-start gap-1.5 text-[11px] text-emerald-200/90 bg-emerald-950/40 border border-emerald-500/30 rounded-lg p-2 leading-relaxed">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>
-                        <strong>Value Guarantee:</strong> Receive instant Friday yield receipts and deed documents directly on WhatsApp.
-                      </span>
+                  <div>
+                    <label className={labelBase}>Phone Number</label>
+                    <div className="relative">
+                      <input
+                        type="tel"
+                        value={regPhone}
+                        onChange={(e) => setRegPhone(e.target.value)}
+                        placeholder="08012345678 or +234..."
+                        autoComplete="tel"
+                        className={`${inputBase} font-mono`}
+                        required
+                      />
+                      <Phone className="w-4 h-4 text-[#8B96A3] absolute left-3 top-3" />
                     </div>
 
-                    {/* Live Strict Sanitization & Country Detection Feedback */}
                     {regPhone.trim() && (
-                      regPhoneValidation.isValid ? (
-                        <div className="flex items-center justify-between text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/30">
-                          <span className="flex items-center gap-1.5 font-bold">
-                            <span>{regPhoneValidation.flag}</span>
-                            <span>{regPhoneValidation.formatted}</span>
-                          </span>
-                          <span className="text-emerald-300 font-sans">✓ Verified Active Format</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-[10px] text-rose-300 font-mono bg-rose-500/10 px-2 py-1 rounded-md border border-rose-500/30">
-                          <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
-                          <span>{regPhoneValidation.error}</span>
-                        </div>
-                      )
+                      <div
+                        className={`mt-1.5 text-[11px] font-mono ${
+                          regPhoneValidation.isValid
+                            ? isChampagne
+                              ? 'text-[#0B7A4E]'
+                              : 'text-[#10B981]'
+                            : 'text-rose-600'
+                        }`}
+                      >
+                        {regPhoneValidation.isValid
+                          ? `${regPhoneValidation.formatted} · Valid`
+                          : regPhoneValidation.error}
+                      </div>
                     )}
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Create Password</label>
-                  <div className="relative">
-                    <input 
-                      type={showRegPassword ? 'text' : 'password'}
-                      value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
-                      placeholder="Minimum 6 characters"
-                      autoComplete="new-password"
-                      className="w-full bg-[#06080e] border border-slate-700/80 rounded-xl py-2.5 pl-9 pr-10 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all font-mono"
-                    />
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <div>
+                    <label className={labelBase}>Password</label>
+                    <div className="relative">
+                      <input
+                        type={showRegPassword ? 'text' : 'password'}
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        placeholder="Minimum 6 characters"
+                        autoComplete="new-password"
+                        className={`${inputBase} pr-10`}
+                      />
+                      <Lock className="w-4 h-4 text-[#8B96A3] absolute left-3 top-3" />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegPassword(!showRegPassword)}
+                        className="absolute right-3 top-3 text-[#8B96A3] hover:text-[#18222B] cursor-pointer"
+                        tabIndex={-1}
+                        aria-label={showRegPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelBase}>Invite Code</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={regRef}
+                        onChange={(e) => setRegRef(e.target.value.toUpperCase())}
+                        placeholder="Sponsor referral code"
+                        className={`${inputBase} font-mono uppercase`}
+                        required
+                      />
+                      <Users className="w-4 h-4 text-[#8B96A3] absolute left-3 top-3" />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-[#0B7A4E] hover:bg-[#08633E] text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer mt-1"
+                    id="btn_landing_register"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Create Account</span>
+                  </button>
+
+                  <p className={`text-center pt-1 text-xs ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
+                    Already registered?{' '}
                     <button
                       type="button"
-                      onClick={() => setShowRegPassword(!showRegPassword)}
-                      className="absolute right-3 top-3 text-slate-400 hover:text-white focus:outline-none"
-                      tabIndex={-1}
-                      title={showRegPassword ? "Hide password" : "Show password"}
+                      onClick={() => {
+                        setIsRegistering(false);
+                        clearMessages();
+                      }}
+                      className={`font-semibold hover:underline cursor-pointer ${
+                        isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'
+                      }`}
                     >
-                      {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      Sign in
                     </button>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-baseline mb-1">
-                    <label className="block text-xs font-semibold text-slate-300">
-                      Sponsor Referral Code <span className="text-rose-400 font-bold">*</span>
-                    </label>
-                    <span className="text-[10px] text-amber-300 bg-amber-500/10 border border-amber-500/30 font-mono font-bold px-1.5 py-0.5 rounded uppercase">
-                      Compulsory
-                    </span>
-                  </div>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      value={regRef}
-                      onChange={(e) => setRegRef(e.target.value.toUpperCase())}
-                      placeholder="e.g. INV1000 or friend's code"
-                      className="w-full bg-[#06080e] border border-slate-700/80 rounded-xl py-2.5 pl-9 pr-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition-all font-mono uppercase"
-                      required
-                    />
-                    <Users className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    🔒 Registration requires an invite code from a verified investor or sponsor.
                   </p>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 active:scale-[0.99] text-slate-950 font-black py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/15 cursor-pointer mt-2"
-                  id="btn_landing_register"
-                >
-                  <span>Create Account</span>
-                  <UserPlus className="w-4 h-4 text-slate-950" />
-                </button>
-
-                <div className="text-center pt-2 text-xs text-slate-400">
-                  <span>Already registered? </span>
-                  <button 
-                    type="button"
-                    onClick={() => { setIsRegistering(false); clearMessages(); }}
-                    className="text-amber-400 hover:text-amber-300 font-bold hover:underline cursor-pointer"
-                  >
-                    Sign in here
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-
-        {/* SECTION 2: LIVE TREASURY STRIP & FRIDAY PAYOUT COUNTDOWN */}
-        <section className={`w-full ${isChampagne ? 'bg-gradient-to-r from-[#fbf8f2] via-[#f5ede0] to-[#ece1cf] border-y border-[#c5a059]/35 text-slate-900' : 'bg-gradient-to-r from-[#0c101c] via-[#090d18] to-[#120a24] border-y border-amber-500/25 text-slate-100'} py-6 px-4 sm:px-6 lg:px-8 shadow-md relative z-10`}>
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="space-y-1.5 text-center md:text-left">
-              <span className={`text-[10px] ${isChampagne ? 'text-amber-800 font-extrabold' : 'text-amber-400 font-bold'} font-mono uppercase tracking-widest flex items-center justify-center md:justify-start gap-1.5`}>
-                <Clock className={`w-3.5 h-3.5 ${isChampagne ? 'text-amber-700' : 'text-amber-400'} shrink-0`} />
-                OFFICIAL FRIDAY TREASURY CASH DISTRIBUTION SCHEDULE
-              </span>
-              <h3 className={`text-base sm:text-xl font-black ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-wide font-mono`}>
-                Live Countdown to Friday 12:00 PM Payout Window
-              </h3>
-              <p className={`text-xs ${isChampagne ? 'text-slate-700' : 'text-slate-300'} max-w-xl leading-relaxed`}>
-                Every Friday at 12:00 PM, tenant rental yields collected from our UAE luxury towers are automatically disbursed to investor wallets and local Nigerian bank accounts.
-              </p>
+                </form>
+              )}
             </div>
-            <div className="shrink-0 w-full md:w-auto flex justify-center">
+          </div>
+        </section>
+
+        {/* FRIDAY PAYOUT COUNTDOWN STRIP */}
+        <section
+          id="payout_structure"
+          className={`w-full border-y py-6 px-4 sm:px-6 lg:px-8 ${
+            isChampagne
+              ? 'bg-[#F3EFE8] border-[#E6E0D6]'
+              : 'bg-[#121922] border-[#222F3D]'
+          }`}
+        >
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-5">
+            <div className="text-center md:text-left">
+              <span
+                className={`text-[11px] font-semibold uppercase tracking-[0.14em] block ${
+                  isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'
+                }`}
+              >
+                Weekly Settlement
+              </span>
+              <h2 className="font-serif text-xl sm:text-2xl font-semibold mt-0.5">
+                Next Friday 12:00 PM Distribution
+              </h2>
+            </div>
+            <div className="shrink-0">
               <PayoutCountdown />
             </div>
           </div>
         </section>
 
-        {/* SECTION: INSTITUTIONAL CUSTODY & DIFC SPV REGISTRY STRIP */}
-        <section id="difc_trust_section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
-          <div className={`${isChampagne ? 'bg-white border-[#B8964E]/30' : 'bg-[#10121A] border-[#B8964E]/25'} border rounded-2xl p-6 sm:p-8 shadow-xl space-y-6`}>
-            <div className="border-b border-[#B8964E]/20 pb-4">
-              <div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[#B8964E] font-bold">
-                  Institutional Fiduciary Architecture
-                </span>
-                <h3 className={`text-lg sm:text-2xl font-bold ${isChampagne ? 'text-slate-950' : 'text-[#FAF8F5]'} tracking-tight mt-0.5`}>
-                  DIFC SPV Legal Trust &amp; Dubai Land Department (DLD) Custody
-                </h3>
-              </div>
+        {/* DUBAI PROPERTY OFFERINGS CATALOG */}
+        <section
+          id="properties_catalog"
+          className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 space-y-10 cv-auto"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-[var(--pm-border)]">
+            <div>
+              <span
+                className={`text-[11px] font-semibold uppercase tracking-[0.16em] block ${
+                  isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'
+                }`}
+              >
+                Dubai Portfolio
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight mt-1">
+                Verified Property Offerings
+              </h2>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono uppercase text-[#B8964E] block font-bold">01 · Sovereign Ring-Fencing</span>
-                <h4 className={`text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'}`}>
-                  DIFC Special Purpose Vehicle (SPV)
-                </h4>
-                <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
-                  Incorporated under DIFC Law No. 4 of 2019. Individual property titles are held in a ring-fenced legal vehicle, isolating investor capital entirely from corporate operating debt and outside claims.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono uppercase text-emerald-400 block font-bold">02 · Freehold Title Registration</span>
-                <h4 className={`text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'}`}>
-                  Dubai Land Department (DLD) Deeds
-                </h4>
-                <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
-                  All 6 assets hold authentic cadastral registrations with verified Makani municipal geotags. Beneficial co-owners hold contractually authenticated fractional title deeds.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono uppercase text-[#D4AF37] block font-bold">03 · Escrow Payout Clearing</span>
-                <h4 className={`text-sm font-bold ${isChampagne ? 'text-slate-950' : 'text-white'}`}>
-                  Contractual Friday Settlements
-                </h4>
-                <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
-                  Lease proceeds collected from corporate tenants are cleared through licensed banking escrow and paid every Friday at 12:00 PM WAT directly into user bank accounts.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 3: HOW IT WORKS (3 PLAIN-LANGUAGE LAYMAN STEPS) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-8 relative z-10">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <div className={`inline-flex items-center gap-1.5 ${isChampagne ? 'bg-amber-100/90 border-amber-300 text-amber-900 font-bold' : 'bg-amber-500/10 border-amber-500/30 text-amber-300 font-bold'} border text-[11px] px-3 py-1 rounded-full uppercase tracking-wider font-mono`}>
-              <span>HOW PM INVEST WORKS</span>
-            </div>
-            <h3 className={`text-xl sm:text-3xl font-black ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-tight font-mono`}>
-              Dubai Real Estate Co-Ownership in 3 Steps
-            </h3>
-            <p className={`text-xs sm:text-sm ${isChampagne ? 'text-slate-600' : 'text-slate-400'} leading-relaxed`}>
-              No complicated paperwork or international banking hurdles. Co-own verified Dubai luxury assets and start receiving weekly direct bank alerts in minutes.
+            <p className={`text-xs sm:text-sm ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
+              24-week tenure · Direct Friday payouts · DLD recorded
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md hover:border-amber-600' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-xl hover:border-amber-400/50'} border rounded-2xl p-6 space-y-3 relative overflow-hidden group transition-all`}>
-              <div className={`w-10 h-10 rounded-xl ${isChampagne ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-amber-500/15 text-amber-400 border-amber-500/30'} border flex items-center justify-center font-black font-mono text-base`}>
-                1
-              </div>
-              <h4 className={`text-base font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} uppercase tracking-wide`}>
-                Pick Your Property Stake
-              </h4>
-              <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
-                Choose a structured 24-week unit in prime Dubai towers (starting from ₦15,000). Every unit is backed by authentic Dubai Land Department Title Deeds and Makani parcel IDs.
-              </p>
-            </div>
-
-            <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md hover:border-amber-600' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-xl hover:border-amber-400/50'} border rounded-2xl p-6 space-y-3 relative overflow-hidden group transition-all`}>
-              <div className={`w-10 h-10 rounded-xl ${isChampagne ? 'bg-emerald-100 text-emerald-900 border-emerald-300' : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'} border flex items-center justify-center font-black font-mono text-base`}>
-                2
-              </div>
-              <h4 className={`text-base font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} uppercase tracking-wide`}>
-                Receive Friday Bank Alerts
-              </h4>
-              <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
-                Tenants pay rent, and our treasury distributes your guaranteed weekly cash yield directly to your wallet and Nigerian bank account every Friday at 12:00 PM sharp.
-              </p>
-            </div>
-
-            <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md hover:border-amber-600' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-xl hover:border-amber-400/50'} border rounded-2xl p-6 space-y-3 relative overflow-hidden group transition-all`}>
-              <div className={`w-10 h-10 rounded-xl ${isChampagne ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-amber-500/15 text-amber-400 border-amber-500/30'} border flex items-center justify-center font-black font-mono text-base`}>
-                3
-              </div>
-              <h4 className={`text-base font-bold ${isChampagne ? 'text-slate-950' : 'text-white'} uppercase tracking-wide`}>
-                Principal Capital Return
-              </h4>
-              <p className={`text-xs ${isChampagne ? 'text-slate-600' : 'text-slate-300'} leading-relaxed`}>
-                At the completion of the 24-week tenure, your initial investment capital is returned in full, or you can roll it over into new luxury Dubai developments.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 4: FULL-WIDTH 3-COLUMN DUBAI PROPERTY CATALOG */}
-        <section id="properties_catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 relative z-10">
-          <div className={`flex flex-col md:flex-row md:items-end justify-between gap-4 border-b ${isChampagne ? 'border-[#c5a059]/30' : 'border-amber-500/20'} pb-4`}>
-            <div>
-              <div className={`inline-flex items-center gap-1.5 ${isChampagne ? 'bg-amber-100/90 border-amber-300 text-amber-900 font-bold' : 'bg-amber-500/10 border-amber-500/30 text-amber-300 font-bold'} border text-[11px] px-3 py-1 rounded-full uppercase tracking-wider mb-2 font-mono`}>
-                <UaeFlag size="xs" />
-                <span>Prime Real Estate Portfolio</span>
-              </div>
-              <h3 className={`text-xl sm:text-3xl font-black ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-tight font-mono`}>
-                Verified Dubai Property Offerings (24-Week Cycles)
-              </h3>
-              <p className={`text-xs sm:text-sm ${isChampagne ? 'text-slate-600' : 'text-slate-400'} mt-1 max-w-xl leading-relaxed`}>
-                All offerings are recorded under the Dubai Land Department and managed through Treasure Homes Special Purpose Vehicles (SPVs).
-              </p>
-            </div>
-            <div className="shrink-0 flex items-center gap-3">
-              <span className={`text-xs font-mono ${isChampagne ? 'text-emerald-800 bg-emerald-100/90 border-emerald-300' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'} flex items-center gap-1.5 border px-3 py-1.5 rounded-full font-bold`}>
-                <Clock className={`w-3.5 h-3.5 ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'}`} />
-                Weekly Friday Payouts
-              </span>
-            </div>
-          </div>
-
-          {/* 3-Column Grid on Desktop, 2 on Tablet, 1 on Mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {INVESTMENT_PLANS.map(plan => (
-              <div 
+            {INVESTMENT_PLANS.map((plan) => (
+              <article
                 key={plan.id}
-                className={`${isChampagne ? 'bg-white border-[#c5a059]/35 shadow-lg hover:border-amber-600' : 'bg-gradient-to-b from-[#0e1424] via-[#090d18] to-[#06080e] border-amber-500/20 hover:border-amber-400/60 shadow-2xl'} border rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between group`}
+                className={`rounded-2xl border overflow-hidden flex flex-col justify-between transition-colors duration-200 group ${
+                  isChampagne
+                    ? 'bg-white border-[#E6E0D6] hover:border-[#BFC7CE]'
+                    : 'bg-[#121922] border-[#222F3D] hover:border-[#324255]'
+                }`}
               >
-                {/* Property Photography Banner with Badges */}
-                <div className="relative h-48 w-full overflow-hidden bg-slate-950">
-                  <img 
-                    src={plan.propertyImage} 
+                {/* Clean Full-Bleed Architectural Photo with Guaranteed Scrim Contrast */}
+                <div className="relative h-48 w-full overflow-hidden bg-[#18222B]">
+                  <img
+                    src={plan.propertyImage}
                     alt={plan.propertyName || plan.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                     loading="lazy"
                     decoding="async"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                  
-                  {/* Location Badge */}
-                  <div className="absolute top-3 left-3 bg-[#06080e]/85 backdrop-blur-md border border-amber-500/40 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-md">
-                    <UaeFlag size="xs" />
-                    <span>{plan.propertyLocation.split(',')[0]}</span>
-                  </div>
-
-                  {/* DLD Verified Tag */}
-                  <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-[9px] font-black uppercase px-2.5 py-1 rounded-full tracking-widest font-mono shadow-md">
-                    DLD VERIFIED
-                  </div>
-
-                  {/* Property Type & Occupancy */}
-                  <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-slate-200 truncate pr-2">{plan.propertyType}</span>
-                    <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded font-mono text-[10px] font-bold shrink-0">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+                  <div className="pm-photo-overlay absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2">
+                    <span className="text-xs font-medium truncate">
+                      {plan.propertyType}
+                    </span>
+                    <span className="pm-photo-sub text-[11px] font-mono tabular-nums shrink-0">
                       {plan.occupancyRate}
                     </span>
                   </div>
                 </div>
 
-                {/* Card Content */}
-                <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Title & Street Address */}
-                    <div className="space-y-1">
-                      <h4 className={`text-base sm:text-lg font-black ${isChampagne ? 'text-slate-950 group-hover:text-amber-800' : 'text-[#f7ecd5] group-hover:text-amber-400'} uppercase tracking-tight transition-colors`}>
+                {/* Dossier Details */}
+                <div className="p-5 flex-1 flex flex-col justify-between gap-5">
+                  <div className="space-y-4">
+                    <div>
+                      <p
+                        className={`text-[11px] font-medium tracking-wide uppercase ${
+                          isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'
+                        }`}
+                      >
+                        {plan.propertyLocation.split(',')[0]} · DLD Verified
+                      </p>
+                      <h3 className="font-serif text-xl sm:text-2xl font-semibold tracking-tight mt-0.5 leading-snug">
                         {plan.propertyName || plan.name}
-                      </h4>
-                      <div className={`flex items-start gap-1 text-[11px] ${isChampagne ? 'text-slate-600' : 'text-slate-400'}`}>
-                        <MapPin className={`w-3.5 h-3.5 ${isChampagne ? 'text-amber-700' : 'text-amber-400'} shrink-0 mt-0.5`} />
-                        <span className="line-clamp-1 leading-snug">{plan.propertyAddress}</span>
-                      </div>
-                      <div className={`flex items-center gap-1.5 pt-1 text-[9px] font-mono ${isChampagne ? 'text-slate-600' : 'text-slate-400'}`}>
-                        <span className={`${isChampagne ? 'bg-[#f4eee2] border-[#c5a059]/30 text-amber-900' : 'bg-[#06080e] border-amber-500/15 text-amber-300/80'} border px-2 py-0.5 rounded`}>
-                          Makani: {plan.makaniNumber}
-                        </span>
-                        <span className={`${isChampagne ? 'bg-[#f4eee2] border-[#c5a059]/30 text-slate-700' : 'bg-[#06080e] border-amber-500/15 text-slate-400'} border px-2 py-0.5 rounded`}>
-                          Ref: {plan.cadastralId}
-                        </span>
-                      </div>
+                      </h3>
+                      <p
+                        className={`text-[11px] font-mono mt-1 truncate ${
+                          isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'
+                        }`}
+                      >
+                        Makani {plan.makaniNumber} · {plan.cadastralId}
+                      </p>
                     </div>
 
-                    {/* Yield Box */}
-                    <div className={`mt-3.5 ${isChampagne ? 'bg-[#faf7f2] border-[#c5a059]/35' : 'bg-[#06080e]/90 border-amber-500/20 shadow-inner'} border rounded-xl p-3.5 space-y-2 text-xs`}>
+                    {/* Flat Hairline Ledger (Zero Nested Boxes) */}
+                    <div
+                      className={`border-t border-b py-3 space-y-2 text-xs ${
+                        isChampagne ? 'border-[#E6E0D6]' : 'border-[#222F3D]'
+                      }`}
+                    >
                       <div className="flex justify-between items-baseline">
-                        <span className={`${isChampagne ? 'text-slate-600' : 'text-slate-400'} text-xs`}>Stake Capital:</span>
-                        <span className={`text-base font-extrabold ${isChampagne ? 'text-slate-950' : 'text-white'} font-mono`}>₦{plan.cost.toLocaleString()}</span>
+                        <span className={isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}>
+                          Stake Capital
+                        </span>
+                        <span className="font-mono text-sm font-semibold tabular-nums">
+                          ₦{plan.cost.toLocaleString()}
+                        </span>
                       </div>
                       <div className="flex justify-between items-baseline">
-                        <span className={`${isChampagne ? 'text-slate-600' : 'text-slate-400'} text-xs`}>Weekly Friday Yield:</span>
-                        <span className={`text-sm font-black ${isChampagne ? 'text-emerald-700' : 'text-emerald-400'} font-mono`}>₦{plan.weeklyPayout.toLocaleString()} / wk</span>
+                        <span className={isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}>
+                          Friday Payout
+                        </span>
+                        <span
+                          className={`font-mono text-sm font-semibold tabular-nums ${
+                            isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'
+                          }`}
+                        >
+                          ₦{plan.weeklyPayout.toLocaleString()}/wk
+                        </span>
                       </div>
-                      <div className={`h-px ${isChampagne ? 'bg-[#e5d8c3]' : 'bg-amber-500/15'} w-full`} />
                       <div className="flex justify-between items-baseline">
-                        <span className={`${isChampagne ? 'text-amber-900 font-bold' : 'text-amber-300 font-bold'} text-xs`}>24-Week Total Returns:</span>
-                        <span className={`text-base font-black ${isChampagne ? 'text-amber-800' : 'text-amber-400'} font-mono`}>₦{plan.totalReturns.toLocaleString()}</span>
+                        <span className={isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}>
+                          24-Week Return
+                        </span>
+                        <span
+                          className={`font-mono text-sm font-semibold tabular-nums ${
+                            isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'
+                          }`}
+                        >
+                          ₦{plan.totalReturns.toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Action Buttons: Acquire Stake & Inspect DLD Deed */}
-                  <div className="space-y-2 mt-3">
+                  {/* Clean Actions */}
+                  <div className="space-y-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -1163,119 +1024,83 @@ function MainAppContent() {
                           }, 250);
                         }
                       }}
-                      className={`w-full py-2.5 px-3 rounded-xl ${
-                        isChampagne
-                          ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-black'
-                          : 'bg-gradient-to-r from-[#B8964E] via-[#D4AF37] to-[#9C7B38] hover:from-[#D4AF37] hover:to-[#B8964E] text-slate-950 font-black'
-                      } text-xs flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer active:scale-95`}
+                      className="w-full py-2.5 px-4 rounded-lg bg-[#0B7A4E] hover:bg-[#08633E] text-white text-xs font-semibold transition-colors cursor-pointer"
                     >
-                      <Award className="w-3.5 h-3.5" />
-                      <span>Acquire Stake in {plan.name} →</span>
+                      Acquire · ₦{plan.cost.toLocaleString()}
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setInspectingDeedPlan(plan)}
-                      className={`w-full py-2 px-3 rounded-xl border ${
+                      className={`w-full py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                         isChampagne
-                          ? 'border-slate-300 hover:border-slate-400 bg-white text-slate-700'
-                          : 'border-white/10 hover:border-[#B8964E]/50 bg-[#0B0C10] text-slate-300 hover:text-white'
-                      } text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all cursor-pointer`}
+                          ? 'text-[#43505C] hover:text-[#18222B] hover:bg-[#F3EFE8]'
+                          : 'text-[#94A3B8] hover:text-[#F4F1EA] hover:bg-[#18222E]'
+                      }`}
                     >
-                      <Building className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span>Inspect DLD Deed &amp; Underwriting Dossier</span>
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Preview Title Deed</span>
                     </button>
                   </div>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
-
-          {/* Note on Plans */}
-          <div className={`${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md' : 'bg-[#0c101c] border-amber-500/25 text-slate-200 shadow-xl'} border rounded-2xl p-5 text-xs space-y-1.5`}>
-            <span className={`font-bold ${isChampagne ? 'text-amber-800' : 'text-amber-400'} block uppercase tracking-wider text-[11px] font-mono flex items-center gap-1.5`}>
-              <Sparkles className={`w-3.5 h-3.5 ${isChampagne ? 'text-amber-700' : 'text-amber-400'}`} />
-              Note on UAE Property Tenures &amp; Friday Cash Payouts
-            </span>
-            <p className={`leading-relaxed ${isChampagne ? 'text-slate-700' : 'text-slate-300'} text-xs`}>
-              Your returns stem from direct tenancy rent and institutional capital growth of physical luxury towers in the United Arab Emirates. Each plan runs for a strict 24-week tenure with cash profits paid into your bank or wallet every Friday. Investors receive registered fractional deeds upon acquisition.
-            </p>
-          </div>
         </section>
 
-        {/* SECTION 5: INSTITUTIONAL BENEFIT HIGHLIGHTS */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-            <div className={`flex items-start gap-3 ${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-lg'} border p-4 rounded-xl`}>
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 shrink-0 mt-0.5">
-                <ShieldCheck className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <h4 className={`font-bold ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-wider`}>Weekly Cash Returns</h4>
-                <p className={`${isChampagne ? 'text-slate-600' : 'text-slate-400'} text-[11px] mt-0.5 leading-relaxed`}>
-                  Physical property yield paid directly to your wallet every Friday without withdrawal delays.
-                </p>
-              </div>
+        {/* DIFC LEGAL CUSTODY — CONCISE 3-PILLAR FRAMEWORK */}
+        <section
+          id="difc_trust_section"
+          className={`w-full border-t py-14 sm:py-20 px-4 sm:px-6 lg:px-8 cv-auto ${
+            isChampagne
+              ? 'bg-white border-[#E6E0D6]'
+              : 'bg-[#121922] border-[#222F3D]'
+          }`}
+        >
+          <div className="max-w-7xl mx-auto space-y-10">
+            <div className="max-w-xl">
+              <span
+                className={`text-[11px] font-semibold uppercase tracking-[0.16em] block ${
+                  isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'
+                }`}
+              >
+                Fiduciary Structure
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight mt-1">
+                Asset-Backed Governance
+              </h2>
             </div>
 
-            <div className={`flex items-start gap-3 ${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-lg'} border p-4 rounded-xl`}>
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-700 shrink-0 mt-0.5">
-                <Users className="w-5 h-5 text-amber-700" />
-              </div>
-              <div>
-                <h4 className={`font-bold ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-wider`}>7.5% Referral Bonus</h4>
-                <p className={`${isChampagne ? 'text-slate-600' : 'text-slate-400'} text-[11px] mt-0.5 leading-relaxed`}>
-                  Share your exclusive invite link. Earn 7.5% liquid cash every Friday your invitee gets paid.
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-2">
+              <div className={`space-y-2 pt-5 border-t ${isChampagne ? 'border-[#E6E0D6]' : 'border-[#222F3D]'}`}>
+                <span className={`font-mono text-xs ${isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'}`}>01</span>
+                <h3 className="font-serif text-xl font-semibold">DIFC SPV Custody</h3>
+                <p className={`text-xs sm:text-sm leading-relaxed ${isChampagne ? 'text-[#43505C]' : 'text-[#94A3B8]'}`}>
+                  Titles are ring-fenced inside a DIFC Special Purpose Vehicle under Common Law.
                 </p>
               </div>
-            </div>
 
-            <div className={`flex items-start gap-3 ${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-lg'} border p-4 rounded-xl`}>
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-700 shrink-0 mt-0.5">
-                <Award className="w-5 h-5 text-amber-700" />
-              </div>
-              <div>
-                <h4 className={`font-bold ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-wider`}>DLD Recorded Deeds</h4>
-                <p className={`${isChampagne ? 'text-slate-600' : 'text-slate-400'} text-[11px] mt-0.5 leading-relaxed`}>
-                  All properties registered under official Dubai Land Department cadastral parcel identifiers.
+              <div className={`space-y-2 pt-5 border-t ${isChampagne ? 'border-[#E6E0D6]' : 'border-[#222F3D]'}`}>
+                <span className={`font-mono text-xs ${isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'}`}>02</span>
+                <h3 className="font-serif text-xl font-semibold">DLD Freehold Deeds</h3>
+                <p className={`text-xs sm:text-sm leading-relaxed ${isChampagne ? 'text-[#43505C]' : 'text-[#94A3B8]'}`}>
+                  Every offering carries verifiable Dubai Land Department cadastral and Makani records.
                 </p>
               </div>
-            </div>
 
-            <div className={`flex items-start gap-3 ${isChampagne ? 'bg-white border-[#c5a059]/35 text-slate-800 shadow-md' : 'bg-[#0c101c] border-amber-500/20 text-slate-300 shadow-lg'} border p-4 rounded-xl`}>
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 shrink-0 mt-0.5">
-                <MessageSquare className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <h4 className={`font-bold ${isChampagne ? 'text-slate-950' : 'text-[#f7ecd5]'} uppercase tracking-wider`}>24/7 Investor Group</h4>
-                <p className={`${isChampagne ? 'text-slate-600' : 'text-slate-400'} text-[11px] mt-0.5 leading-relaxed`}>
-                  Join our official verified WhatsApp community for live Friday payment proofs and updates.
+              <div className={`space-y-2 pt-5 border-t ${isChampagne ? 'border-[#E6E0D6]' : 'border-[#222F3D]'}`}>
+                <span className={`font-mono text-xs ${isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'}`}>03</span>
+                <h3 className="font-serif text-xl font-semibold">Friday Settlement</h3>
+                <p className={`text-xs sm:text-sm leading-relaxed ${isChampagne ? 'text-[#43505C]' : 'text-[#94A3B8]'}`}>
+                  Rental yields clear every Friday at 12:00 PM directly to your wallet and bank account.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Unified Brand Footer */}
-        <div className={`${isChampagne ? 'bg-[#ede5d8] border-t border-[#c5a059]/30 text-slate-700' : 'bg-[#06080e] border-t border-amber-500/20 text-slate-400'} text-xs`}>
-          <div className="max-w-7xl mx-auto px-4 pt-8 pb-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-            <div className="space-y-1">
-              <span className={`${isChampagne ? 'text-slate-900' : 'text-[#f7ecd5]'} font-bold text-sm block`}>100% REGULATED</span>
-              <p className={isChampagne ? 'text-slate-600' : 'text-slate-400'}>Operating transparent cash reserves under supervision of the Treasure Homes asset board.</p>
-            </div>
-            <div className={`space-y-1 py-4 md:py-0 md:border-x ${isChampagne ? 'border-[#c5a059]/30' : 'border-amber-500/20'}`}>
-              <span className={`${isChampagne ? 'text-amber-800' : 'text-amber-400'} font-bold text-sm block font-mono`}>₦{(liveLiquidityReserve / 1000000000).toFixed(2)}B+ RESERVE BACKING</span>
-              <p className={isChampagne ? 'text-slate-600' : 'text-slate-400'}>Ensuring complete stability with physical properties and liquid collateral holding records.</p>
-            </div>
-            <div className="space-y-1">
-              <span className={`${isChampagne ? 'text-slate-900' : 'text-[#f7ecd5]'} font-bold text-sm block`}>KYC INTEGRITY GATE</span>
-              <p className={isChampagne ? 'text-slate-600' : 'text-slate-400'}>Anti-fraud protection including verified identification checks for seamless, quick clearances.</p>
-            </div>
-          </div>
-
-          <OfflineIndicator />
-          <LegalDisclosures />
-        </div>
+        <OfflineIndicator />
+        <LegalDisclosures />
 
         {inspectingDeedPlan && (
           <UaeDeedModal
@@ -1284,7 +1109,7 @@ function MainAppContent() {
             investment={{
               id: 'deed_inspect_' + inspectingDeedPlan.id,
               userId: 'guest',
-              userName: 'Verified Public Dossier',
+              userName: 'Public Dossier',
               planId: inspectingDeedPlan.id,
               planName: inspectingDeedPlan.name,
               propertyName: inspectingDeedPlan.propertyName,
@@ -1311,9 +1136,14 @@ function MainAppContent() {
     );
   }
 
-  // Authenticated workspace
+  // ── AUTHENTICATED WORKSPACE ──
   return (
-    <div className={`min-h-screen ${isChampagne ? 'bg-[#f4efe6] text-slate-900' : 'bg-[#06080e] text-slate-100'} flex flex-col justify-between font-sans pb-0 selection:bg-amber-500/30 selection:text-amber-200`} id="app_workspace_root">
+    <div
+      className={`min-h-screen flex flex-col justify-between font-sans ${
+        isChampagne ? 'bg-[#FAF8F4] text-[#18222B]' : 'bg-[#0B1015] text-[#F4F1EA]'
+      }`}
+      id="app_workspace_root"
+    >
       <PayoutToastContainer
         toasts={payoutToasts}
         onDismiss={dismissPayoutToast}
@@ -1327,74 +1157,103 @@ function MainAppContent() {
           }
         }}
       />
+
       <div>
         <BrandingHeader />
-        
-        {(isImpersonating || (typeof window !== 'undefined' && sessionStorage.getItem('pm_original_admin_id'))) && currentUser && currentUser.role !== 'admin' && (
-          <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-4 py-2 text-xs font-bold shadow-md sticky top-0 z-50 flex flex-col sm:flex-row items-center justify-between gap-2 border-b border-amber-600 animate-fadeIn">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-950 animate-ping" />
-              <span>
-                👀 Admin Preview Mode: Viewing user dashboard as <strong>{currentUser.name}</strong> ({currentUser.email} &bull; {currentUser.isMarketingAccount ? 'Marketer' : 'Lead'})
-              </span>
+
+        {(isImpersonating || (typeof window !== 'undefined' && sessionStorage.getItem('pm_original_admin_id'))) &&
+          currentUser &&
+          currentUser.role !== 'admin' && (
+            <div className="bg-[#18222B] text-[#FAF8F4] px-4 py-2.5 text-xs sticky top-16 z-40 border-b border-[#2C3A47]">
+              <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+                <span>
+                  Previewing account: <strong>{currentUser.name}</strong> ({currentUser.email})
+                </span>
+                <button
+                  onClick={() => exitImpersonation()}
+                  className="bg-[#0B7A4E] hover:bg-[#08633E] text-white px-3.5 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap"
+                >
+                  Return to Admin
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => exitImpersonation()}
-              className="bg-slate-950 hover:bg-slate-900 text-amber-400 px-3.5 py-1.5 rounded-lg text-xs font-extrabold cursor-pointer transition-colors whitespace-nowrap active:scale-95 shadow-xs"
-            >
-              Exit Preview &amp; Return to Control Panel &rarr;
-            </button>
-          </div>
-        )}
+          )}
 
         {currentUser.role === 'admin' && (
-          <div className={`${isChampagne ? 'bg-[#ede5d8] border-b border-[#c5a059]/35 text-slate-800' : 'bg-[#1e293b] border-b border-slate-700'} py-3 px-4 transition-colors`}>
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
-              <div className={`flex items-center gap-2 ${isChampagne ? 'text-slate-800 font-semibold' : 'text-slate-300'} text-xs font-medium`}>
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shadow-sm" />
-                <span>Treasure Homes Authorized Admin session</span>
-              </div>
-              <div className={`flex gap-2 ${isChampagne ? 'bg-[#dfd5c2] border-[#c5a059]/40' : 'bg-[#0f172a] border-slate-700'} p-1 rounded-xl border flex-wrap justify-center`}>
+          <div
+            className={`border-b py-2.5 px-4 ${
+              isChampagne
+                ? 'bg-[#F3EFE8] border-[#E6E0D6] text-[#43505C]'
+                : 'bg-[#121922] border-[#222F3D] text-[#94A3B8]'
+            }`}
+          >
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2.5">
+              <span className="text-xs font-medium">Admin Session</span>
+              <div
+                className={`inline-flex p-1 rounded-lg border ${
+                  isChampagne
+                    ? 'bg-white border-[#E6E0D6]'
+                    : 'bg-[#0B1015] border-[#222F3D]'
+                }`}
+              >
                 <button
                   onClick={() => setAdminView('admin')}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                     adminView === 'admin'
-                      ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
-                      : isChampagne ? 'text-slate-700 hover:text-slate-950 hover:bg-black/5' : 'text-slate-400 hover:text-white'
+                      ? 'bg-[#0B7A4E] text-white'
+                      : isChampagne
+                      ? 'text-[#43505C] hover:text-[#18222B]'
+                      : 'text-[#94A3B8] hover:text-[#F4F1EA]'
                   }`}
                 >
                   <ShieldAlert className="w-3.5 h-3.5" />
-                  Control Panel
+                  <span>Admin</span>
                 </button>
                 <button
                   onClick={() => setAdminView('investor')}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                     adminView === 'investor'
-                      ? 'bg-emerald-600 text-white shadow-sm font-extrabold'
-                      : isChampagne ? 'text-slate-700 hover:text-slate-950 hover:bg-black/5' : 'text-slate-400 hover:text-white'
+                      ? 'bg-[#0B7A4E] text-white'
+                      : isChampagne
+                      ? 'text-[#43505C] hover:text-[#18222B]'
+                      : 'text-[#94A3B8] hover:text-[#F4F1EA]'
                   }`}
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
-                  Real Investor View
+                  <span>Investor</span>
                 </button>
                 <button
                   onClick={() => setAdminView('marketer')}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                     adminView === 'marketer'
-                      ? 'bg-purple-600 text-white shadow-sm font-extrabold'
-                      : isChampagne ? 'text-purple-800 hover:text-purple-950 hover:bg-black/5' : 'text-purple-300 hover:text-white'
+                      ? 'bg-[#0B7A4E] text-white'
+                      : isChampagne
+                      ? 'text-[#43505C] hover:text-[#18222B]'
+                      : 'text-[#94A3B8] hover:text-[#F4F1EA]'
                   }`}
                 >
-                  <Zap className="w-3.5 h-3.5" />
-                  Marketer Portal View
+                  <Briefcase className="w-3.5 h-3.5" />
+                  <span>Marketer</span>
                 </button>
               </div>
             </div>
           </div>
         )}
-        
-        <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8">
-          <React.Suspense fallback={<div className="rounded-2xl border border-amber-500/30 bg-[#090d18] p-8 text-center text-sm text-[#f7ecd5] font-mono shadow-xl">Loading your luxury portfolio…</div>}>
+
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <React.Suspense
+            fallback={
+              <div
+                className={`rounded-xl border p-8 text-center text-sm ${
+                  isChampagne
+                    ? 'bg-white border-[#E6E0D6] text-[#6C7885]'
+                    : 'bg-[#121922] border-[#222F3D] text-[#8896A6]'
+                }`}
+              >
+                Loading workspace…
+              </div>
+            }
+          >
             {currentUser.role === 'admin' ? (
               adminView === 'admin' ? (
                 <AdminPanel />

@@ -34,7 +34,7 @@ import { useAppState } from '../context/StateContext';
 import { DailyTask } from '../types';
 import { getWatMillisecondsUntilMidnight, formatWatCountdown, getWatDate } from '../lib/watTime';
 import { MultilingualPitchModal } from './MultilingualPitchModal';
-import { WHATSAPP_COMMUNITY_URL, WHATSAPP_SUPPORT_URL } from './CommunityBanner';
+import { TELEGRAM_COMMUNITY_URL } from './CommunityBanner';
 
 export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRegisterModal?: () => void }> = ({ 
   onNavigateToInvest,
@@ -586,33 +586,28 @@ export const DailyTasksHub: React.FC<{ onNavigateToInvest?: () => void; onOpenRe
         </div>
 
         {/* NATIVE ONE-TAP SHARING TOOLS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 my-4">
-          {/* Direct 1-on-1 WhatsApp Concierge */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
+          {/* Direct Telegram Community */}
           <a
-            href={WHATSAPP_SUPPORT_URL}
+            href={TELEGRAM_COMMUNITY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-[#081310] hover:bg-[#0c1f19] border border-emerald-500/50 text-emerald-200 p-4 rounded-xl flex items-center justify-between transition-all cursor-pointer group text-left shadow-lg hover:border-emerald-400"
-            id="btn_chat_whatsapp_tasks"
-            title="Chat 1-on-1 with Dedicated Account Concierge"
+            className="pm-card hover:bg-[var(--pm-surface-subtle)] p-4 rounded-xl flex items-center justify-between transition-colors cursor-pointer group text-left"
+            id="btn_join_telegram_tasks"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-[#25D366] text-slate-950 flex items-center justify-center font-bold text-sm shadow-xs">
-                WA
+              <div className="w-9 h-9 rounded-lg bg-[#0B7A4E] text-white flex items-center justify-center font-semibold text-xs">
+                TG
               </div>
               <div>
-                <span className="font-bold text-xs text-white block group-hover:text-emerald-300">
-                  Chat on WhatsApp
-                </span>
-                <span className="text-[10px] text-slate-400 block">
-                  1-on-1 Account Concierge
-                </span>
+                <span className="font-semibold text-xs block">Official Telegram</span>
+                <span className="text-[11px] opacity-65 block">Payout notices</span>
               </div>
             </div>
-            <ExternalLink className="w-4 h-4 text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
+            <ExternalLink className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
           </a>
 
-          {/* WhatsApp Share */}
+          {/* Social Share */}
           <button
             onClick={handleShareWhatsApp}
             className="bg-[#081310] hover:bg-[#0c1f19] border border-emerald-500/30 text-emerald-200 p-4 rounded-xl flex items-center justify-between transition-all cursor-pointer group text-left shadow-lg hover:border-emerald-400/50"
