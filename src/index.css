@@ -418,3 +418,11 @@ html.theme-champagne input::placeholder,
 html.theme-champagne textarea::placeholder {
   color: #8B96A3 !important;
 }
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

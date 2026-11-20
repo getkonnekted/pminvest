@@ -36,6 +36,7 @@ import { PayoutCountdown } from './components/PayoutCountdown';
 import { TELEGRAM_COMMUNITY_URL } from './components/CommunityBanner';
 import { sanitizeAndValidatePhone } from './lib/phoneSanitizer';
 import { UaeDeedModal } from './components/UaeDeedModal';
+import { GovernanceCarousel } from './components/GovernanceCarousel';
 import dubaiHeroSkyline from './assets/images/dubai_hero_skyline_1795182501653.jpg';
 
 const UserDashboard = React.lazy(() => import('./components/UserDashboard').then(module => ({ default: module.UserDashboard })));
@@ -1078,56 +1079,8 @@ function MainAppContent() {
           </div>
         </section>
 
-        {/* DIFC LEGAL CUSTODY — CONCISE 3-PILLAR FRAMEWORK */}
-        <section
-          id="difc_trust_section"
-          className={`w-full border-t py-14 sm:py-20 px-4 sm:px-6 lg:px-8 cv-auto ${
-            isChampagne
-              ? 'bg-white border-[#E6E0D6]'
-              : 'bg-[#121922] border-[#222F3D]'
-          }`}
-        >
-          <div className="max-w-7xl mx-auto space-y-10">
-            <div className="max-w-xl">
-              <span
-                className={`text-[11px] font-semibold uppercase tracking-[0.16em] block ${
-                  isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'
-                }`}
-              >
-                Fiduciary Structure
-              </span>
-              <h2 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight mt-1">
-                Asset-Backed Governance
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-2">
-              <div className={`space-y-2 pt-5 border-t ${isChampagne ? 'border-[#E6E0D6]' : 'border-[#222F3D]'}`}>
-                <span className={`font-mono text-xs ${isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'}`}>01</span>
-                <h3 className="font-serif text-xl font-semibold">DIFC SPV Custody</h3>
-                <p className={`text-xs sm:text-sm leading-relaxed ${isChampagne ? 'text-[#43505C]' : 'text-[#94A3B8]'}`}>
-                  Titles are ring-fenced inside a DIFC Special Purpose Vehicle under Common Law.
-                </p>
-              </div>
-
-              <div className={`space-y-2 pt-5 border-t ${isChampagne ? 'border-[#E6E0D6]' : 'border-[#222F3D]'}`}>
-                <span className={`font-mono text-xs ${isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'}`}>02</span>
-                <h3 className="font-serif text-xl font-semibold">DLD Freehold Deeds</h3>
-                <p className={`text-xs sm:text-sm leading-relaxed ${isChampagne ? 'text-[#43505C]' : 'text-[#94A3B8]'}`}>
-                  Every offering carries verifiable Dubai Land Department cadastral and Makani records.
-                </p>
-              </div>
-
-              <div className={`space-y-2 pt-5 border-t ${isChampagne ? 'border-[#E6E0D6]' : 'border-[#222F3D]'}`}>
-                <span className={`font-mono text-xs ${isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'}`}>03</span>
-                <h3 className="font-serif text-xl font-semibold">Friday Settlement</h3>
-                <p className={`text-xs sm:text-sm leading-relaxed ${isChampagne ? 'text-[#43505C]' : 'text-[#94A3B8]'}`}>
-                  Rental yields clear every Friday at 12:00 PM directly to your wallet and bank account.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* DIFC LEGAL CUSTODY — SCROLL-SNAP COVERFLOW CAROUSEL */}
+        <GovernanceCarousel />
 
         <OfflineIndicator />
         <LegalDisclosures />
