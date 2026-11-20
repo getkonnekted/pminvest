@@ -146,7 +146,132 @@ table,
   color: #FAF8F4 !important;
 }
 .pm-photo-overlay .pm-photo-sub {
-  color: rgba(250, 248, 244, 0.82) !important;
+  color: rgba(250, 248, 244, 0.80) !important;
+}
+.pm-photo-overlay .pm-photo-muted {
+  color: rgba(250, 248, 244, 0.64) !important;
+}
+.pm-photo-overlay .pm-photo-brass {
+  color: #DFC387 !important;
+}
+.pm-photo-overlay .pm-photo-emerald {
+  color: #5EEAD4 !important;
+}
+
+/* =========================================================================
+   HERO ARCHITECTURAL MOTION (GPU-COMPOSITED ONLY · REDUCED-MOTION SAFE)
+   ========================================================================= */
+@keyframes pmHeroDrift {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.065) translate3d(-0.8%, -0.5%, 0);
+  }
+}
+
+@keyframes pmHeroLineReveal {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 108%, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes pmHeroFadeRise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes pmHeroRuleDraw {
+  0% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pmYieldSheen {
+  0%, 18% {
+    background-position: 100% 50%;
+  }
+  52%, 100% {
+    background-position: 0% 50%;
+  }
+}
+
+.pm-hero-bg-drift {
+  animation: pmHeroDrift 24s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.pm-hero-line-1 {
+  display: inline-block;
+  animation: pmHeroLineReveal 0.82s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;
+  will-change: transform, opacity;
+}
+
+.pm-hero-line-2 {
+  display: inline-block;
+  animation: pmHeroLineReveal 0.86s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both;
+  will-change: transform, opacity;
+}
+
+.pm-hero-yield-text {
+  background: linear-gradient(
+    105deg,
+    #6EE7B7 0%,
+    #A7F3D0 26%,
+    #F3E2BA 48%,
+    #6EE7B7 70%,
+    #34D399 100%
+  );
+  background-size: 240% 100%;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  animation: pmYieldSheen 6.5s cubic-bezier(0.4, 0, 0.2, 1) 1.1s infinite;
+}
+
+.pm-hero-rule {
+  transform-origin: left center;
+  animation: pmHeroRuleDraw 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
+  will-change: transform, opacity;
+}
+
+.pm-hero-fade-1 {
+  animation: pmHeroFadeRise 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both;
+}
+
+.pm-hero-fade-2 {
+  animation: pmHeroFadeRise 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.46s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-hero-bg-drift,
+  .pm-hero-line-1,
+  .pm-hero-line-2,
+  .pm-hero-yield-text,
+  .pm-hero-rule,
+  .pm-hero-fade-1,
+  .pm-hero-fade-2 {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
 }
 
 @keyframes shimmer {

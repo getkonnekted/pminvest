@@ -36,6 +36,7 @@ import { PayoutCountdown } from './components/PayoutCountdown';
 import { TELEGRAM_COMMUNITY_URL } from './components/CommunityBanner';
 import { sanitizeAndValidatePhone } from './lib/phoneSanitizer';
 import { UaeDeedModal } from './components/UaeDeedModal';
+import dubaiHeroSkyline from './assets/images/dubai_hero_skyline_1795182501653.jpg';
 
 const UserDashboard = React.lazy(() => import('./components/UserDashboard').then(module => ({ default: module.UserDashboard })));
 const MarketerDashboard = React.lazy(() => import('./components/MarketerDashboard').then(module => ({ default: module.MarketerDashboard })));
@@ -217,143 +218,171 @@ function MainAppContent() {
 
         <BrandingHeader />
 
-        {/* HERO & CLIENT AUTHENTICATION */}
-        <section className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-14 sm:pt-14 sm:pb-20">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
-            {/* Left Editorial Proposition */}
-            <div className="lg:col-span-7 space-y-7 pt-1">
-              <div className="space-y-4">
-                <p
-                  className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
-                    isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'
-                  }`}
-                >
-                  DIFC SPV Custody · Dubai Land Department
-                </p>
+        {/* HERO & CLIENT AUTHENTICATION — FULL-BLEED DUBAI REAL ESTATE BACKDROP */}
+        <section
+          className={`relative overflow-hidden border-b ${
+            isChampagne ? 'border-[#E6E0D6]' : 'border-[#222F3D]'
+          }`}
+          style={{
+            background: 'linear-gradient(135deg, #0D161D 0%, #15232E 50%, #0B1218 100%)'
+          }}
+        >
+          {/* Architectural Dubai Marina Waterfront Backdrop with Slow Drift */}
+          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none" aria-hidden="true">
+            <img
+              src={dubaiHeroSkyline}
+              alt=""
+              referrerPolicy="no-referrer"
+              fetchPriority="high"
+              decoding="async"
+              className="w-full h-full object-cover object-center pm-hero-bg-drift"
+            />
+            {/* Measured Institutional Scrim — Preserves Dubai Skyline while Guaranteeing >= 7:1 Text Contrast */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(102deg, rgba(10, 17, 23, 0.88) 0%, rgba(10, 17, 23, 0.74) 48%, rgba(10, 17, 23, 0.44) 100%)'
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(180deg, rgba(10, 17, 23, 0.25) 0%, rgba(10, 17, 23, 0.08) 45%, rgba(10, 17, 23, 0.80) 100%)'
+              }}
+            />
+          </div>
 
-                <h1
-                  className={`font-serif font-semibold tracking-tight leading-[1.06] ${
-                    isChampagne ? 'text-[#18222B]' : 'text-[#F4F1EA]'
-                  }`}
-                  style={{ fontSize: 'clamp(2.35rem, 4.4vw, 3.85rem)', textWrap: 'balance' as any }}
-                >
-                  Prime Dubai Real Estate,{' '}
-                  <span className={isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'}>
-                    Weekly Friday Yields.
-                  </span>
-                </h1>
+          <div className="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-14 sm:pt-14 sm:pb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+              {/* Left Editorial Proposition (Theme-Immune over Architectural Backdrop) */}
+              <div className="lg:col-span-7 space-y-7 pt-1 pm-photo-overlay">
+                <div className="space-y-4">
+                  <p className="pm-photo-brass text-[11px] font-semibold uppercase tracking-[0.18em] pm-hero-fade-1">
+                    DIFC SPV Custody · Dubai Land Department
+                  </p>
 
-                <p
-                  className={`text-sm sm:text-base max-w-xl leading-relaxed ${
-                    isChampagne ? 'text-[#43505C]' : 'text-[#A8B4C2]'
-                  }`}
-                >
-                  Fractional ownership in verified Dubai towers starting from ₦15,000, with rental distributions settled directly every Friday.
-                </p>
+                  <h1
+                    className="font-serif font-semibold tracking-tight leading-[1.06]"
+                    style={{ fontSize: 'clamp(2.4rem, 4.5vw, 3.95rem)', textWrap: 'balance' as any }}
+                  >
+                    <span className="block overflow-hidden pb-1">
+                      <span className="pm-hero-line-1">Prime Dubai Real Estate,</span>
+                    </span>
+                    <span className="block overflow-hidden pb-1.5">
+                      <span className="pm-hero-line-2">
+                        <span className="pm-hero-yield-text italic font-semibold">
+                          Weekly Friday Yields.
+                        </span>
+                      </span>
+                    </span>
+                  </h1>
+
+                  {/* Subtle Architectural Hairline Accent Rule */}
+                  <div
+                    className="pm-hero-rule h-px w-24"
+                    style={{
+                      background: 'linear-gradient(90deg, #34D399 0%, #DFC387 65%, transparent 100%)'
+                    }}
+                    aria-hidden="true"
+                  />
+
+                  <p className="pm-photo-sub text-sm sm:text-base max-w-xl leading-relaxed pm-hero-fade-1">
+                    Fractional ownership in verified Dubai towers starting from ₦15,000, with rental distributions settled directly every Friday.
+                  </p>
+                </div>
+
+                {/* Focused Action Row */}
+                <div className="flex flex-wrap items-center gap-4 pt-1 pm-hero-fade-2">
+                  <a
+                    href="#properties_catalog"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-[#0B7A4E] hover:bg-[#08633E] text-white text-sm font-semibold transition-colors cursor-pointer"
+                  >
+                    <span>View Properties</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+
+                  <a
+                    href="#difc_trust_section"
+                    className="inline-flex items-center justify-center px-5 py-3 rounded-lg border border-white/25 bg-white/10 hover:bg-white/18 backdrop-blur-sm text-sm font-medium transition-colors cursor-pointer"
+                  >
+                    Legal Trust
+                  </a>
+
+                  <a
+                    href={TELEGRAM_COMMUNITY_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pm-photo-emerald inline-flex items-center gap-1.5 text-xs font-semibold hover:opacity-85 transition-opacity px-1 py-2"
+                    id="btn_hero_join_telegram"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Telegram Channel</span>
+                  </a>
+                </div>
+
+                {/* Clean Hairline-Divided Institutional Ledger */}
+                <div className="pt-7 mt-4 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-6 pm-hero-fade-2">
+                  <div>
+                    <span className="pm-photo-muted text-[11px] uppercase tracking-[0.1em] block">
+                      SPV Entity
+                    </span>
+                    <span className="font-mono text-sm font-semibold tabular-nums block mt-1">
+                      Reg #4982
+                    </span>
+                    <span className="pm-photo-muted text-[11px] block mt-0.5">
+                      DIFC Common Law
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="pm-photo-muted text-[11px] uppercase tracking-[0.1em] block">
+                      Portfolio
+                    </span>
+                    <span className="font-mono text-sm font-semibold tabular-nums block mt-1">
+                      {INVESTMENT_PLANS.length} Deeds
+                    </span>
+                    <span className="pm-photo-emerald text-[11px] block mt-0.5">
+                      DLD Recorded
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="pm-photo-muted text-[11px] uppercase tracking-[0.1em] block">
+                      Settlement
+                    </span>
+                    <span className="pm-photo-emerald font-mono text-sm font-semibold tabular-nums block mt-1">
+                      Fridays
+                    </span>
+                    <span className="pm-photo-muted text-[11px] block mt-0.5">
+                      12:00 PM Direct
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="pm-photo-muted text-[11px] uppercase tracking-[0.1em] block">
+                      Partner Share
+                    </span>
+                    <span className="pm-photo-brass font-mono text-sm font-semibold tabular-nums block mt-1">
+                      7.5% Weekly
+                    </span>
+                    <span className="pm-photo-muted text-[11px] block mt-0.5">
+                      Referral Override
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              {/* Focused Action Row */}
-              <div className="flex flex-wrap items-center gap-4 pt-1">
-                <a
-                  href="#properties_catalog"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-[#0B7A4E] hover:bg-[#08633E] text-white text-sm font-semibold transition-colors cursor-pointer"
-                >
-                  <span>View Properties</span>
-                  <ArrowRight className="w-4 h-4" />
-                </a>
-
-                <a
-                  href="#difc_trust_section"
-                  className={`inline-flex items-center justify-center px-5 py-3 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
-                    isChampagne
-                      ? 'bg-white border-[#D3CBC0] text-[#18222B] hover:bg-[#F3EFE8]'
-                      : 'bg-[#121922] border-[#222F3D] text-[#F4F1EA] hover:bg-[#18222E]'
-                  }`}
-                >
-                  Legal Trust
-                </a>
-
-                <a
-                  href={TELEGRAM_COMMUNITY_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-1.5 text-xs font-semibold transition-colors px-1 py-2 ${
-                    isChampagne
-                      ? 'text-[#0B7A4E] hover:text-[#08633E]'
-                      : 'text-[#10B981] hover:text-emerald-300'
-                  }`}
-                  id="btn_hero_join_telegram"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Telegram Channel</span>
-                </a>
-              </div>
-
-              {/* Clean Hairline-Divided Institutional Ledger */}
+              {/* Right Clean Single-Elevation Auth Card */}
               <div
-                className={`pt-7 mt-4 border-t grid grid-cols-2 sm:grid-cols-4 gap-6 ${
-                  isChampagne ? 'border-[#E6E0D6]' : 'border-[#222F3D]'
+                id="card_auth_panel"
+                className={`lg:col-span-5 rounded-2xl border p-6 sm:p-7 shadow-2xl ${
+                  isChampagne
+                    ? 'bg-white/98 border-[#E6E0D6]'
+                    : 'bg-[#121922]/96 border-[#222F3D]'
                 }`}
               >
-                <div>
-                  <span className={`text-[11px] uppercase tracking-[0.1em] block ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
-                    SPV Entity
-                  </span>
-                  <span className="font-mono text-sm font-semibold tabular-nums block mt-1">
-                    Reg #4982
-                  </span>
-                  <span className={`text-[11px] block mt-0.5 ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
-                    DIFC Common Law
-                  </span>
-                </div>
-
-                <div>
-                  <span className={`text-[11px] uppercase tracking-[0.1em] block ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
-                    Portfolio
-                  </span>
-                  <span className="font-mono text-sm font-semibold tabular-nums block mt-1">
-                    {INVESTMENT_PLANS.length} Deeds
-                  </span>
-                  <span className={`text-[11px] block mt-0.5 ${isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'}`}>
-                    DLD Recorded
-                  </span>
-                </div>
-
-                <div>
-                  <span className={`text-[11px] uppercase tracking-[0.1em] block ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
-                    Settlement
-                  </span>
-                  <span className={`font-mono text-sm font-semibold tabular-nums block mt-1 ${isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]'}`}>
-                    Fridays
-                  </span>
-                  <span className={`text-[11px] block mt-0.5 ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
-                    12:00 PM Direct
-                  </span>
-                </div>
-
-                <div>
-                  <span className={`text-[11px] uppercase tracking-[0.1em] block ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
-                    Partner Share
-                  </span>
-                  <span className={`font-mono text-sm font-semibold tabular-nums block mt-1 ${isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]'}`}>
-                    7.5% Weekly
-                  </span>
-                  <span className={`text-[11px] block mt-0.5 ${isChampagne ? 'text-[#6C7885]' : 'text-[#8896A6]'}`}>
-                    Referral Override
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Clean Single-Elevation Auth Card */}
-            <div
-              id="card_auth_panel"
-              className={`lg:col-span-5 rounded-2xl border p-6 sm:p-7 ${
-                isChampagne
-                  ? 'bg-white border-[#E6E0D6]'
-                  : 'bg-[#121922] border-[#222F3D]'
-              }`}
-            >
               {/* Clean Segmented Tabs */}
               <div
                 className={`grid grid-cols-2 p-1 rounded-lg mb-6 border ${
@@ -860,6 +889,7 @@ function MainAppContent() {
                   </p>
                 </form>
               )}
+              </div>
             </div>
           </div>
         </section>
@@ -867,7 +897,7 @@ function MainAppContent() {
         {/* FRIDAY PAYOUT COUNTDOWN STRIP */}
         <section
           id="payout_structure"
-          className={`w-full border-y py-6 px-4 sm:px-6 lg:px-8 ${
+          className={`w-full border-b py-6 px-4 sm:px-6 lg:px-8 ${
             isChampagne
               ? 'bg-[#F3EFE8] border-[#E6E0D6]'
               : 'bg-[#121922] border-[#222F3D]'
