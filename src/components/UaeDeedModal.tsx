@@ -1,24 +1,16 @@
 import React, { useState } from 'react';
-import { 
-  ShieldCheck, 
-  Printer, 
-  X, 
-  Building, 
-  CheckCircle2, 
-  Award, 
+import {
+  ShieldCheck,
+  Printer,
+  X,
+  Award,
   QrCode,
-  FileText,
   MapPin,
   Landmark,
-  DollarSign,
-  TrendingUp,
-  Percent,
-  Check,
-  Lock,
-  ExternalLink
+  TrendingUp
 } from 'lucide-react';
 import { UserInvestment } from '../types';
-import { UaeFlag } from './UaeFlag';
+import { useTheme } from '../context/ThemeContext';
 
 interface UaeDeedModalProps {
   isOpen: boolean;
@@ -46,127 +38,130 @@ interface PropertyMeta {
 const PROPERTY_DATABASE: Record<string, PropertyMeta> = {
   plan_0: {
     name: 'Jumeirah Village Studios',
-    location: 'Jumeirah Village Circle (JVC), Dubai, UAE',
-    address: 'Plot 214-108, District 12, Jumeirah Village Circle (JVC), Dubai, United Arab Emirates',
+    location: 'Jumeirah Village Circle (JVC), Dubai',
+    address: 'Plot 214-108, District 12, JVC, Dubai, UAE',
     image: '/properties/jumeirah_village_studios.jpg',
-    type: 'Starter Studio Co-Ownership Stake',
+    type: 'Starter Studio Co-Ownership',
     occupancy: '97.8%',
-    deedTier: 'Jumeirah Village Co-Ownership Deed (₦15,000 Starter Tier)',
+    deedTier: 'Jumeirah Village Deed',
     cadastralId: 'DLD-CAD-214-108',
     makaniNumber: '13490 61842',
-    zoning: 'Freehold Urban Residential (R-3)',
-    valuation: 'AED 52,000,000 (Valued Q3 2026)',
-    trustee: 'Treasure Homes Sovereign Real Estate SPV Ltd',
+    zoning: 'Freehold Residential (R-3)',
+    valuation: 'AED 52M',
+    trustee: 'Treasure Homes SPV Ltd',
     spvCode: 'SPV-DXB-JVC-00'
   },
   plan_1: {
     name: 'Marina Bay Residences',
-    location: 'Dubai Marina, Dubai, UAE',
-    address: 'Plot 392-581, Marina Promenade, Al Marsa Street, Dubai Marina, Dubai, United Arab Emirates',
+    location: 'Dubai Marina, Dubai',
+    address: 'Plot 392-581, Marina Promenade, Dubai Marina, UAE',
     image: '/properties/marina_bay_residences.jpg',
-    type: 'Executive Studio Waterfront Stake',
+    type: 'Executive Waterfront Studio',
     occupancy: '98.4%',
-    deedTier: 'Marina Bay Co-Ownership Deed (₦30,000 Tier)',
+    deedTier: 'Marina Bay Deed',
     cadastralId: 'DLD-CAD-392-581',
     makaniNumber: '12845 76291',
-    zoning: 'Freehold Prime Residential (R-4)',
-    valuation: 'AED 84,500,000 (Valued Q3 2026)',
-    trustee: 'Treasure Homes Sovereign Real Estate SPV Ltd',
+    zoning: 'Freehold Residential (R-4)',
+    valuation: 'AED 84.5M',
+    trustee: 'Treasure Homes SPV Ltd',
     spvCode: 'SPV-DXB-MARINA-01'
   },
   plan_2: {
     name: 'Creek Horizon Suites',
-    location: 'Dubai Creek Harbour, Dubai, UAE',
-    address: 'Plot 184-210, Creek Island Boulevard, Dubai Creek Harbour, The Lagoons, Dubai, United Arab Emirates',
+    location: 'Dubai Creek Harbour, Dubai',
+    address: 'Plot 184-210, Creek Island Blvd, Dubai Creek Harbour, UAE',
     image: '/properties/creek_horizon_suites.jpg',
-    type: '1-Bedroom Waterfront Apartment',
+    type: '1-Bedroom Waterfront Residence',
     occupancy: '97.2%',
-    deedTier: 'Creek Horizon Co-Ownership Deed (₦60,000 Tier)',
+    deedTier: 'Creek Horizon Deed',
     cadastralId: 'DLD-CAD-184-210',
     makaniNumber: '14592 88201',
     zoning: 'Waterfront Mixed Residential (W-2)',
-    valuation: 'AED 120,000,000 (Valued Q3 2026)',
-    trustee: 'Treasure Homes Sovereign Real Estate SPV Ltd',
+    valuation: 'AED 120M',
+    trustee: 'Treasure Homes SPV Ltd',
     spvCode: 'SPV-DXB-CREEK-02'
   },
   plan_3: {
     name: 'Downtown Sky Vista',
-    location: 'Downtown Burj Khalifa District, Dubai, UAE',
-    address: 'Plot 119-969, Sheikh Mohammed bin Rashid Boulevard, Downtown Dubai, Dubai, United Arab Emirates',
+    location: 'Downtown Dubai',
+    address: 'Plot 119-969, Mohammed bin Rashid Blvd, Downtown Dubai, UAE',
     image: '/properties/downtown_sky_vista.jpg',
-    type: 'Serviced Luxury Residence Stake',
+    type: 'Serviced Luxury Residence',
     occupancy: '99.1%',
-    deedTier: 'Downtown Sky Co-Ownership Deed (₦120,000 Tier)',
+    deedTier: 'Downtown Sky Deed',
     cadastralId: 'DLD-CAD-119-969',
     makaniNumber: '11894 92051',
-    zoning: 'Central Commercial & Hospitality (C-1)',
-    valuation: 'AED 245,000,000 (Valued Q3 2026)',
-    trustee: 'Treasure Homes Sovereign Real Estate SPV Ltd',
+    zoning: 'Central Hospitality (C-1)',
+    valuation: 'AED 245M',
+    trustee: 'Treasure Homes SPV Ltd',
     spvCode: 'SPV-DXB-DOWNTOWN-03'
   },
   plan_4: {
     name: 'Sobha Sanctuary Estates',
-    location: 'Sobha Hartland / MBR City, Dubai, UAE',
-    address: 'Plot 440-112, Ras Al Khor Road, Sobha Hartland, Mohammed Bin Rashid Al Maktoum City, Dubai, United Arab Emirates',
+    location: 'Sobha Hartland, MBR City',
+    address: 'Plot 440-112, Sobha Hartland, MBR City, Dubai, UAE',
     image: '/properties/sobha_sanctuary_estates.jpg',
-    type: '2-Bedroom Forest Villa Stake',
+    type: '2-Bedroom Forest Villa',
     occupancy: '96.8%',
-    deedTier: 'Sobha Sanctuary Co-Ownership Deed (₦250,000 Tier)',
+    deedTier: 'Sobha Sanctuary Deed',
     cadastralId: 'DLD-CAD-440-112',
     makaniNumber: '16402 71830',
-    zoning: 'Ultra-Luxury Villa Residential (V-1)',
-    valuation: 'AED 380,000,000 (Valued Q3 2026)',
-    trustee: 'Treasure Homes Sovereign Real Estate SPV Ltd',
+    zoning: 'Luxury Villa Residential (V-1)',
+    valuation: 'AED 380M',
+    trustee: 'Treasure Homes SPV Ltd',
     spvCode: 'SPV-DXB-SOBHA-04'
   },
   plan_5: {
     name: 'Palm Azure Ocean Villa',
-    location: 'Palm Jumeirah, Dubai, UAE',
-    address: 'Plot 512-404, Crescent Road West, Frond G, Palm Jumeirah, Dubai, United Arab Emirates',
+    location: 'Palm Jumeirah, Dubai',
+    address: 'Plot 512-404, Crescent Rd West, Frond G, Palm Jumeirah, UAE',
     image: '/properties/palm_azure_villa.jpg',
-    type: 'Ultra-Luxury Waterfront Residence',
+    type: 'Beachfront Signature Villa',
     occupancy: '98.9%',
-    deedTier: 'Palm Azure Co-Ownership Deed (₦600,000 Tier)',
+    deedTier: 'Palm Azure Deed',
     cadastralId: 'DLD-CAD-512-404',
     makaniNumber: '10382 64920',
-    zoning: 'Beachfront Sovereign Luxury (B-1)',
-    valuation: 'AED 620,000,000 (Valued Q3 2026)',
-    trustee: 'Treasure Homes Sovereign Real Estate SPV Ltd',
+    zoning: 'Beachfront Luxury (B-1)',
+    valuation: 'AED 620M',
+    trustee: 'Treasure Homes SPV Ltd',
     spvCode: 'SPV-DXB-PALM-05'
   },
   plan_6: {
     name: 'Emirates Financial Tower',
-    location: 'DIFC Financial District, Dubai, UAE',
-    address: 'Plot 884-219, Al Sa\'ada Street, DIFC Gate Precinct 4, Dubai International Financial Centre, Dubai, United Arab Emirates',
+    location: 'DIFC Financial District, Dubai',
+    address: 'Plot 884-219, Al Sa\'ada Street, DIFC Gate Precinct 4, Dubai, UAE',
     image: '/properties/emirates_tower_difc.jpg',
-    type: 'Prime Grade-A Commercial Asset',
+    type: 'Grade-A Commercial Asset',
     occupancy: '99.4%',
-    deedTier: 'Emirates Tower Co-Ownership Deed (₦1,500,000 Tier)',
+    deedTier: 'Emirates Tower Deed',
     cadastralId: 'DLD-CAD-884-219',
     makaniNumber: '18290 83910',
-    zoning: 'DIFC Special Free Zone Commercial (DIFC-G)',
-    valuation: 'AED 1,450,000,000 (Valued Q3 2026)',
-    trustee: 'Treasure Homes Sovereign Real Estate SPV Ltd',
+    zoning: 'DIFC Free Zone Commercial',
+    valuation: 'AED 1.45B',
+    trustee: 'Treasure Homes SPV Ltd',
     spvCode: 'SPV-DXB-DIFC-06'
   }
 };
 
-export const UaeDeedModal: React.FC<UaeDeedModalProps> = ({ 
-  isOpen, 
-  onClose, 
+export const UaeDeedModal: React.FC<UaeDeedModalProps> = ({
+  isOpen,
+  onClose,
   investment,
   defaultTab = 'deed'
 }) => {
+  const { isChampagne } = useTheme();
   const [activeTab, setActiveTab] = useState<'deed' | 'trust' | 'tenancy' | 'cadastral'>(defaultTab);
 
   if (!isOpen || !investment) return null;
 
-  // Resolve property meta
-  const planKey = (investment.planId && PROPERTY_DATABASE[investment.planId]) 
-    ? investment.planId 
-    : Object.keys(PROPERTY_DATABASE).find(k => 
-        PROPERTY_DATABASE[k].name.toLowerCase() === (investment.propertyName || investment.planName || '').toLowerCase()
-      ) || 'plan_1';
+  const planKey =
+    investment.planId && PROPERTY_DATABASE[investment.planId]
+      ? investment.planId
+      : Object.keys(PROPERTY_DATABASE).find(
+          (k) =>
+            PROPERTY_DATABASE[k].name.toLowerCase() ===
+            (investment.propertyName || investment.planName || '').toLowerCase()
+        ) || 'plan_1';
 
   const meta = PROPERTY_DATABASE[planKey];
   const propertyName = investment.propertyName || meta.name;
@@ -175,367 +170,333 @@ export const UaeDeedModal: React.FC<UaeDeedModalProps> = ({
   const propertyImage = investment.propertyImage || meta.image;
   const cadastralId = investment.cadastralId || meta.cadastralId;
   const makaniNumber = investment.makaniNumber || meta.makaniNumber;
-  const deedTier = investment.deedTier || meta.deedTier;
-  const deedCode = investment.deedReferenceCode || `UAE-DLD-2026-${investment.id.slice(-6).toUpperCase()}`;
-
-  const handlePrint = () => {
-    window.print();
-  };
+  const deedCode =
+    investment.deedReferenceCode ||
+    `UAE-DLD-2026-${investment.id.slice(-6).toUpperCase()}`;
 
   const totalWeeks = investment.totalWeeks || 24;
 
+  const surfaceBg = isChampagne ? 'bg-[#FFFFFF]' : 'bg-[#121922]';
+  const subtleBg = isChampagne ? 'bg-[#F7F4EE]' : 'bg-[#18222E]';
+  const borderCol = isChampagne ? 'border-[#E6E0D6]' : 'border-[#222F3D]';
+  const textMain = isChampagne ? 'text-[#18222B]' : 'text-[#F4F1EA]';
+  const textMuted = isChampagne ? 'text-[#556270]' : 'text-[#94A3B8]';
+  const textEmerald = isChampagne ? 'text-[#0B7A4E]' : 'text-[#10B981]';
+  const textBrass = isChampagne ? 'text-[#9A7B3E]' : 'text-[#C6A45C]';
+
+  const tabs: {
+    id: 'deed' | 'trust' | 'tenancy' | 'cadastral';
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }[] = [
+    { id: 'deed', label: 'Title Deed', icon: Award },
+    { id: 'trust', label: 'SPV Trust', icon: ShieldCheck },
+    { id: 'tenancy', label: 'Cashflow', icon: TrendingUp },
+    { id: 'cadastral', label: 'Cadastral', icon: MapPin }
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto">
-      <div className="bg-slate-950 border border-amber-500/40 rounded-2xl max-w-3xl w-full max-h-[94vh] flex flex-col shadow-2xl relative font-sans text-slate-100 overflow-hidden my-auto">
-        
-        {/* Top Sticky Header */}
-        <div className="sticky top-0 z-20 flex items-center justify-between gap-2 px-3 sm:px-5 py-2.5 sm:py-3.5 bg-slate-900/95 border-b border-slate-800 backdrop-blur">
-          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
-              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-amber-400 font-mono block truncate">
-                Official Backing Vault
-              </span>
-              <span className="text-[10px] sm:text-[11px] text-slate-400 block truncate">
-                {propertyName}
-              </span>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+      <div
+        className={`${surfaceBg} ${textMain} border ${borderCol} rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl relative font-sans overflow-hidden my-auto`}
+      >
+        {/* Top Header */}
+        <div
+          className={`flex items-center justify-between gap-3 px-5 py-3.5 border-b ${borderCol} ${surfaceBg} shrink-0`}
+        >
+          <div className="min-w-0">
+            <span className={`text-[10px] font-semibold uppercase tracking-[0.14em] block ${textBrass}`}>
+              Property Dossier
+            </span>
+            <span className="font-serif text-lg font-semibold block truncate">
+              {propertyName}
+            </span>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={handlePrint}
-              className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 whitespace-nowrap"
-              title="Print official document"
+              onClick={() => window.print()}
+              className="px-3 py-1.5 rounded-lg bg-[#0B7A4E] hover:bg-[#08633E] text-white font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+              title="Print or save PDF"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Print / Save PDF</span>
+              <span className="hidden sm:inline">Print PDF</span>
               <span className="sm:hidden">Print</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="p-1 sm:p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className={`p-1.5 rounded-lg border ${borderCol} ${textMuted} hover:opacity-100 transition-opacity cursor-pointer`}
               aria-label="Close"
             >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Tab Navigation for All Backing Documents */}
-        <div className="bg-slate-900/60 border-b border-slate-800/80 px-4 py-2 flex items-center gap-2 overflow-x-auto text-xs">
-          <button
-            type="button"
-            onClick={() => setActiveTab('deed')}
-            className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'deed'
-                ? 'bg-amber-500 text-slate-950 shadow-xs'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Award className="w-3.5 h-3.5" />
-            <span>Title Deed Certificate</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('trust')}
-            className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'trust'
-                ? 'bg-amber-500 text-slate-950 shadow-xs'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>SPV Trust Agreement</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('tenancy')}
-            className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'tenancy'
-                ? 'bg-amber-500 text-slate-950 shadow-xs'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>Rental Cashflow Schedule</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('cadastral')}
-            className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
-              activeTab === 'cadastral'
-                ? 'bg-amber-500 text-slate-950 shadow-xs'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>Cadastral Survey &amp; Address</span>
-          </button>
+        {/* Clean Underline Tab Bar */}
+        <div className={`px-5 border-b ${borderCol} flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar shrink-0`}>
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3 py-2.5 text-xs font-medium border-b-2 -mb-px flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
+                  isActive
+                    ? `border-[#0B7A4E] ${textEmerald} font-semibold`
+                    : `border-transparent ${textMuted} hover:opacity-100`
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Modal Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 print:p-0 print:overflow-visible">
-
-          {/* TAB 1: TITLE DEED CERTIFICATE */}
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 print:p-0 print:overflow-visible">
+          {/* TAB 1: TITLE DEED */}
           {activeTab === 'deed' && (
-            <div className="border border-amber-500/30 rounded-2xl overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 print:border-none print:bg-white print:text-black">
-              {/* Property Image Banner */}
-              <div className="relative h-48 sm:h-56 w-full overflow-hidden border-b border-amber-500/30">
-                <img 
-                  src={propertyImage} 
-                  alt={propertyName} 
+            <div className="space-y-5">
+              {/* Architectural Photo Header (Theme-Immune Ivory Text) */}
+              <div className="relative h-44 sm:h-52 w-full rounded-xl overflow-hidden bg-[#18222B]">
+                <img
+                  src={propertyImage}
+                  alt={propertyName}
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover object-center"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-                <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold bg-amber-500 text-slate-950 px-2 py-0.5 rounded-md uppercase font-mono tracking-widest inline-block mb-1">
-                      AUTHENTICATED UAE TITLE DEED
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      'linear-gradient(180deg, rgba(11,16,21,0.12) 0%, rgba(11,16,21,0.35) 45%, rgba(11,16,21,0.88) 100%)'
+                  }}
+                />
+                <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 pm-photo-overlay flex items-end justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="pm-photo-brass text-[10px] font-semibold uppercase tracking-[0.16em] block">
+                      Dubai Land Department Deed
                     </span>
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-white font-serif tracking-wide drop-shadow-md">
+                    <h2 className="font-serif text-2xl sm:text-3xl font-semibold leading-tight mt-0.5 truncate">
                       {propertyName}
                     </h2>
-                    <p className="text-xs text-amber-300 font-mono flex items-center gap-1.5">
-                      <MapPin className="w-3 h-3 text-amber-400" />
-                      <span>{propertyLocation}</span>
-                      <UaeFlag size="xs" />
+                    <p className="pm-photo-sub text-xs mt-0.5 truncate">
+                      {propertyLocation}
                     </p>
                   </div>
-                  <span className="text-xs font-mono text-emerald-400 font-bold bg-slate-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/30">
-                    {meta.occupancy} Occupancy
+                  <span className="pm-photo-emerald font-mono text-xs font-semibold shrink-0">
+                    {meta.occupancy} Occ.
                   </span>
                 </div>
               </div>
 
-              {/* Certificate Inner Body */}
-              <div className="p-5 sm:p-6 space-y-5">
-                {/* Official Reference Bar */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-xs font-mono">
-                  <div>
-                    <span className="text-[10px] text-slate-500 block uppercase">Deed Reference</span>
-                    <span className="font-bold text-amber-400">{deedCode}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block uppercase">Cadastral ID</span>
-                    <span className="font-bold text-slate-200">{cadastralId}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block uppercase">Makani Number</span>
-                    <span className="font-bold text-slate-200">{makaniNumber}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block uppercase">Issue Date</span>
-                    <span className="font-bold text-emerald-400">{new Date(investment.createdAt).toLocaleDateString()}</span>
-                  </div>
+              {/* Reference Strip */}
+              <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 ${subtleBg} border ${borderCol} rounded-xl p-3.5 text-xs`}>
+                <div>
+                  <span className={`text-[10px] uppercase tracking-wider block ${textMuted}`}>Deed Ref</span>
+                  <span className={`font-mono font-semibold block mt-0.5 truncate ${textBrass}`}>{deedCode}</span>
                 </div>
+                <div>
+                  <span className={`text-[10px] uppercase tracking-wider block ${textMuted}`}>Cadastral</span>
+                  <span className={`font-mono font-semibold block mt-0.5 ${textMain}`}>{cadastralId}</span>
+                </div>
+                <div>
+                  <span className={`text-[10px] uppercase tracking-wider block ${textMuted}`}>Makani</span>
+                  <span className={`font-mono font-semibold block mt-0.5 ${textMain}`}>{makaniNumber}</span>
+                </div>
+                <div>
+                  <span className={`text-[10px] uppercase tracking-wider block ${textMuted}`}>Issued</span>
+                  <span className={`font-mono font-semibold block mt-0.5 ${textEmerald}`}>
+                    {new Date(investment.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
 
-                {/* Valid Physical Address in Selected Area */}
-                <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-3.5 flex items-start gap-3">
-                  <Landmark className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-[10px] text-amber-400 uppercase font-mono font-bold block">
-                      Registered Physical Property Address
+              {/* Address */}
+              <div className={`flex items-start gap-3 ${subtleBg} border ${borderCol} rounded-xl p-3.5`}>
+                <Landmark className={`w-4 h-4 shrink-0 mt-0.5 ${textBrass}`} />
+                <div className="text-xs">
+                  <span className={`text-[10px] uppercase tracking-wider font-medium block ${textMuted}`}>
+                    Registered Address
+                  </span>
+                  <p className={`font-medium mt-0.5 ${textMain}`}>{propertyAddress}</p>
+                </div>
+              </div>
+
+              {/* Concise Allocation Statement + Financial Summary */}
+              <div className={`border-y ${borderCol} py-4 space-y-4`}>
+                <p className={`text-xs sm:text-sm leading-relaxed ${textMuted}`}>
+                  Confirms <strong className={textMain}>{investment.userName}</strong> holds a fractional stake in{' '}
+                  <strong className={textMain}>{propertyName}</strong> under{' '}
+                  <strong className={textMain}>{meta.trustee}</strong> ({meta.spvCode}).
+                </p>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className={`${subtleBg} border ${borderCol} rounded-xl p-3`}>
+                    <span className={`text-[10px] uppercase tracking-wider block ${textMuted}`}>Capital</span>
+                    <span className={`font-mono text-sm sm:text-base font-semibold tabular-nums block mt-0.5 ${textMain}`}>
+                      ₦{investment.cost.toLocaleString()}
                     </span>
-                    <p className="text-xs text-slate-200 font-medium mt-0.5 leading-relaxed font-sans">
-                      {propertyAddress}
-                    </p>
+                  </div>
+                  <div className={`${subtleBg} border ${borderCol} rounded-xl p-3`}>
+                    <span className={`text-[10px] uppercase tracking-wider block ${textEmerald}`}>Friday Yield</span>
+                    <span className={`font-mono text-sm sm:text-base font-semibold tabular-nums block mt-0.5 ${textEmerald}`}>
+                      ₦{investment.weeklyPayout.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className={`${subtleBg} border ${borderCol} rounded-xl p-3`}>
+                    <span className={`text-[10px] uppercase tracking-wider block ${textBrass}`}>Total ({totalWeeks}w)</span>
+                    <span className={`font-mono text-sm sm:text-base font-semibold tabular-nums block mt-0.5 ${textBrass}`}>
+                      ₦{investment.totalReturns.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Verification Footer */}
+              <div className="flex items-center justify-between gap-4 pt-1">
+                <div className="flex items-center gap-3">
+                  <div className={`w-11 h-11 rounded-lg border ${borderCol} bg-white p-1 flex items-center justify-center shrink-0`}>
+                    <QrCode className="w-9 h-9 text-[#18222B]" />
+                  </div>
+                  <div className="text-[11px] font-mono">
+                    <span className={`font-semibold block ${textMain}`}>DLD Registry Verified</span>
+                    <span className={`block ${textEmerald}`}>24-Week Friday Ledger</span>
                   </div>
                 </div>
 
-                {/* Core Allocation Statement */}
-                <div className="space-y-3 text-xs text-slate-300 leading-relaxed border-y border-slate-800/80 py-4 font-sans">
-                  <p>
-                    This official certificate confirms that <strong className="text-white uppercase tracking-wider">{investment.userName}</strong> holds an authenticated fractional co-ownership stake in <strong className="text-amber-400">{propertyName}</strong>, under the sovereign custody of Treasure Homes Sovereign Real Estate SPV Ltd.
-                  </p>
-
-                  <div className="grid grid-cols-3 gap-2.5 font-mono pt-1">
-                    <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-                      <span className="text-[10px] text-slate-500 block font-sans">Allotted Principal</span>
-                      <span className="text-sm font-extrabold text-white">₦{investment.cost.toLocaleString()}</span>
-                    </div>
-                    <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-                      <span className="text-[10px] text-emerald-400 block font-sans font-semibold">Weekly Cash Payout</span>
-                      <span className="text-sm font-extrabold text-emerald-400">₦{investment.weeklyPayout.toLocaleString()}</span>
-                    </div>
-                    <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-                      <span className="text-[10px] text-amber-400 block font-sans font-semibold">Total ({totalWeeks}w)</span>
-                      <span className="text-sm font-extrabold text-amber-400">₦{investment.totalReturns.toLocaleString()}</span>
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] text-slate-400 pt-1 leading-normal">
-                    Dividend disbursements are settled on a strict 7-day schedule directly into your platform wallet. All funds are backed by physical asset appreciation, short-let hospitality, and corporate leasing agreements registered with the Dubai Land &amp; Property Trust.
-                  </p>
-                </div>
-
-                {/* Footer Signatures & QR Code */}
-                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-white rounded-lg p-1 flex items-center justify-center shrink-0 shadow-sm">
-                      <QrCode className="w-10 h-10 text-slate-950" />
-                    </div>
-                    <div className="text-[10px] font-mono text-slate-400 space-y-0.5">
-                      <span className="text-white font-bold block">VERIFIED UAE TITLE DEED</span>
-                      <span>Registry: Dubai Land &amp; Property Escrow</span>
-                      <span className="text-emerald-400 block font-bold">● Active 24-Week Distribution Ledger</span>
-                    </div>
-                  </div>
-
-                  <div className="text-right border-t sm:border-t-0 pt-2 sm:pt-0 font-serif">
-                    <div className="text-amber-400 italic text-sm font-bold tracking-wider">Treasure Homes Ltd</div>
-                    <div className="text-[9px] text-slate-500 font-mono uppercase tracking-widest">Sovereign Property Trustee</div>
-                  </div>
+                <div className="text-right">
+                  <div className={`font-serif italic text-base font-semibold ${textBrass}`}>Treasure Homes Ltd</div>
+                  <div className={`text-[10px] font-mono uppercase tracking-wider ${textMuted}`}>SPV Trustee</div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 2: SPV TRUST AGREEMENT */}
+          {/* TAB 2: SPV TRUST */}
           {activeTab === 'trust' && (
-            <div className="border border-slate-800 rounded-2xl bg-slate-900/70 p-6 space-y-5 font-sans">
-              <div className="border-b border-slate-800 pb-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono font-bold uppercase text-amber-400 tracking-wider">
-                    LEGAL INSTRUMENT OF TRUST &amp; CUSTODY
-                  </span>
-                  <span className="text-xs font-mono text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">
-                    ENFORCEABLE CONTRACT
-                  </span>
+            <div className="space-y-4">
+              <div className={`border-b ${borderCol} pb-3 flex items-center justify-between gap-2`}>
+                <div>
+                  <h3 className="font-serif text-xl font-semibold">SPV Custody Summary</h3>
+                  <p className={`text-xs ${textMuted}`}>
+                    {meta.trustee} · {investment.userName}
+                  </p>
                 </div>
-                <h3 className="text-lg font-bold text-white mt-1">
-                  Special Purpose Vehicle (SPV) Co-Investment Agreement
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5 font-mono">
-                  Between Treasure Homes Sovereign Real Estate SPV Ltd &amp; {investment.userName}
-                </p>
+                <span className={`text-xs font-mono font-semibold ${textEmerald}`}>Active</span>
               </div>
 
-              <div className="space-y-4 text-xs text-slate-300 leading-relaxed">
-                <div>
-                  <h4 className="font-bold text-white uppercase text-[11px] mb-1 font-mono">1. Asset Backing &amp; Ring-Fencing</h4>
-                  <p className="text-slate-400">
-                    The Trustee confirms that 100% of the invested principal of <strong>₦{investment.cost.toLocaleString()}</strong> is irrevocably allocated to the physical real estate asset <strong>{propertyName}</strong> located at <em>{propertyAddress}</em>. The property title is ring-fenced within SPV code <strong>{meta.spvCode}</strong> and protected from third-party encumbrances.
+              <div className="space-y-3 text-xs leading-relaxed">
+                <div className={`${subtleBg} border ${borderCol} rounded-xl p-3.5`}>
+                  <span className={`font-semibold block mb-1 ${textMain}`}>1. Ring-Fenced Title</span>
+                  <p className={textMuted}>
+                    ₦{investment.cost.toLocaleString()} is allocated to {propertyName} inside SPV{' '}
+                    <span className="font-mono font-semibold">{meta.spvCode}</span>, separated from corporate liabilities.
                   </p>
                 </div>
 
-                <div>
-                  <h4 className="font-bold text-white uppercase text-[11px] mb-1 font-mono">2. Guaranteed Payout Schedule &amp; Liquidity</h4>
-                  <p className="text-slate-400">
-                    The Investor shall receive weekly disbursements of <strong>₦{investment.weeklyPayout.toLocaleString()}</strong> every 7 days across the full 24-week tenure, culminating in total returns of <strong>₦{investment.totalReturns.toLocaleString()}</strong>. Disbursements are backed by continuous operational rental income and the platform liquidity reserve.
+                <div className={`${subtleBg} border ${borderCol} rounded-xl p-3.5`}>
+                  <span className={`font-semibold block mb-1 ${textMain}`}>2. Friday Settlement</span>
+                  <p className={textMuted}>
+                    ₦{investment.weeklyPayout.toLocaleString()} credits every Friday for {totalWeeks} weeks (₦
+                    {investment.totalReturns.toLocaleString()} total). Auto-Renew adds +3% (+₦
+                    {Math.round(investment.weeklyPayout * 0.03).toLocaleString()}/wk).
                   </p>
                 </div>
 
-                <div>
-                  <h4 className="font-bold text-white uppercase text-[11px] mb-1 font-mono">3. Auto-Renew &amp; Rollover +3% Increment Clause</h4>
-                  <p className="text-slate-400">
-                    In accordance with platform governance, Investors exercising the Auto-Renew rollover toggle are entitled to an additional <strong>+3% increment</strong> on eligible weekly payouts (+₦{Math.round(investment.weeklyPayout * 0.03).toLocaleString()}/week), compounding weekly cash returns.
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-white uppercase text-[11px] mb-1 font-mono">4. Dispute Resolution &amp; Sovereign Jurisdiction</h4>
-                  <p className="text-slate-400">
-                    This agreement is governed by the laws of the United Arab Emirates and the Dubai International Financial Centre (DIFC) Courts.
+                <div className={`${subtleBg} border ${borderCol} rounded-xl p-3.5`}>
+                  <span className={`font-semibold block mb-1 ${textMain}`}>3. Jurisdiction</span>
+                  <p className={textMuted}>
+                    Governed under Dubai International Financial Centre (DIFC) Common Law.
                   </p>
                 </div>
               </div>
 
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 grid grid-cols-2 gap-4 text-xs font-mono">
-                <div>
-                  <span className="text-[10px] text-slate-500 uppercase block">SPV Registration</span>
-                  <span className="text-white font-bold">{meta.spvCode}</span>
+              <div className={`grid grid-cols-2 gap-3 text-xs font-mono pt-1`}>
+                <div className={`${subtleBg} border ${borderCol} rounded-xl p-3`}>
+                  <span className={`text-[10px] uppercase block ${textMuted}`}>SPV Code</span>
+                  <span className={`font-semibold block mt-0.5 ${textMain}`}>{meta.spvCode}</span>
                 </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 uppercase block">Asset Valuation</span>
-                  <span className="text-emerald-400 font-bold">{meta.valuation}</span>
+                <div className={`${subtleBg} border ${borderCol} rounded-xl p-3`}>
+                  <span className={`text-[10px] uppercase block ${textMuted}`}>Valuation</span>
+                  <span className={`font-semibold block mt-0.5 ${textEmerald}`}>{meta.valuation}</span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 3: RENTAL CASHFLOW SCHEDULE */}
+          {/* TAB 3: CASHFLOW */}
           {activeTab === 'tenancy' && (
-            <div className="border border-slate-800 rounded-2xl bg-slate-900/70 p-6 space-y-5 font-sans">
-              <div className="border-b border-slate-800 pb-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono font-bold uppercase text-amber-400 tracking-wider">
-                    OPERATIONAL CASHFLOW LEDGER
-                  </span>
-                  <span className="text-xs font-mono text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">
-                    {meta.occupancy} OCCUPIED
-                  </span>
+            <div className="space-y-4">
+              <div className={`border-b ${borderCol} pb-3 flex items-center justify-between gap-2`}>
+                <div>
+                  <h3 className="font-serif text-xl font-semibold">Weekly Yield Schedule</h3>
+                  <p className={`text-xs ${textMuted}`}>{propertyName} · {meta.occupancy} Occupied</p>
                 </div>
-                <h3 className="text-lg font-bold text-white mt-1">
-                  {propertyName} Tenancy &amp; Yield Statement
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Verified commercial &amp; hospitality leasehold contracts driving weekly cash payouts.
-                </p>
+                <span className={`text-xs font-mono font-semibold ${textEmerald}`}>
+                  Wk {investment.weeksPaid}/{totalWeeks}
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-                  <span className="text-slate-400 text-[10px] uppercase font-mono block">Weekly Distribution</span>
-                  <span className="text-base font-extrabold text-emerald-400 font-mono">₦{investment.weeklyPayout.toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">Disbursed every 7 days</span>
+              <div className="grid grid-cols-3 gap-3 text-xs">
+                <div className={`${subtleBg} border ${borderCol} rounded-xl p-3`}>
+                  <span className={`text-[10px] uppercase block ${textMuted}`}>Weekly</span>
+                  <span className={`font-mono text-sm font-semibold tabular-nums block mt-0.5 ${textEmerald}`}>
+                    ₦{investment.weeklyPayout.toLocaleString()}
+                  </span>
                 </div>
-                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-                  <span className="text-slate-400 text-[10px] uppercase font-mono block">Cumulative Payouts</span>
-                  <span className="text-base font-extrabold text-white font-mono">₦{(investment.weeklyPayout * investment.weeksPaid).toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">Week {investment.weeksPaid} of {totalWeeks} paid</span>
+                <div className={`${subtleBg} border ${borderCol} rounded-xl p-3`}>
+                  <span className={`text-[10px] uppercase block ${textMuted}`}>Paid</span>
+                  <span className={`font-mono text-sm font-semibold tabular-nums block mt-0.5 ${textMain}`}>
+                    ₦{(investment.weeklyPayout * investment.weeksPaid).toLocaleString()}
+                  </span>
                 </div>
-                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-                  <span className="text-slate-400 text-[10px] uppercase font-mono block">Remaining Target</span>
-                  <span className="text-base font-extrabold text-amber-400 font-mono">₦{(investment.weeklyPayout * Math.max(0, totalWeeks - investment.weeksPaid)).toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">{Math.max(0, totalWeeks - investment.weeksPaid)} weeks remaining</span>
+                <div className={`${subtleBg} border ${borderCol} rounded-xl p-3`}>
+                  <span className={`text-[10px] uppercase block ${textMuted}`}>Remaining</span>
+                  <span className={`font-mono text-sm font-semibold tabular-nums block mt-0.5 ${textBrass}`}>
+                    ₦{(investment.weeklyPayout * Math.max(0, totalWeeks - investment.weeksPaid)).toLocaleString()}
+                  </span>
                 </div>
               </div>
 
-              {/* Weekly Payout Schedule Table Preview */}
-              <div className="border border-slate-800 rounded-xl overflow-hidden">
+              <div className={`border ${borderCol} rounded-xl overflow-hidden`}>
                 <table className="w-full text-left text-xs font-mono">
-                  <thead className="bg-slate-950 text-slate-400 text-[10px] uppercase border-b border-slate-800">
+                  <thead className={`${subtleBg} border-b ${borderCol} text-[10px] uppercase ${textMuted}`}>
                     <tr>
-                      <th className="py-2.5 px-3">Tenure Cycle</th>
-                      <th className="py-2.5 px-3">Payout Due</th>
-                      <th className="py-2.5 px-3 text-right">Cash Amount</th>
-                      <th className="py-2.5 px-3 text-right">Status</th>
+                      <th className="py-2.5 px-3 font-medium">Cycle</th>
+                      <th className="py-2.5 px-3 font-medium">Schedule</th>
+                      <th className="py-2.5 px-3 text-right font-medium">Payout</th>
+                      <th className="py-2.5 px-3 text-right font-medium">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                  <tbody className={`divide-y ${borderCol}`}>
                     {Array.from({ length: Math.min(8, totalWeeks) }).map((_, idx) => {
                       const weekNum = idx + 1;
                       const isPaid = weekNum <= investment.weeksPaid;
                       const isNext = weekNum === investment.weeksPaid + 1;
 
                       return (
-                        <tr key={weekNum} className={isNext ? 'bg-amber-500/10' : ''}>
-                          <td className="py-2 px-3 font-semibold">Week {weekNum}</td>
-                          <td className="py-2 px-3 text-slate-400">
-                            {isPaid 
-                              ? 'Disbursed' 
-                              : isNext 
-                                ? 'Next 7-Day Due' 
-                                : `Cycle +${weekNum * 7}d`}
+                        <tr key={weekNum}>
+                          <td className={`py-2 px-3 font-semibold ${textMain}`}>Week {weekNum}</td>
+                          <td className={`py-2 px-3 ${textMuted}`}>
+                            {isPaid ? 'Settled' : isNext ? 'Next Friday' : `+${weekNum * 7}d`}
                           </td>
-                          <td className="py-2 px-3 text-right font-bold text-white">
+                          <td className={`py-2 px-3 text-right font-semibold tabular-nums ${textMain}`}>
                             ₦{investment.weeklyPayout.toLocaleString()}
                           </td>
                           <td className="py-2 px-3 text-right">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              isPaid ? 'bg-emerald-500/20 text-emerald-400' :
-                              isNext ? 'bg-amber-500/20 text-amber-400' :
-                              'bg-slate-800 text-slate-400'
-                            }`}>
-                              {isPaid ? 'PAID' : isNext ? 'SCHEDULED' : 'PENDING'}
+                            <span
+                              className={`text-[10px] font-semibold ${
+                                isPaid ? textEmerald : isNext ? textBrass : textMuted
+                              }`}
+                            >
+                              {isPaid ? 'PAID' : isNext ? 'NEXT' : 'PENDING'}
                             </span>
                           </td>
                         </tr>
@@ -547,58 +508,44 @@ export const UaeDeedModal: React.FC<UaeDeedModalProps> = ({
             </div>
           )}
 
-          {/* TAB 4: CADASTRAL SURVEY & ADDRESS */}
+          {/* TAB 4: CADASTRAL */}
           {activeTab === 'cadastral' && (
-            <div className="border border-slate-800 rounded-2xl bg-slate-900/70 p-6 space-y-5 font-sans">
-              <div className="border-b border-slate-800 pb-4">
-                <span className="text-[10px] font-mono font-bold uppercase text-amber-400 tracking-wider">
-                  MUNICIPALITY REGISTRATION &amp; GEO-SURVEY
-                </span>
-                <h3 className="text-lg font-bold text-white mt-1">
-                  Cadastral Survey &amp; Physical Address Record
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Authenticated records under the Dubai Municipality &amp; Land Registry framework.
-                </p>
+            <div className="space-y-4">
+              <div className={`border-b ${borderCol} pb-3`}>
+                <h3 className="font-serif text-xl font-semibold">Cadastral &amp; Makani Record</h3>
+                <p className={`text-xs ${textMuted}`}>Dubai Municipality land survey reference.</p>
               </div>
 
-              {/* Property Image & Address Card */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <div className="h-40 rounded-lg overflow-hidden border border-slate-800">
-                  <img src={propertyImage} alt={propertyName} className="w-full h-full object-cover" />
+              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 items-center ${subtleBg} border ${borderCol} rounded-xl p-4`}>
+                <div className="h-40 rounded-lg overflow-hidden bg-[#18222B]">
+                  <img
+                    src={propertyImage}
+                    alt={propertyName}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <div className="space-y-2 text-xs">
+                <div className="space-y-2.5 text-xs">
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-mono block">Physical Address</span>
-                    <strong className="text-white text-xs block mt-0.5 font-sans">{propertyAddress}</strong>
+                    <span className={`text-[10px] uppercase tracking-wider block ${textMuted}`}>Address</span>
+                    <strong className={`block mt-0.5 ${textMain}`}>{propertyAddress}</strong>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-mono block">Cadastral Reference</span>
-                    <span className="text-amber-400 font-mono font-bold">{cadastralId}</span>
+                    <span className={`text-[10px] uppercase tracking-wider block ${textMuted}`}>Cadastral ID</span>
+                    <span className={`font-mono font-semibold ${textBrass}`}>{cadastralId}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-mono block">Makani Geocode Number</span>
-                    <span className="text-emerald-400 font-mono font-bold">{makaniNumber}</span>
+                    <span className={`text-[10px] uppercase tracking-wider block ${textMuted}`}>Makani Number</span>
+                    <span className={`font-mono font-semibold ${textEmerald}`}>{makaniNumber}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-mono block">Zoning Classification</span>
-                    <span className="text-slate-300 font-mono">{meta.zoning}</span>
+                    <span className={`text-[10px] uppercase tracking-wider block ${textMuted}`}>Zoning</span>
+                    <span className={`font-mono ${textMain}`}>{meta.zoning}</span>
                   </div>
                 </div>
-              </div>
-
-              <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs text-slate-400 leading-relaxed">
-                <div className="flex items-center gap-2 text-white font-bold">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>Cadastral Verification Certificate Active</span>
-                </div>
-                <p>
-                  This property is officially surveyed and registered on the unified Dubai Land Registry mapping system. Investors can present this Cadastral ID and Makani Number at the Dubai Land Department or verify coordinates on the official Dubai Makani geo-portal.
-                </p>
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>
